@@ -2,6 +2,8 @@ from lib import exceptions
 import gi
 gi.require_version("NM", "1.0")
 from gi.repository import NM
+import os
+import re
 
 
 class PluginManager():
@@ -10,11 +12,17 @@ class PluginManager():
         strongswan=["ikev2"]
     )
 
-    def __init__(self, virtual_device_name="proton0"):
-        self.virtual_device_name = virtual_device_name
+    def import_connection_from_file(self, filename):
+        """Import connection from file
 
-    def import_connection_from_ovpn(self, filename, vpn_protocol="tcp"):
-        """Import connection form .ovpn file"""
+        Args:
+            filename (string): path to file
+        """
+        vpn_protocol = self.extract_vpn_protocol(filename)
+
+        if not vpn_protocol:
+            raise Exception("Alternative protocols are not yet supported")
+
         protocol_implementation_type = self.get_protocol_implementation_type(
             vpn_protocol
         )
@@ -36,6 +44,40 @@ class PluginManager():
             if connection.normalize():
                 print("Connection was normalized")
             return connection
+
+    def extract_vpn_protocol(self, filename):
+        """Extract vpn protocol from file
+        
+        Args:
+            filename (string): path to file
+        """
+        vpn_protocol = False
+
+        if not isinstance(filename, str):
+            raise TypeError(
+                "Incorrect object type, "
+                + "str is expected but got {} instead".format(type(filename))
+            )
+
+        if not os.path.isfile(filename):
+            raise FileNotFoundError(
+                "The provided file \"{}\"".format(filename)
+                + "could not be found"
+            )
+
+        with open(filename, "r") as f:
+            try:
+                vpn_protocol = re.search(
+                    r"proto\W(udp|tcp)", f.read()
+                ).group(1)
+            except AttributeError:
+                pass
+            except FileNotFoundError:
+                raise exceptions.ImportConnectionError(
+
+                )
+
+        return vpn_protocol
 
     def get_protocol_implementation_type(self, vpn_protocol):
         """Find and return protocol implementation type"""

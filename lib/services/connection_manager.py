@@ -6,8 +6,9 @@ from gi.repository import NM, GLib
 
 
 class ConnectionManager():
-    def __init__(self, plugin_manager):
+    def __init__(self, plugin_manager, virtual_device_name="proton0"):
         self.plugin_manager = plugin_manager
+        self.virtual_device_name = virtual_device_name
 
     def add_connection(self, filename, username, password, delete_cached_cert):
         """Setup and add ProtonVPN connection
@@ -21,7 +22,7 @@ class ConnectionManager():
         client = NM.Client.new(None)
         main_loop = GLib.MainLoop()
 
-        connection = self.plugin_manager.import_connection_from_ovpn(
+        connection = self.plugin_manager.import_connection_from_file(
             filename
         )
 
@@ -219,7 +220,7 @@ class ConnectionManager():
         virtual_device_type = self.get_virtual_device_type(filename)
 
         # Changes virtual tunnel name
-        vpn_settings.add_data_item("dev", self.plugin_manager.virtual_device_name)
+        vpn_settings.add_data_item("dev", self.virtual_device_name)
         vpn_settings.add_data_item("dev-type", virtual_device_type)
 
     def get_proton_connection(self, connection_type, client=None):
@@ -245,7 +246,7 @@ class ConnectionManager():
 
                 vpn_settings = conn_for_vpn.get_setting_vpn()
 
-                if vpn_settings.get_data_item("dev") == self.plugin_manager.virtual_device_name:
+                if vpn_settings.get_data_item("dev") == self.virtual_device_name:
                     return_conn = [conn, conn.get_id()]
                     break
 

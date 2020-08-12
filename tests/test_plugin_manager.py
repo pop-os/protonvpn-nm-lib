@@ -43,7 +43,7 @@ class TestIntegrationPluginManager:
 
     def test_correct_import(self):
         assert isinstance(
-            self.pm.import_connection_from_ovpn(
+            self.pm.import_connection_from_file(
                 os.path.join(CERT_FOLDER, "ProtonVPN.ovpn")
             ),
             NM.SimpleConnection
@@ -51,22 +51,30 @@ class TestIntegrationPluginManager:
 
     def test_broken_import(self):
         with pytest.raises(exceptions.ImportConnectionError):
-            self.pm.import_connection_from_ovpn("ProtonVPN_broken_cert.ovpn")
+            self.pm.import_connection_from_file(
+                os.path.join(CERT_FOLDER, "ProtonVPN_broken_cert.ovpn")
+            )
 
     def test_missing_import(self):
-        with pytest.raises(exceptions.ImportConnectionError):
-            self.pm.import_connection_from_ovpn("")
+        with pytest.raises(FileNotFoundError):
+            self.pm.import_connection_from_file(
+                os.path.join(CERT_FOLDER, "")
+            )
 
     def test_filename_is_random(self):
-        with pytest.raises(exceptions.ImportConnectionError):
-            self.pm.import_connection_from_ovpn("someradnom_STRING")
+        with pytest.raises(FileNotFoundError):
+            self.pm.import_connection_from_file(
+                os.path.join(CERT_FOLDER, "someradnom_STRING")
+            )
 
     def test_filename_is_int(self):
-        with pytest.raises(exceptions.ImportConnectionError):
-            self.pm.import_connection_from_ovpn(25)
+        with pytest.raises(TypeError):
+            self.pm.import_connection_from_file(
+                os.path.join(CERT_FOLDER, 25)
+            )
 
     def test_import_from_subfolder(self):
-        with pytest.raises(exceptions.ImportConnectionError):
-            self.pm.import_connection_from_ovpn(
-                "./random_folder/ProtonVPN.ovpn"
+        with pytest.raises(FileNotFoundError):
+            self.pm.import_connection_from_file(
+                os.path.join(CERT_FOLDER, "./random_folder/ProtonVPN.ovpn")
             )
