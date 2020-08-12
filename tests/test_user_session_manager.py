@@ -31,7 +31,7 @@ MOCK_AUTHDATA = {
 
 TEST_KEYRING = dict(
     sname=["test1", "test2", "test3"],
-    uname=["test1_user", "test2_user", "test3_user"] 
+    uname=["test1_user", "test2_user", "test3_user"]
 )
 
 
@@ -58,9 +58,21 @@ class TestUserSessionManager:
     @pytest.mark.parametrize(
         "auth_data,expected_servicename,expected_username",
         [
-            (MOCK_AUTHDATA, TEST_KEYRING["sname"][0], TEST_KEYRING["uname"][0]),
-            (MOCK_AUTHDATA, TEST_KEYRING["sname"][1], TEST_KEYRING["uname"][0]),
-            (MOCK_AUTHDATA, TEST_KEYRING["sname"][2], TEST_KEYRING["uname"][0])
+            (
+                MOCK_AUTHDATA,
+                TEST_KEYRING["sname"][0],
+                TEST_KEYRING["uname"][0]
+            ),
+            (
+                MOCK_AUTHDATA,
+                TEST_KEYRING["sname"][1],
+                TEST_KEYRING["uname"][0]
+            ),
+            (
+                MOCK_AUTHDATA,
+                TEST_KEYRING["sname"][2],
+                TEST_KEYRING["uname"][0]
+            )
         ]
     )
     def test_store_expected_session(
