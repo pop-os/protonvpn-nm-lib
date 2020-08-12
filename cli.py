@@ -89,8 +89,10 @@ class NetworkManagerPrototypeCLI():
         else:
             protocol = "tcp"
 
+        delattr(args, "protocol")
+
         try:
-            session = self.user_manager.load_session
+            session = self.user_manager.load_session()
         except (
             exceptions.JSONAuthDataNoneError,
             exceptions.JSONAuthDataEmptyError
@@ -108,7 +110,6 @@ class NetworkManagerPrototypeCLI():
             tor=self.server_manager.feature_f,
         )
 
-        delattr(args, "protocol")
         command = False
 
         for cls_attr in inspect.getmembers(args):
@@ -116,7 +117,9 @@ class NetworkManagerPrototypeCLI():
                 command = list(cls_attr)
 
         try:
-            certificate_filename = cli_commands[command[0]](session, protocol, command[1])
+            certificate_filename = cli_commands[command[0]](
+                session, protocol, command
+            )
         except TypeError:
             servername, protocol = dialog(
                 self.server_manager,
@@ -183,7 +186,7 @@ class NetworkManagerPrototypeCLI():
             return ovpn_username, ovpn_password1
 
         try:
-            self.user_manager.load_session
+            self.user_manager.load_session()
         except (
             exceptions.JSONAuthDataNoneError,
             exceptions.JSONAuthDataEmptyError

@@ -1,6 +1,5 @@
 import datetime
 import re
-import sys
 import json
 import random
 import os
@@ -12,7 +11,7 @@ class ServerManager():
     def __init__(self, cert_manager):
         self.cert_manager = cert_manager
 
-    def fastest(self, session, protocol, _):
+    def fastest(self, session, protocol, *_):
         self.pull_server_data(session)
 
         servers = self.get_servers(session)
@@ -39,9 +38,9 @@ class ServerManager():
             servername, ip_list
         )
 
-    def country_f(self, session, protocol, country_code):
+    def country_f(self, session, protocol, *args):
         """Connect to the fastest server in a specific country."""
-        country_code = country_code.strip().upper()
+        country_code = args[0][1].strip().upper()
         self.pull_server_data(session)
         servers = self.get_servers(session)
 
@@ -55,11 +54,9 @@ class ServerManager():
                 server_pool.append(server)
 
         if len(server_pool) == 0:
-            print(
-                "[!] No Server in country {0} found\n".format(country_code)
-                + "[!] Please choose a valid country"
+            raise Exception(
+                "Invalid country code \"{}\"".format(country_code)
             )
-            sys.exit(1)
 
         servername = self.get_fastest_server(server_pool)
 
@@ -75,11 +72,14 @@ class ServerManager():
             servername, ip_list
         )
 
-    def direct(self, session, protocol, user_input):
+    def direct(self, session, protocol, *args):
         """Connect to a single given server directly"""
-        self.pull_server_data(session)
+        user_input = args[0]
+        if isinstance(user_input, list):
+            user_input = user_input[1]
 
-        user_input = user_input.upper()
+        servername = user_input.strip().upper()
+
 
         if not self.is_servername_valid(user_input):
             raise exceptions.IllegalServername(
@@ -87,30 +87,30 @@ class ServerManager():
             )
 
         servername = user_input
+        self.pull_server_data(session)
         servers = self.get_servers(session)
 
         try:
             ip_list = self.get_ip_list(servername, servers)
         except IndexError:
             raise exceptions.IllegalServername(
-                "\"{}\" is not a valid server".format(servername)
+                "\"{}\" is not an existing server".format(servername)
             )
 
         if servername not in [server["Name"] for server in servers]:
-            print(
-                "[!] {0} doesn't exist, ".format(servername)
-                + "is under maintenance, or inaccessible with your plan.\n"
-                "[!] Please enter a different, valid servername."
+            raise Exception(
+                "{} is either invalid, under maintenance ".format(servername)
+                + "or inaccessible with your plan"
             )
-            sys.exit(1)
 
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
             servername, ip_list
         )
 
-    def feature_f(self, session, protocol, literal_feature):
+    def feature_f(self, session, protocol, *args):
         """Connect to the fastest server in a specific country."""
+        literal_feature = args[0][0].strip().lower()
         allowed_features = {
             "sc": 1, "tor": 2,
             "p2p": 4, "stream": 8,
@@ -119,7 +119,7 @@ class ServerManager():
 
         try:
             feature = allowed_features[literal_feature]
-        except:
+        except KeyError:
             raise Exception("Feature is non-existent")
 
         self.pull_server_data(session)
@@ -129,8 +129,9 @@ class ServerManager():
         server_pool = [s for s in servers if s["Features"] == feature]
 
         if len(server_pool) == 0:
-            print("[!] No servers found with your selection.")
-            sys.exit(1)
+            raise Exception(
+                "No servers found with the {} feature".format(literal_feature)
+            )
 
         servername = self.get_fastest_server(server_pool)
 
@@ -146,7 +147,7 @@ class ServerManager():
             servername, ip_list
         )
 
-    def random_c(self, session, protocol, _):
+    def random_c(self, session, protocol, *_):
         """Connect to a random ProtonVPN Server."""
         servers = self.get_servers(session)
 
@@ -283,8 +284,5 @@ class ServerManager():
             ) + "{0}".format(
                 '-' + tor if tor is not None else ''
             )
-
-        else:
-            return False
 
         return return_servername
