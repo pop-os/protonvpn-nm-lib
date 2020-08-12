@@ -24,12 +24,11 @@ class UserManager(UserSessionManager):
 
     @property
     def vpn_credentials(self):
-        session = self.load_session
+        session = self.load_session()
 
         api_resp = session.api_request('/vpn')
 
         return (api_resp["VPN"]["Name"], api_resp["VPN"]["Password"])
 
-    @property
     def load_session(self):
         return self.load_stored_user_session()
