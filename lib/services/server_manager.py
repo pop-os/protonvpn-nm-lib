@@ -204,10 +204,6 @@ class ServerManager():
 
         return ip_list
 
-    def get_user_tier(self, session):
-        data = session.api_request(endpoint="/vpn")
-        return data["VPN"]["MaxTier"]
-
     def get_servers(self, session):
         """Return a list of all servers for the users Tier."""
 
@@ -221,8 +217,20 @@ class ServerManager():
         # Sort server IDs by Tier
         return [server for server in servers if server["Tier"] <= user_tier and server["Status"] == 1] # noqa
 
+    def get_user_tier(self, session):
+        data = session.api_request(endpoint="/vpn")
+        return data["VPN"]["MaxTier"]
+
     def get_fastest_server(self, server_pool):
         """Return the fastest server from a list of servers"""
+
+        if not isinstance(server_pool, list):
+            raise TypeError(
+                "Incorrect object type, "
+                + "list is expected but got {} instead".format(
+                    type(server_pool)
+                )
+            )
 
         # Sort servers by "speed" and select top n according to pool_size
         fastest_pool = sorted(

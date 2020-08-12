@@ -64,6 +64,25 @@ session = proton.Session.load(json.loads(MOCK_DATA_JSON))
 class TestServerManager:
     server_man = ServerManager(CertificateManager())
 
+    @pytest.fixture
+    def empty_server_pool(self):
+        feature = 1
+        server_pool = [s for s in SERVERS if s["Features"] == feature]
+        return server_pool
+
+    @pytest.fixture
+    def full_server_pool(self):
+        feature = 0
+        server_pool = [s for s in SERVERS if s["Features"] == feature]
+        return server_pool
+
+    def test_get_fastest_server_empty_pool(self, empty_server_pool):
+        with pytest.raises(IndexError):
+            self.server_man.get_fastest_server(empty_server_pool)
+
+    def test_get_fastest_server_full_pool(self, full_server_pool):
+        self.server_man.get_fastest_server(full_server_pool)
+
     @pytest.mark.parametrize(
         "servername",
         [
