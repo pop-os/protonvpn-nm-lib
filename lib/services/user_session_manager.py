@@ -19,7 +19,10 @@ class UserSessionManager:
     def __init__(self):
         self.set_optimum_keyring_backend()
         current_DE = os.getenv("XDG_CURRENT_DESKTOP", "")
-        print(current_DE)
+        print(
+            "Current DE:",
+            "None" if len(str(current_DE)) == 0 else current_DE
+        )
 
     def load_stored_user_session(
         self,
@@ -170,26 +173,31 @@ class UserSessionManager:
             backend_name = backend_string_object.split(".")[2]
             backend_priority = search_in_str(
                 r"\(\w+:\W(\d+\.?\d*)\)", backend_str
-            ).group(1)
-
-            try:
-                supported_backends.index(backend_name)
-            except ValueError:
-                continue
-            else:
-                if (
-                    optimum_backend is None
-                    or float(backend_priority) > float(optimum_backend[1])
-                ):
-                    optimum_backend = (
-                        backend_name,
-                        backend_priority,
-                        backend_obj
-                    )
-
-        if optimum_backend is None:
-            raise exceptions.OptimumBackendNotFound(
-                "Supported backend was not found"
             )
 
+            if backend_priority is not None:
+                try:
+                    supported_backends.index(backend_name)
+                except ValueError:
+                    continue
+                else:
+                    backend_priority = backend_priority.group(1)
+                    if (
+                        optimum_backend is None
+                        or float(backend_priority) > float(optimum_backend[1])
+                    ):
+                        optimum_backend = (
+                            backend_name,
+                            backend_priority,
+                            backend_obj
+                        )
+
+        if optimum_backend is None:
+            optimum_backend = (
+                "SecretService",
+                10,
+                keyring.backends.SecretService.Keyring()
+            )
+
+        print("Keyring backend:", optimum_backend[0])
         keyring.set_keyring(optimum_backend[2])
