@@ -29,7 +29,7 @@ class CertificateManager:
         if not isinstance(session, Session):
             raise TypeError(
                 "Incorrect object type, "
-                + "{} is expected ".format(Session)
+                + "{} is expected ".format(type(Session))
                 + "but got {} instead".format(type(protocol))
             )
 
