@@ -1,6 +1,5 @@
 import argparse
 from lib import exceptions
-import os
 import getpass
 import sys
 from lib.services.plugin_manager import PluginManager
@@ -25,7 +24,9 @@ class NetworkManagerPrototypeCLI():
         if not args.command or not hasattr(self, args.command):
             print(
                 "python filename.py "
-                + "[connect [<servername>|-f|-r|--p2p|--sc|--tor|--cc <iso_country_code>] [-p] | disconnect | login | logout]"
+                + "[connect "
+                + "[<servername>|-f|-r|--p2p|--sc|--tor|--cc "
+                + "<iso_country_code>] [-p] | disconnect | login | logout]"
             )
             parser.exit(1)
 

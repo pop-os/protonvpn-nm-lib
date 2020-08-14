@@ -279,7 +279,10 @@ class ConnectionManager():
 
                 vpn_settings = conn_for_vpn.get_setting_vpn()
 
-                if vpn_settings.get_data_item("dev") == self.virtual_device_name:
+                if (
+                    vpn_settings.get_data_item("dev")
+                    == self.virtual_device_name
+                ):
                     return_conn = [conn, conn.get_id()]
                     break
 

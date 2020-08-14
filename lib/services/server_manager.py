@@ -480,7 +480,11 @@ class ServerManager():
             key (string): keyword that contains servernames in json
             servers (list): a list containing the servers
         """
-        value = [server[key] for server in servers if server['Name'] == servername]
+        value = [
+            server[key] for server
+            in servers if
+            server['Name'] == servername
+        ]
         return value[0]
 
     def get_country_name(self, code):

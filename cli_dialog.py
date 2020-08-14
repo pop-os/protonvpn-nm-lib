@@ -29,7 +29,10 @@ def dialog(cert_manager, session):
 
     # cert_manager.pull_server_data(session)
 
-    features = {0: "Normal", 1: "Secure-Core", 2: "Tor", 4: "P2P", 8: "Streaming", 16: "IPv6"}
+    features = {
+        0: "Normal", 1: "Secure-Core", 2: "Tor",
+        4: "P2P", 8: "Streaming", 16: "IPv6"
+    }
     server_tiers = {0: "F", 1: "B", 2: "P"}
 
     servers = cert_manager.get_servers(session)
@@ -47,7 +50,9 @@ def dialog(cert_manager, session):
     for country in sorted(countries.keys()):
         country_features = []
         for server in countries[country]:
-            feat = int(cert_manager.get_server_value(server, "Features", servers))
+            feat = int(cert_manager.get_server_value(
+                server, "Features", servers)
+            )
             if not features[feat] in country_features:
                 country_features.append(features[feat])
         choices.append((country, " | ".join(sorted(country_features))))
