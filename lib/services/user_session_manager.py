@@ -1,4 +1,5 @@
 from lib import exceptions
+from lib.constants import DEFAULT_KEYRING_SERVICE, DEFAULT_KEYRING_USERNAME
 import json
 import os
 import re
@@ -9,8 +10,6 @@ import proton
 
 
 class UserSessionManager:
-    DEFAULT_KEYRING_SERVICE = "ProtonVPN"
-    DEFAULT_KEYRING_USERNAME = "AuthData"
     KEYRING_BACKENDS = [
         keyring.backends.kwallet.DBusKeyring,
         keyring.backends.SecretService.Keyring,
