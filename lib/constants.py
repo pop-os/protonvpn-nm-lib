@@ -13,3 +13,6 @@ OPENVPN_TEMPLATE = "openvpn_template.j2"
 PROTON_XDG_CACHE_HOME = os.path.join(XDG_CACHE_HOME, "protonvpn")
 CACHED_SERVERLIST = os.path.join(PROTON_XDG_CACHE_HOME, "cached_serverlist.json")
 CACHED_OPENVPN_CERTIFICATE = os.path.join(PROTON_XDG_CACHE_HOME, "ProtonVPN.ovpn")
+
+DEFAULT_KEYRING_SERVICE = "ProtonVPN"
+DEFAULT_KEYRING_USERNAME = "AuthData"
