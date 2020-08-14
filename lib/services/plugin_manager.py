@@ -47,9 +47,9 @@ class PluginManager():
 
     def extract_vpn_protocol(self, filename):
         """Extract vpn protocol from file
-        
+
         Args:
-            filename (string): path to file
+            filename (string): path to certificate
         """
         vpn_protocol = False
 
@@ -57,6 +57,10 @@ class PluginManager():
             raise TypeError(
                 "Incorrect object type, "
                 + "str is expected but got {} instead".format(type(filename))
+            )
+        elif not filename.strip():
+            raise ValueError(
+                "The provided argument \"filename\" is empty"
             )
 
         if not os.path.isfile(filename):
@@ -72,10 +76,8 @@ class PluginManager():
                 ).group(1)
             except AttributeError:
                 pass
-            except FileNotFoundError:
-                raise exceptions.ImportConnectionError(
-
-                )
+            except FileNotFoundError as e:
+                raise exceptions.ImportConnectionError(e)
 
         return vpn_protocol
 

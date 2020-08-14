@@ -27,15 +27,31 @@ class TestUnitPluginManager:
         with pytest.raises(exceptions.IllegalVPNProtocol):
             self.pm.get_protocol_implementation_type("some_protocol")
 
-    def test_incorrect_plugin_protocol_name(self):
-        with pytest.raises(exceptions.ProtocolPluginNotFound):
-            self.pm.get_matching_plugin("ikve2")
-
     def test_correct_plugin_protocol_name(self):
         assert isinstance(
             self.pm.get_matching_plugin("openvpn"),
             NM.VpnEditorPlugin
         )
+
+    def test_incorrect_plugin_protocol_name(self):
+        with pytest.raises(exceptions.ProtocolPluginNotFound):
+            self.pm.get_matching_plugin("ikve2")
+
+    def test_extract_correct_protocol(self):
+        proto = self.pm.extract_vpn_protocol(
+            os.path.join(CERT_FOLDER, "ProtonVPN.ovpn")
+        )
+        assert proto == "tcp"
+
+    def test_extract_incorrect_path(self):
+        with pytest.raises(FileNotFoundError):
+            self.pm.extract_vpn_protocol(
+                os.path.join(CERT_FOLDER, "random_file.ovpn")
+            )
+
+    def test_extract_empty_path(self):
+        with pytest.raises(ValueError):
+            self.pm.extract_vpn_protocol("")
 
 
 class TestIntegrationPluginManager:
