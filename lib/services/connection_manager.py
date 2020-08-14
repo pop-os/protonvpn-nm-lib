@@ -1,5 +1,5 @@
 from lib import exceptions
-
+from lib.constants import DEV_ENV
 import gi
 gi.require_version("NM", "1.0")
 from gi.repository import NM, GLib
@@ -185,8 +185,9 @@ class ConnectionManager():
         except Exception as e:
             raise (callback_type_dict[callback_type]["exception"])(e)
 
-        if callback_type == "add":
-            delete_cached_cert(filename)
+        if not DEV_ENV == "true":
+            if callback_type == "add":
+                delete_cached_cert(filename)
 
         main_loop.quit()
 
