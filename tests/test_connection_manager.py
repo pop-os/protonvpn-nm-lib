@@ -94,3 +94,10 @@ class TestIntegrationConnectionManager():
                 self.pwd,
                 ""
             )
+
+    def test_remove_correct_connection(self):
+        self.cm.remove_connection()
+
+    def test_remove_inexistent_connection(self):
+        with pytest.raises(exceptions.ConnectionNotFound):
+            self.cm.remove_connection()
