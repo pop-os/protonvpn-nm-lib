@@ -101,3 +101,5 @@ class TestIntegrationConnectionManager():
     def test_remove_inexistent_connection(self):
         with pytest.raises(exceptions.ConnectionNotFound):
             self.cm.remove_connection()
+
+    um.logout()
