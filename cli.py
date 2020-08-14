@@ -111,16 +111,11 @@ class NetworkManagerPrototypeCLI():
         )
 
         command = False
-
         for cls_attr in inspect.getmembers(args):
             if cls_attr[0] in cli_commands and cls_attr[1]:
                 command = list(cls_attr)
 
-        try:
-            certificate_filename = cli_commands[command[0]](
-                session, protocol, command
-            )
-        except TypeError:
+        if not command:
             servername, protocol = dialog(
                 self.server_manager,
                 session,
@@ -129,6 +124,14 @@ class NetworkManagerPrototypeCLI():
             certificate_filename = self.server_manager.direct(
                 session, protocol, servername
             )
+        else:
+            try:
+                certificate_filename = cli_commands[command[0]](
+                    session, protocol, command
+                )
+            except Exception as e:
+                print(e)
+                sys.exit(1)
 
         try:
             username, password = self.user_manager.vpn_credentials
