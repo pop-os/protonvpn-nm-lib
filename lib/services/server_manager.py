@@ -5,6 +5,7 @@ import random
 import os
 from lib.constants import CACHED_SERVERLIST, PROTON_XDG_CACHE_HOME
 from lib import exceptions
+from proton.api import Session
 
 
 class ServerManager():
@@ -12,6 +13,27 @@ class ServerManager():
         self.cert_manager = cert_manager
 
     def fastest(self, session, protocol, *_):
+        """Connect to the fastest server.
+
+        Args:
+            session (proton.api.Session): current user session
+            protocol (string): protocol to be used
+        Returns:
+            string: path to certificate file that is to be imported into nm
+        """
+        if not isinstance(session, Session):
+            raise TypeError(
+                "Incorrect object type, "
+                + "{} is expected ".format(type(Session))
+                + "but got {} instead".format(type(protocol))
+            )
+
+        if not isinstance(protocol, str):
+            raise TypeError(
+                "Incorrect object type, "
+                + "str is expected but got {} instead".format(type(protocol))
+            )
+
         self.pull_server_data(session)
 
         servers = self.get_servers(session)
@@ -39,7 +61,28 @@ class ServerManager():
         )
 
     def country_f(self, session, protocol, *args):
-        """Connect to the fastest server in a specific country."""
+        """Connect to the fastest server in a specific country.
+
+        Args:
+            session (proton.api.Session): current user session
+            protocol (string): protocol to be used
+            args (tuple(list)): country code [PT|SE|CH]
+        Returns:
+            string: path to certificate file that is to be imported into nm
+        """
+        if not isinstance(session, Session):
+            raise TypeError(
+                "Incorrect object type, "
+                + "{} is expected ".format(type(Session))
+                + "but got {} instead".format(type(protocol))
+            )
+
+        if not isinstance(protocol, str):
+            raise TypeError(
+                "Incorrect object type, "
+                + "str is expected but got {} instead".format(type(protocol))
+            )
+
         country_code = args[0][1].strip().upper()
         self.pull_server_data(session)
         servers = self.get_servers(session)
@@ -50,7 +93,11 @@ class ServerManager():
         # Filter out excluded features and countries
         server_pool = []
         for server in servers:
-            if server["Features"] not in excluded_features and server["ExitCountry"] == country_code:
+            if (
+                server["Features"] not in excluded_features
+            ) and (
+                server["ExitCountry"] == country_code
+            ):
                 server_pool.append(server)
 
         if len(server_pool) == 0:
@@ -73,13 +120,33 @@ class ServerManager():
         )
 
     def direct(self, session, protocol, *args):
-        """Connect to a single given server directly"""
+        """Connect to a single given server directly.
+
+        Args:
+            session (proton.api.Session): current user session
+            protocol (string): protocol to be used
+            args (tuple(list)|list): servername to connect to
+        Returns:
+            string: path to certificate file that is to be imported into nm
+        """
+        if not isinstance(session, Session):
+            raise TypeError(
+                "Incorrect object type, "
+                + "{} is expected ".format(type(Session))
+                + "but got {} instead".format(type(protocol))
+            )
+
+        if not isinstance(protocol, str):
+            raise TypeError(
+                "Incorrect object type, "
+                + "str is expected but got {} instead".format(type(protocol))
+            )
+
         user_input = args[0]
         if isinstance(user_input, list):
             user_input = user_input[1]
 
         servername = user_input.strip().upper()
-
 
         if not self.is_servername_valid(user_input):
             raise exceptions.IllegalServername(
@@ -109,7 +176,28 @@ class ServerManager():
         )
 
     def feature_f(self, session, protocol, *args):
-        """Connect to the fastest server in a specific country."""
+        """Connect to the fastest server based on specified feature.
+
+        Args:
+            session (proton.api.Session): current user session
+            protocol (string): protocol to be used
+            args (tuple(list)): literal feature to be used [p2p|tor|sc]
+        Returns:
+            string: path to certificate file that is to be imported into nm
+        """
+        if not isinstance(session, Session):
+            raise TypeError(
+                "Incorrect object type, "
+                + "{} is expected ".format(type(Session))
+                + "but got {} instead".format(type(protocol))
+            )
+
+        if not isinstance(protocol, str):
+            raise TypeError(
+                "Incorrect object type, "
+                + "str is expected but got {} instead".format(type(protocol))
+            )
+
         literal_feature = args[0][0].strip().lower()
         allowed_features = {
             "sc": 1, "tor": 2,
@@ -148,7 +236,27 @@ class ServerManager():
         )
 
     def random_c(self, session, protocol, *_):
-        """Connect to a random ProtonVPN Server."""
+        """Connect to a random server.
+
+        Args:
+            session (proton.api.Session): current user session
+            protocol (string): protocol to be used
+        Returns:
+            string: path to certificate file that is to be imported into nm
+        """
+        if not isinstance(session, Session):
+            raise TypeError(
+                "Incorrect object type, "
+                + "{} is expected ".format(type(Session))
+                + "but got {} instead".format(type(protocol))
+            )
+
+        if not isinstance(protocol, str):
+            raise TypeError(
+                "Incorrect object type, "
+                + "str is expected but got {} instead".format(type(protocol))
+            )
+
         servers = self.get_servers(session)
 
         servername = random.choice(servers)["Name"]
@@ -169,7 +277,13 @@ class ServerManager():
         self, session,
         force=False, cached_serverlist=CACHED_SERVERLIST
     ):
-        """Pull current server data from the ProtonVPN API."""
+        """Cache server data from API.
+
+        Args:
+            session (proton.api.Session): the current user session
+            cached_serverlist (string): path to cached server list
+            force (bool): wether refresh interval shuld be ignored or not
+        """
         refresh_interval = 45
 
         if not isinstance(cached_serverlist, str):
@@ -204,7 +318,7 @@ class ServerManager():
         if (
             not os.path.isfile(cached_serverlist)
         ) or (
-            time_ago > last_modified_time
+            time_ago > last_modified_time or force
         ):
 
             data = session.api_request(endpoint="/vpn/logicals")
@@ -213,6 +327,14 @@ class ServerManager():
                 json.dump(data, f)
 
     def get_ip_list(self, servername, servers):
+        """Exctracts the IP from the server list, based on servername.
+
+        Args:
+            servername (string): servername [PT#1]
+            servers (list): a curated list containing the servers
+        Returns:
+            list: the ips for the selected server
+        """
         try:
             subservers = self.get_server_value(servername, "Servers", servers)
         except IndexError as e:
@@ -222,7 +344,13 @@ class ServerManager():
         return ip_list
 
     def get_servers(self, session):
-        """Return a list of all servers for the users Tier."""
+        """Return a list of all servers based on tier.
+
+        Args:
+            session (proton.api.Session): the current user session
+        Returns:
+            list: the serverlist extracted from raw json, based on user tier
+        """
 
         with open(CACHED_SERVERLIST, "r") as f:
             server_data = json.load(f)
@@ -235,12 +363,24 @@ class ServerManager():
         return [server for server in servers if server["Tier"] <= user_tier and server["Status"] == 1] # noqa
 
     def get_user_tier(self, session):
+        """Feches a users tier from the API.
+
+        Args:
+            session (proton.api.Session): the current user session
+        Returns:
+            int: current user session tier
+        """
         data = session.api_request(endpoint="/vpn")
         return data["VPN"]["MaxTier"]
 
     def get_fastest_server(self, server_pool):
-        """Return the fastest server from a list of servers"""
+        """Return the fastest server from a list of servers.
 
+        Args:
+            server_pool (list): a pool with servers
+        Returns:
+            string: The servername with the highest score (fastest)
+        """
         if not isinstance(server_pool, list):
             raise TypeError(
                 "Incorrect object type, "
@@ -263,17 +403,36 @@ class ServerManager():
         return fastest_server
 
     def get_server_value(self, servername, key, servers):
-        """Return the value of a key for a given server."""
+        """Return the value of a key for a given server.
+
+        Args:
+            servername (string): servername [PT#1]
+            key (string): keyword that contains servernames in json
+            servers (list): a list containing the servers
+        """
         value = [server[key] for server in servers if server['Name'] == servername]
         return value[0]
 
     def get_country_name(self, code):
-        """Return the full name of a country from code"""
+        """Return the full name of a country from a specified code.
 
+        Args:
+            code (string): country code [PT|SE|CH]
+        Returns:
+            string:
+                country name if found, else returns the code
+        """
         from lib.country_codes import country_codes
         return country_codes.get(code, code)
 
     def is_servername_valid(self, servername):
+        """Checks if the provided servername is in a valid format.
+
+        Args:
+            servername (string): the servername [SE-PT#1]
+        Returns:
+            bool
+        """
         if not isinstance(servername, str):
             raise TypeError(
                 "Incorrect object type, "
@@ -310,4 +469,4 @@ class ServerManager():
                 '-' + tor if tor is not None else ''
             )
 
-        return return_servername
+        return False if not return_servername else True
