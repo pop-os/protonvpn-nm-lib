@@ -134,7 +134,7 @@ class NetworkManagerPrototypeCLI():
                 sys.exit(1)
 
         try:
-            username, password = self.user_manager.vpn_credentials
+            username, password = self.user_manager.fetch_vpn_credentials()
         except (
             exceptions.JSONAuthDataNoneError, exceptions.JSONAuthDataEmptyError
         ) as e:
