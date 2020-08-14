@@ -3,6 +3,8 @@ from lib.services.certificate_manager import CertificateManager
 import proton
 import json
 import pytest
+import os
+import shutil
 
 SERVERS = [
     {
@@ -85,10 +87,60 @@ MOCK_AUTHDATA = {
 
 MOCK_DATA_JSON = json.dumps(MOCK_AUTHDATA)
 session = proton.Session.load(json.loads(MOCK_DATA_JSON))
+PWD = os.path.dirname(os.path.abspath(__file__))
+TEST_CACHED_SERVERFILE = os.path.join(PWD, "test_cached_serverfile")
+user = os.environ["vpntest_user"]
+pwd = os.environ["vpntest_pwd"]
+s = proton.Session("https://api.protonvpn.ch")
+s.authenticate(user, pwd)
 
 
 class TestUnitServerManager:
     server_man = ServerManager(CertificateManager())
+
+    @classmethod
+    def setup_class(cls):
+        try:
+            os.mkdir(TEST_CACHED_SERVERFILE)
+        except FileExistsError:
+            shutil.rmtree(TEST_CACHED_SERVERFILE)
+            os.mkdir(TEST_CACHED_SERVERFILE)
+
+    @classmethod
+    def teardown_class(cls):
+        shutil.rmtree(TEST_CACHED_SERVERFILE)
+
+    def test_none_path_pull_server_data(self):
+        with pytest.raises(TypeError):
+            self.server_man.pull_server_data(
+                session=s, cached_serverlist=None
+            )
+
+    def test_integer_path_pull_server_data(self):
+        with pytest.raises(TypeError):
+            self.server_man.pull_server_data(
+                session=s, cached_serverlist=5
+            )
+
+    def test_empty_path_pull_server_data(self):
+        with pytest.raises(FileNotFoundError):
+            self.server_man.pull_server_data(
+                session=s, cached_serverlist=""
+            )
+
+    def test_root_path_pull_server_data(self):
+        with pytest.raises(IsADirectoryError):
+            self.server_man.pull_server_data(
+                session=s, cached_serverlist="/"
+            )
+
+    def test_correct_path_pull_server_data(self):
+        self.server_man.pull_server_data(
+            session=s,
+            cached_serverlist=os.path.join(
+                TEST_CACHED_SERVERFILE, "test_cache_serverlist.json"
+            )
+        )
 
     @pytest.mark.parametrize("servername", ["#", "", 5, None, {}, []])
     def test_get_incorrect_ip_list(self, servername):
@@ -213,3 +265,19 @@ class TestUnitServerManager:
     def test_more_incorrect_servernames(self, servername, excp):
         with pytest.raises(excp):
             self.server_man.is_servername_valid(servername)
+
+
+# class TestIntegrationServerManager:
+#     server_man = ServerManager(CertificateManager())
+
+#     @classmethod
+#     def setup_class(cls):
+#         try:
+#             os.mkdir(TEST_CACHED_SERVERFILE)
+#         except FileExistsError:
+#             shutil.rmtree(TEST_CACHED_SERVERFILE)
+#             os.mkdir(TEST_CACHED_SERVERFILE)
+
+#     @classmethod
+#     def teardown_class(cls):
+#         shutil.rmtree(TEST_CACHED_SERVERFILE)
