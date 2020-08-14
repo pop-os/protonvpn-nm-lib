@@ -97,7 +97,10 @@ class NetworkManagerPrototypeCLI():
             exceptions.JSONAuthDataNoneError,
             exceptions.JSONAuthDataEmptyError
         ):
-            print("[!] No stored session was found, please try to first login")
+            print(
+                u"[!] No stored session was found, "
+                + " please try to first login."
+            )
             sys.exit(1)
 
         cli_commands = dict(
@@ -139,7 +142,8 @@ class NetworkManagerPrototypeCLI():
             exceptions.JSONAuthDataNoneError, exceptions.JSONAuthDataEmptyError
         ) as e:
             print(
-                "[!] The stored session might be corrupted, please re-login."
+                u"[!] The stored session might be corrupted, "
+                + "please re-login."
                 + "\nException: {}".format(e))
             sys.exit(1)
 
@@ -161,7 +165,7 @@ class NetworkManagerPrototypeCLI():
         try:
             self.connection_manager.remove_connection()
         except exceptions.ConnectionNotFound as e:
-            print("[!] {}".format(e))
+            print(u"[\u2A2F] {}".format(e))
             sys.exit(1)
 
     def login(self):
@@ -181,8 +185,10 @@ class NetworkManagerPrototypeCLI():
                 )
 
                 if not ovpn_password1 == ovpn_password2:
-                    print()
-                    print("[!] The passwords do not match. Please try again.")
+                    print(
+                        u"\n[\u2A2F] Passwords do not match.\n"
+                        + "Please try again."
+                    )
                 else:
                     break
 
@@ -203,21 +209,24 @@ class NetworkManagerPrototypeCLI():
                 exceptions.APIAuthenticationError,
                 ValueError
             ) as exp:
-                print("Unable to authenticate: {}".format(exp))
+                print(u"[\u2A2F] Unable to authenticate: {}".format(exp))
             else:
-                print("\nLogin successful!")
+                print(u"\n[\u2713] Login successful!")
 
         else:
-            print("\nYou are already logged in!")
+            print(u"\n[\u2713]You are already logged in!")
 
     def logout(self):
         try:
             self.user_manager.delete_user_session()
-        except Exception as e:
-            print(e)
+        except exceptions.StoredSessionNotFound:
+            print(
+                u"[!] No stored session was found, "
+                + "please try to first login."
+            )
             sys.exit(1)
         else:
-            print("Logout successful!")
+            print(u"[\u2713] Logout successful!")
             sys.exit(1)
 
 
