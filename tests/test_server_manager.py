@@ -1,5 +1,6 @@
 from lib.services.server_manager import ServerManager
 from lib.services.certificate_manager import CertificateManager
+from lib.constants import CACHED_SERVERLIST
 import proton
 import json
 import pytest
@@ -91,8 +92,8 @@ PWD = os.path.dirname(os.path.abspath(__file__))
 TEST_CACHED_SERVERFILE = os.path.join(PWD, "test_cached_serverfile")
 user = os.environ["vpntest_user"]
 pwd = os.environ["vpntest_pwd"]
-s = proton.Session("https://api.protonvpn.ch")
-s.authenticate(user, pwd)
+REAL_SESSION = proton.Session("https://api.protonvpn.ch")
+REAL_SESSION.authenticate(user, pwd)
 
 
 class TestUnitServerManager:
@@ -113,30 +114,30 @@ class TestUnitServerManager:
     def test_none_path_pull_server_data(self):
         with pytest.raises(TypeError):
             self.server_man.pull_server_data(
-                session=s, cached_serverlist=None
+                session=REAL_SESSION, cached_serverlist=None
             )
 
     def test_integer_path_pull_server_data(self):
         with pytest.raises(TypeError):
             self.server_man.pull_server_data(
-                session=s, cached_serverlist=5
+                session=REAL_SESSION, cached_serverlist=5
             )
 
     def test_empty_path_pull_server_data(self):
         with pytest.raises(FileNotFoundError):
             self.server_man.pull_server_data(
-                session=s, cached_serverlist=""
+                session=REAL_SESSION, cached_serverlist=""
             )
 
     def test_root_path_pull_server_data(self):
         with pytest.raises(IsADirectoryError):
             self.server_man.pull_server_data(
-                session=s, cached_serverlist="/"
+                session=REAL_SESSION, cached_serverlist="/"
             )
 
     def test_correct_path_pull_server_data(self):
         self.server_man.pull_server_data(
-            session=s,
+            session=REAL_SESSION,
             cached_serverlist=os.path.join(
                 TEST_CACHED_SERVERFILE, "test_cache_serverlist.json"
             )
@@ -236,7 +237,7 @@ class TestUnitServerManager:
     )
     def test_correct_servernames(self, servername):
         resp = self.server_man.is_servername_valid(servername)
-        assert resp == servername
+        assert resp is True
 
     @pytest.mark.parametrize(
         "servername",
@@ -270,14 +271,5 @@ class TestUnitServerManager:
 # class TestIntegrationServerManager:
 #     server_man = ServerManager(CertificateManager())
 
-#     @classmethod
-#     def setup_class(cls):
-#         try:
-#             os.mkdir(TEST_CACHED_SERVERFILE)
-#         except FileExistsError:
-#             shutil.rmtree(TEST_CACHED_SERVERFILE)
-#             os.mkdir(TEST_CACHED_SERVERFILE)
-
-#     @classmethod
-#     def teardown_class(cls):
-#         shutil.rmtree(TEST_CACHED_SERVERFILE)
+#     def test_connect_fastest(self):
+#         self.server_man.fastest(REAL_SESSION, "tcp")
