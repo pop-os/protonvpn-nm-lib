@@ -19,82 +19,115 @@ class TestUnitUserManager():
         return pwd
 
     @pytest.fixture
-    def test_service(self):
+    def test_keyring_service(self):
         return "TestUserManager"
 
     @pytest.fixture
-    def test_authdata(self):
+    def test_keyring_username(self):
         return "TestAuthData"
 
     def test_correct_login(
         self,
         pvpn_user, pvpn_pass,
-        test_service, test_authdata
+        test_keyring_service, test_keyring_username
     ):
-        self.um.login(pvpn_user, pvpn_pass, test_service, test_authdata)
+        self.um.keyring_service = test_keyring_service
+        self.um.keyring_username = test_keyring_username
+        self.um.login(pvpn_user, pvpn_pass)
 
     def test_missing_username_login_cred(
         self,
         pvpn_user, pvpn_pass,
-        test_service, test_authdata
+        test_keyring_service, test_keyring_username
     ):
+        self.um.keyring_service = test_keyring_service
+        self.um.keyring_username = test_keyring_username
         with pytest.raises(ValueError):
-            self.um.login("", pvpn_pass, test_service, test_authdata)
+            self.um.login("", pvpn_pass)
 
     def test_missing_password_login_cred(
         self,
         pvpn_user, pvpn_pass,
-        test_service, test_authdata
+        test_keyring_service, test_keyring_username
     ):
+        self.um.keyring_service = test_keyring_service
+        self.um.keyring_username = test_keyring_username
         with pytest.raises(ValueError):
-            self.um.login(pvpn_user, "", test_service, test_authdata)
+            self.um.login(pvpn_user, "")
 
     def test_int_login_cred(
         self,
         pvpn_user, pvpn_pass,
-        test_service, test_authdata
+        test_keyring_service, test_keyring_username
     ):
+        self.um.keyring_service = test_keyring_service
+        self.um.keyring_username = test_keyring_username
         with pytest.raises(TypeError):
-            self.um.login(5, 5, test_service, test_authdata)
+            self.um.login(5, 5)
 
     def test_empty_login_cred(
         self,
         pvpn_user, pvpn_pass,
-        test_service, test_authdata
+        test_keyring_service, test_keyring_username
     ):
+        self.um.keyring_service = test_keyring_service
+        self.um.keyring_username = test_keyring_username
         with pytest.raises(ValueError):
-            self.um.login("", "", test_service, test_authdata)
+            self.um.login("", "")
 
     def test_load_existing_session(
-        self, test_service, test_authdata
+        self, test_keyring_service, test_keyring_username
     ):
+        self.um.keyring_service = test_keyring_service
+        self.um.keyring_username = test_keyring_username
         assert isinstance(
-            self.um.load_stored_user_session(test_service, test_authdata),
+            self.um.load_session(),
             Session
         )
 
     def test_load_no_session(self):
+        self.um.keyring_service = "Example"
+        self.um.keyring_username = "Session"
         with pytest.raises(exceptions.JSONAuthDataNoneError):
-            self.um.load_stored_user_session("Example", "Session")
+            self.um.load_session()
 
     def test_load_missing_session(self):
         with pytest.raises(exceptions.JSONAuthDataNoneError):
-            self.um.load_stored_user_session("", "")
+            self.um.keyring_service = ""
+            self.um.keyring_username = ""
+            self.um.load_session()
 
     def test_fetch_correct_vpn_cred(
-        self, test_service, test_authdata
+        self, test_keyring_service, test_keyring_username
     ):
+        self.um.keyring_service = test_keyring_service
+        self.um.keyring_username = test_keyring_username
         user = os.environ["openvpntest_user"]
         pwd = os.environ["openvpntest_pwd"]
-        (resp_user, resp_pwd) = self.um.fetch_vpn_credentials(
-            test_service, test_authdata
-        )
+        (resp_user, resp_pwd) = self.um.fetch_vpn_credentials()
         assert (resp_user, resp_pwd) == (user, pwd)
 
     def test_fetch_incorrect_service_vpn_cred(
-        self, test_service, test_authdata
+        self, test_keyring_username
     ):
+        self.um.keyring_service = "Example"
+        self.um.keyring_username = test_keyring_username
         with pytest.raises(exceptions.JSONAuthDataNoneError):
-            self.um.fetch_vpn_credentials(
-                "", test_authdata
-            )
+            self.um.fetch_vpn_credentials()
+
+    def test_correct_logout(
+        self, test_keyring_service, test_keyring_username
+    ):
+        self.um.keyring_service = test_keyring_service
+        self.um.keyring_username = test_keyring_username
+        self.um.logout()
+        with pytest.raises(exceptions.JSONAuthDataNoneError):
+            self.um.load_session()
+
+    def test_incorrect_logout(
+        self, test_keyring_service, test_keyring_username
+    ):
+        self.um.keyring_service = ""
+        self.um.keyring_username = test_keyring_username
+        with pytest.raises(exceptions.StoredSessionNotFound):
+            self.um.logout()
