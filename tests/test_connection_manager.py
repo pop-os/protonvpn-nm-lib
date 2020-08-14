@@ -5,6 +5,9 @@ from lib.services.certificate_manager import CertificateManager
 from lib import exceptions
 import pytest
 import os
+import gi
+gi.require_version("NM", "1.0")
+from gi.repository import NM
 
 PWD = os.path.dirname(os.path.abspath(__file__))
 CERT_FOLDER = os.path.join(PWD, "certificates")
@@ -15,19 +18,22 @@ class TestUnitConnectionManager:
 
     def test_wrong_device_type(self):
         with pytest.raises(exceptions.IllegalVirtualDevice):
-            self.cm.get_virtual_device_type(
+            self.cm.extract_virtual_device_type(
                 os.path.join(CERT_FOLDER, "ProtonVPN_wrong_dev_type.ovpn")
             )
 
     def test_missing_device_type(self):
         with pytest.raises(exceptions.VirtualDeviceNotFound):
-            self.cm.get_virtual_device_type(
+            self.cm.extract_virtual_device_type(
                 os.path.join(CERT_FOLDER, "ProtonVPN_missing_dev_type.ovpn")
             )
 
 
 class TestIntegrationConnectionManager():
-    cm = ConnectionManager(PluginManager())
+    cm = ConnectionManager(
+        PluginManager(),
+        virtual_device_name="testTunnel0"
+    )
     um = UserManager()
     user = os.environ["vpntest_user"]
     pwd = os.environ["vpntest_pwd"]
@@ -43,10 +49,48 @@ class TestIntegrationConnectionManager():
     def test_keyring_username(self):
         return "TestAuthData"
 
-    def test_add_expected_connection(self):
+    def test_add_correct_connection(self):
         self.cm.add_connection(
-            os.path.join(CERT_FOLDER, "ProtonVPN.ovpn"),
+            os.path.join(CERT_FOLDER, "TestProtonVPN.ovpn"),
             self.user,
             self.pwd,
             CertificateManager.delete_cached_certificate
         )
+        assert isinstance(
+            self.cm.get_proton_connection("all_connections")[0],
+            NM.RemoteConnection
+        )
+
+    def test_add_missing_path_connection(self):
+        with pytest.raises(FileNotFoundError):
+            self.cm.add_connection(
+                os.path.join(CERT_FOLDER, ""),
+                self.user,
+                self.pwd,
+                CertificateManager.delete_cached_certificate
+            )
+
+    @pytest.mark.parametrize(
+        "user,pwd,excp",
+        [
+            ("", "test", ValueError), ("test", "", ValueError),
+            (None, "test", TypeError), ([5], "test", TypeError),
+        ]
+    )
+    def test_add_missing_cred_connection(self, user, pwd, excp):
+        with pytest.raises(excp):
+            self.cm.add_connection(
+                os.path.join(CERT_FOLDER, "TestProtonVPN.ovpn"),
+                user,
+                pwd,
+                CertificateManager.delete_cached_certificate
+            )
+
+    def test_add_missing_method_connection(self):
+        with pytest.raises(NotImplementedError):
+            self.cm.add_connection(
+                os.path.join(CERT_FOLDER, "TestProtonVPN.ovpn"),
+                self.user,
+                self.pwd,
+                ""
+            )

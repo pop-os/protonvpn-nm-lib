@@ -17,7 +17,39 @@ class ConnectionManager():
                 filename (string): certificate filename
                 username (string): openvpn username
                 password (string): openvpn password
+                delete_cached_cert (method): method that delete cached cert
         """
+        if not isinstance(filename, str):
+            raise TypeError(
+                "Incorrect object type, "
+                + "str is expected but got {} instead".format(type(filename))
+            )
+        elif not filename.strip():
+            raise ValueError("A valid filename must be provided")
+
+        if not isinstance(username, str):
+            raise TypeError(
+                "Incorrect object type, "
+                + "str is expected but got {} instead".format(type(username))
+            )
+        elif not isinstance(password, str):
+            raise TypeError(
+                "Incorrect object type, "
+                + "str is expected but got {} instead".format(type(password))
+            )
+        elif not username.strip() or not password.strip():
+            raise ValueError("Both username and password must be provided")
+
+        try:
+            delete_cached_cert("test")
+        except FileNotFoundError:
+            pass
+        except Exception:
+            raise NotImplementedError(
+                "Expects object method, "
+                + "{} was passed".format(delete_cached_cert)
+            )
+
         # https://lazka.github.io/pgi-docs/NM-1.0/classes/Client.html
         client = NM.Client.new(None)
         main_loop = GLib.MainLoop()
@@ -191,7 +223,7 @@ class ConnectionManager():
 
         main_loop.quit()
 
-    def get_virtual_device_type(self, filename):
+    def extract_virtual_device_type(self, filename):
         """Get virtual device type from .ovpn file"""
         virtual_dev_type_list = ["tun", "tap"]
 
@@ -218,7 +250,7 @@ class ConnectionManager():
 
     def set_virtual_device_type(self, vpn_settings, filename):
         """Set virtual device type from .ovpn file"""
-        virtual_device_type = self.get_virtual_device_type(filename)
+        virtual_device_type = self.extract_virtual_device_type(filename)
 
         # Changes virtual tunnel name
         vpn_settings.add_data_item("dev", self.virtual_device_name)
