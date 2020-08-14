@@ -130,10 +130,13 @@ class UserSessionManager:
             )
         except (
                 keyring.errors.InitError,
-                keyring.errors.KeyringLocked,
-                keyring.errors.PasswordSetError
+                keyring.errors.KeyringLocked
         ) as e:
-            raise Exception("Could not delete from keychain: {}".format(e))
+            raise exceptions.AccessKeyringError(
+                "Could not access keychain: {}".format(e)
+            )
+        except keyring.errors.PasswordDeleteError as e:
+            raise exceptions.StoredSessionNotFound(e)
 
     def json_session_transform(self, auth_data, action=["save", "load"]):
         """JSON encode/decode auth_data.

@@ -88,5 +88,9 @@ class SessionError(CustomBaseException):
     """Session error"""
 
 
+class StoredSessionNotFound(CustomBaseException):
+    """Stored session was not found"""
+
+
 class IllegalServername(CustomBaseException):
     """Unexpected servername"""
