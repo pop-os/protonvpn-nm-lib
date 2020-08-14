@@ -33,6 +33,10 @@ class ServerManager():
                 "Incorrect object type, "
                 + "str is expected but got {} instead".format(type(protocol))
             )
+        elif len(protocol) == 0:
+            raise ValueError(
+                "The provided argument \"protocol\" is empty"
+            )
 
         self.pull_server_data(session)
 
@@ -82,8 +86,31 @@ class ServerManager():
                 "Incorrect object type, "
                 + "str is expected but got {} instead".format(type(protocol))
             )
+        elif len(protocol) == 0:
+            raise ValueError(
+                "The provided argument \"protocol\" is empty"
+            )
 
-        country_code = args[0][1].strip().upper()
+        if not isinstance(args, tuple):
+            raise TypeError(
+                "Incorrect object type, "
+                + "tuple is expected but got {} instead".format(type(args))
+            )
+        elif not isinstance(args[0], list):
+            raise TypeError(
+                "Incorrect object type, "
+                + "list is expected but got {} instead".format(type(args[0]))
+            )
+
+        try:
+            country_code = args[0][1].strip().upper()
+        except IndexError:
+            raise IndexError(
+                "Incorrect object type, "
+                + "tuple(list) is expected but got {} ".format(args)
+                + "instead"
+            )
+
         self.pull_server_data(session)
         servers = self.get_servers(session)
 
@@ -101,7 +128,7 @@ class ServerManager():
                 server_pool.append(server)
 
         if len(server_pool) == 0:
-            raise Exception(
+            raise ValueError(
                 "Invalid country code \"{}\"".format(country_code)
             )
 
@@ -125,7 +152,7 @@ class ServerManager():
         Args:
             session (proton.api.Session): current user session
             protocol (string): protocol to be used
-            args (tuple(list)|list): servername to connect to
+            args (tuple(list)|tuple): servername to connect to
         Returns:
             string: path to certificate file that is to be imported into nm
         """
@@ -141,6 +168,25 @@ class ServerManager():
                 "Incorrect object type, "
                 + "str is expected but got {} instead".format(type(protocol))
             )
+        elif len(protocol) == 0:
+            raise ValueError(
+                "The provided argument \"protocol\" is empty"
+            )
+
+        if not isinstance(args, tuple):
+            raise TypeError(
+                "Incorrect object type, "
+                + "tuple is expected but got {} ".format(type(args))
+                + "instead"
+            )
+        elif (
+            isinstance(args, tuple) and len(args) == 0
+        ) or (
+            isinstance(args, str) and len(args) == 0
+        ):
+            raise ValueError(
+                "The provided argument \"args\" is empty"
+            )
 
         user_input = args[0]
         if isinstance(user_input, list):
@@ -150,10 +196,9 @@ class ServerManager():
 
         if not self.is_servername_valid(user_input):
             raise exceptions.IllegalServername(
-                "Unexpected servername"
+                "Unexpected servername {}".format(user_input)
             )
 
-        servername = user_input
         self.pull_server_data(session)
         servers = self.get_servers(session)
 
@@ -165,7 +210,7 @@ class ServerManager():
             )
 
         if servername not in [server["Name"] for server in servers]:
-            raise Exception(
+            raise ValueError(
                 "{} is either invalid, under maintenance ".format(servername)
                 + "or inaccessible with your plan"
             )
@@ -197,6 +242,27 @@ class ServerManager():
                 "Incorrect object type, "
                 + "str is expected but got {} instead".format(type(protocol))
             )
+        elif len(protocol) == 0:
+            raise ValueError(
+                "The provided argument \"protocol\" is empty"
+            )
+
+        if not isinstance(args, tuple):
+            raise TypeError(
+                "Incorrect object type, "
+                + "tuple is expected but got {} ".format(type(args))
+                + "instead"
+            )
+        elif len(args) == 0:
+            raise ValueError(
+                "The provided argument \"args\" is empty"
+            )
+        elif not isinstance(args[0], list):
+            raise TypeError(
+                "Incorrect object type, "
+                + "list is expected but got {} ".format(type(args))
+                + "instead"
+            )
 
         literal_feature = args[0][0].strip().lower()
         allowed_features = {
@@ -208,7 +274,7 @@ class ServerManager():
         try:
             feature = allowed_features[literal_feature]
         except KeyError:
-            raise Exception("Feature is non-existent")
+            raise ValueError("Feature is non-existent")
 
         self.pull_server_data(session)
 
@@ -255,6 +321,10 @@ class ServerManager():
             raise TypeError(
                 "Incorrect object type, "
                 + "str is expected but got {} instead".format(type(protocol))
+            )
+        elif len(protocol) == 0:
+            raise ValueError(
+                "The provided argument \"protocol\" is empty"
             )
 
         servers = self.get_servers(session)

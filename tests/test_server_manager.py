@@ -1,6 +1,7 @@
 from lib.services.server_manager import ServerManager
 from lib.services.certificate_manager import CertificateManager
-from lib.constants import CACHED_SERVERLIST
+from lib.constants import CACHED_OPENVPN_CERTIFICATE
+from lib import exceptions
 import proton
 import json
 import pytest
@@ -256,20 +257,154 @@ class TestUnitServerManager:
         assert resp is False
 
     @pytest.mark.parametrize(
-        "servername,excp",
+        "servername",
         [
-            ([], TypeError),
-            ({}, TypeError),
-            (132, TypeError)
+            [], {}, 132
         ]
     )
-    def test_more_incorrect_servernames(self, servername, excp):
-        with pytest.raises(excp):
+    def test_more_incorrect_servernames(self, servername):
+        with pytest.raises(TypeError):
             self.server_man.is_servername_valid(servername)
 
 
-# class TestIntegrationServerManager:
-#     server_man = ServerManager(CertificateManager())
+class TestIntegrationServerManager:
+    server_man = ServerManager(CertificateManager())
 
-#     def test_connect_fastest(self):
-#         self.server_man.fastest(REAL_SESSION, "tcp")
+    @classmethod
+    def teardown_class(cls):
+        os.remove(CACHED_OPENVPN_CERTIFICATE)
+
+    def test_correct_generate_connect_fastest(self):
+        resp = self.server_man.fastest(REAL_SESSION, "tcp")
+        assert os.path.isfile(resp) is True
+
+    @pytest.mark.parametrize(
+        "session,proto",
+        [
+            ("", 5), (5, ""), (object, object),
+            ([], []), ({}, {}), (None, None),
+            (REAL_SESSION, {}), (REAL_SESSION, None)
+        ]
+    )
+    def test_incorrect_generate_connect_fastest(
+        self, session, proto
+    ):
+        with pytest.raises(TypeError):
+            self.server_man.fastest(session, proto)
+
+    def test_correct_generate_connect_country(self):
+        args = [["cc", "PT"]]
+        resp = self.server_man.country_f(
+            REAL_SESSION, "tcp", *args
+        )
+        assert os.path.isfile(resp) is True
+
+    @pytest.mark.parametrize(
+        "session,proto,args,excp",
+        [
+            ("", 5, "", TypeError),
+            (5, "", "", TypeError),
+            (object, object, object, TypeError),
+            ([], [], [], TypeError),
+            (REAL_SESSION, {}, {}, TypeError),
+            (REAL_SESSION, None, None, TypeError),
+            (REAL_SESSION, "tcp", "test", TypeError),
+            (REAL_SESSION, "tcp", "", IndexError),
+            (REAL_SESSION, "tcp", None, TypeError),
+            (REAL_SESSION, "tcp", [], IndexError),
+            (REAL_SESSION, "tcp", [["test", "ex"]], ValueError)
+        ]
+    )
+    def test_incorrect_generate_connect_country(
+        self, session, proto, args, excp
+    ):
+        with pytest.raises(excp):
+            self.server_man.country_f(session, proto, *args)
+
+    def test_correct_generate_connect_direct(self):
+        args = [["servername", "PT#10"]]
+        resp = self.server_man.direct(REAL_SESSION, "tcp", *args)
+        assert os.path.isfile(resp) is True
+
+    def test_correct_generate_connect_direct_dialog(self):
+        args = ["PT#10"]
+        resp = self.server_man.direct(REAL_SESSION, "tcp", *args)
+        assert os.path.isfile(resp) is True
+
+    @pytest.mark.parametrize(
+        "session,proto,args,excp",
+        [
+            ("", 5, "", TypeError),
+            (5, "", "", TypeError),
+            (object, object, object, TypeError),
+            ([], [], [], TypeError),
+            (None, None, None, TypeError),
+            (REAL_SESSION, {}, {}, TypeError),
+            (REAL_SESSION, None, None, TypeError),
+            (REAL_SESSION, "tcp", "test", exceptions.IllegalServername),
+            (REAL_SESSION, "tcp", "", ValueError),
+            (REAL_SESSION, "tcp", None, TypeError),
+            (REAL_SESSION, "tcp", "test", exceptions.IllegalServername),
+            (
+                REAL_SESSION, "tcp",
+                [["test", "ex"]], exceptions.IllegalServername
+            )
+        ]
+    )
+    def test_incorrect_generate_connect_direct(
+        self, session, proto, args, excp
+    ):
+        with pytest.raises(excp):
+            self.server_man.direct(session, proto, *args)
+
+    def test_correct_generate_connect_feature(self):
+        args = [["sc", True]]
+        resp = self.server_man.feature_f(REAL_SESSION, "tcp", *args)
+        assert os.path.isfile(resp) is True
+
+    @pytest.mark.parametrize(
+        "session,proto,args,excp",
+        [
+            ("", 5, "", TypeError),
+            (5, "", "", TypeError),
+            (object, object, object, TypeError),
+            ([], [], [], TypeError),
+            (REAL_SESSION, {}, {}, ValueError),
+            (REAL_SESSION, None, None, TypeError),
+            (REAL_SESSION, "tcp", "test", TypeError),
+            (REAL_SESSION, "tcp", "", ValueError),
+            (REAL_SESSION, "tcp", None, TypeError),
+            (
+                REAL_SESSION, "tcp",
+                [["test", "ex"]], ValueError
+            )
+        ]
+    )
+    def test_incorrect_generate_connect_feature(
+        self, session, proto, args, excp
+    ):
+        with pytest.raises(excp):
+            self.server_man.feature_f(session, "tcp", *args)
+
+    def test_correct_generate_connect_random(self):
+        resp = self.server_man.random_c(REAL_SESSION, "tcp")
+        assert os.path.isfile(resp) is True
+
+    @pytest.mark.parametrize(
+        "session,proto,excp",
+        [
+            ("", 5, TypeError),
+            (5, "", TypeError),
+            (object, object, TypeError),
+            ([], [], TypeError),
+            (None, None, TypeError),
+            (REAL_SESSION, {}, TypeError),
+            (REAL_SESSION, None, TypeError),
+            (REAL_SESSION, "", ValueError)
+        ]
+    )
+    def test_incorrect_generate_connect_random(
+        self, session, proto, excp
+    ):
+        with pytest.raises(excp):
+            self.server_man.random_c(session, proto)
