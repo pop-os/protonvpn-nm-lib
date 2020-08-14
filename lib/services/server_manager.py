@@ -182,8 +182,6 @@ class ServerManager():
         now_time = datetime.datetime.now()
         time_ago = now_time - datetime.timedelta(minutes=refresh_interval)
 
-        # Cache servers only if they do not exists or
-        # have been created > refresh_interval
         if (
             not os.path.isfile(CACHED_SERVERLIST)
         ) or (

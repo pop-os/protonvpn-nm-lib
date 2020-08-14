@@ -87,7 +87,7 @@ MOCK_DATA_JSON = json.dumps(MOCK_AUTHDATA)
 session = proton.Session.load(json.loads(MOCK_DATA_JSON))
 
 
-class TestServerManager:
+class TestUnitServerManager:
     server_man = ServerManager(CertificateManager())
 
     @pytest.mark.parametrize("servername", ["#", "", 5, None, {}, []])
