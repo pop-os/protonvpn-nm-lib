@@ -165,16 +165,35 @@ class ServerManager():
             servername, ip_list
         )
 
-    def pull_server_data(self, session, force=False):
+    def pull_server_data(
+        self, session,
+        force=False, cached_serverlist=CACHED_SERVERLIST
+    ):
         """Pull current server data from the ProtonVPN API."""
         refresh_interval = 45
+
+        if not isinstance(cached_serverlist, str):
+            raise TypeError(
+                "Incorrect object type, "
+                + "str is expected but got {} instead".format(
+                    type(cached_serverlist)
+                )
+            )
+
+        if isinstance(cached_serverlist, str) and len(cached_serverlist) == 0:
+            raise FileNotFoundError("No such file exists")
+
+        if os.path.isdir(cached_serverlist):
+            raise IsADirectoryError(
+                "Provided file path is a directory, while file path expected"
+            )
 
         if not os.path.isdir(PROTON_XDG_CACHE_HOME):
             os.mkdir(PROTON_XDG_CACHE_HOME)
 
         try:
             last_modified_time = datetime.datetime.fromtimestamp(
-                os.path.getmtime(CACHED_SERVERLIST)
+                os.path.getmtime(cached_serverlist)
             )
         except FileNotFoundError:
             last_modified_time = datetime.datetime.now()
@@ -183,14 +202,14 @@ class ServerManager():
         time_ago = now_time - datetime.timedelta(minutes=refresh_interval)
 
         if (
-            not os.path.isfile(CACHED_SERVERLIST)
+            not os.path.isfile(cached_serverlist)
         ) or (
             time_ago > last_modified_time
         ):
 
             data = session.api_request(endpoint="/vpn/logicals")
 
-            with open(CACHED_SERVERLIST, "w") as f:
+            with open(cached_serverlist, "w") as f:
                 json.dump(data, f)
 
     def get_ip_list(self, servername, servers):
