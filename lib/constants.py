@@ -21,4 +21,4 @@ CACHED_OPENVPN_CERTIFICATE = os.path.join(
 
 DEFAULT_KEYRING_SERVICE = "ProtonVPN"
 DEFAULT_KEYRING_USERNAME = "AuthData"
-DEV_ENV = os.environ.get("protonvpn_dev")
+ENV_CI_NAME = "protonvpn_ci"

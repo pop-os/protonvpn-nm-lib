@@ -3,6 +3,7 @@ from lib.services.plugin_manager import PluginManager
 from lib.services.user_manager import UserManager
 from lib.services.certificate_manager import CertificateManager
 from lib import exceptions
+from lib.constants import ENV_CI_NAME
 import pytest
 import os
 import gi
@@ -11,6 +12,7 @@ from gi.repository import NM
 
 PWD = os.path.dirname(os.path.abspath(__file__))
 CERT_FOLDER = os.path.join(PWD, "certificates")
+os.environ[ENV_CI_NAME] = "true"
 
 
 class TestUnitConnectionManager:
