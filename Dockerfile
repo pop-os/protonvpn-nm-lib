@@ -9,6 +9,7 @@ RUN apt-get install -y net-tools \
     iproute2 \
     python3 \
     network-manager \
+    network-manager-openvpn \
     sudo \
     vim \
     pkg-config \
