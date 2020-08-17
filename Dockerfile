@@ -31,6 +31,11 @@ COPY requirements.txt /tmp
 RUN python3 -m pip install -r /tmp/requirements.txt && \
     true
 
+RUN apt-get install -y \
+    dbus-x11 \
+    libsecret-tools \
+    gnome-keyring
+
 RUN useradd -ms /bin/bash user
 RUN usermod -a -G sudo user
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
