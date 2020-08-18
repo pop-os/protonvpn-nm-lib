@@ -1,8 +1,10 @@
-from lib.services.user_manager import UserManager
-from lib import exceptions
-import pytest
 import os
+
+import pytest
 from proton.api import Session
+
+from lib import exceptions
+from lib.services.user_manager import UserManager
 
 
 class TestUnitUserManager():

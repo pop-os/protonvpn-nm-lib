@@ -1,11 +1,11 @@
-from lib import exceptions
-from jinja2 import Environment, FileSystemLoader
 import os
-from lib.constants import (
-    CACHED_OPENVPN_CERTIFICATE, OPENVPN_TEMPLATE,
-    TEMPLATES, PROTON_XDG_CACHE_HOME
-)
+
+from jinja2 import Environment, FileSystemLoader
 from proton.api import Session
+
+from lib import exceptions
+from lib.constants import (CACHED_OPENVPN_CERTIFICATE, OPENVPN_TEMPLATE,
+                           PROTON_XDG_CACHE_HOME, TEMPLATES)
 
 
 class CertificateManager:

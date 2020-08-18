@@ -1,9 +1,12 @@
-from lib import exceptions
-from lib.constants import ENV_CI_NAME
+
+import os
+
 import gi
 gi.require_version("NM", "1.0")
 from gi.repository import NM, GLib
-import os
+
+from lib import exceptions
+from lib.constants import ENV_CI_NAME
 
 
 class ConnectionManager():

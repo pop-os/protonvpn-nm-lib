@@ -1,14 +1,15 @@
 import argparse
-from lib import exceptions
 import getpass
+import inspect
 import sys
-from lib.services.plugin_manager import PluginManager
-from lib.services.connection_manager import ConnectionManager
+
+from cli_dialog import dialog
+from lib import exceptions
 from lib.services.certificate_manager import CertificateManager
+from lib.services.connection_manager import ConnectionManager
+from lib.services.plugin_manager import PluginManager
 from lib.services.server_manager import ServerManager
 from lib.services.user_manager import UserManager
-from cli_dialog import dialog
-import inspect
 
 
 class NetworkManagerPrototypeCLI():

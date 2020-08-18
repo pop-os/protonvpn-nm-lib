@@ -1,6 +1,8 @@
+import proton
+
 from lib import exceptions
 from lib.constants import DEFAULT_KEYRING_SERVICE, DEFAULT_KEYRING_USERNAME
-import proton
+
 from .user_session_manager import UserSessionManager
 
 

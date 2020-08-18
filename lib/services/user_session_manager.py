@@ -1,12 +1,12 @@
-from lib import exceptions
-from lib.constants import DEFAULT_KEYRING_SERVICE, DEFAULT_KEYRING_USERNAME
 import json
 import os
 import re
 
 import keyring
-
 import proton
+
+from lib import exceptions
+from lib.constants import DEFAULT_KEYRING_SERVICE, DEFAULT_KEYRING_USERNAME
 
 
 class UserSessionManager:

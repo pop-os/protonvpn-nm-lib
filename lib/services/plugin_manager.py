@@ -1,9 +1,11 @@
-from lib import exceptions
+import os
+import re
+
 import gi
 gi.require_version("NM", "1.0")
 from gi.repository import NM
-import os
-import re
+
+from lib import exceptions
 
 
 class PluginManager():

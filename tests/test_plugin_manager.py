@@ -1,10 +1,13 @@
-from lib.services.plugin_manager import PluginManager
-from lib import exceptions
-import pytest
+import os
+
 import gi
+import pytest
 gi.require_version("NM", "1.0")
 from gi.repository import NM
-import os
+
+from lib import exceptions
+from lib.services.plugin_manager import PluginManager
+
 
 PWD = os.path.dirname(os.path.abspath(__file__))
 CERT_FOLDER = os.path.join(PWD, "certificates/plugin_manager")

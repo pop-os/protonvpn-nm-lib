@@ -1,10 +1,12 @@
-from lib import exceptions
-import pytest
-from lib.services.certificate_manager import CertificateManager
-import proton
 import json
 import os
 import shutil
+
+import proton
+import pytest
+
+from lib import exceptions
+from lib.services.certificate_manager import CertificateManager
 
 SERVERS = [
     {

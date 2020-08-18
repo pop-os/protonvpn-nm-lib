@@ -1,12 +1,14 @@
-from lib.services.server_manager import ServerManager
-from lib.services.certificate_manager import CertificateManager
-from lib.constants import CACHED_OPENVPN_CERTIFICATE
-from lib import exceptions
-import proton
 import json
-import pytest
 import os
 import shutil
+
+import proton
+import pytest
+
+from lib import exceptions
+from lib.constants import CACHED_OPENVPN_CERTIFICATE
+from lib.services.certificate_manager import CertificateManager
+from lib.services.server_manager import ServerManager
 
 SERVERS = [
     {

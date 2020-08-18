@@ -1,7 +1,8 @@
 import os
-from dialog import Dialog
 import subprocess
 import sys
+
+from dialog import Dialog
 
 
 def dialog(cert_manager, session):

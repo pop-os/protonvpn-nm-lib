@@ -1,11 +1,13 @@
 import datetime
-import re
 import json
-import random
 import os
-from lib.constants import CACHED_SERVERLIST, PROTON_XDG_CACHE_HOME
-from lib import exceptions
+import random
+import re
+
 from proton.api import Session
+
+from lib import exceptions
+from lib.constants import CACHED_SERVERLIST, PROTON_XDG_CACHE_HOME
 
 
 class ServerManager():

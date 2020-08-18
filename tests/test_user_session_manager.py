@@ -1,7 +1,8 @@
-from lib import exceptions
 import pytest
-from lib.services.user_session_manager import UserSessionManager
 from proton.api import Session
+
+from lib import exceptions
+from lib.services.user_session_manager import UserSessionManager
 
 MOCK_AUTHDATA = {
     "api_url": "https://api.protonvpn.ch/tests/ping",
