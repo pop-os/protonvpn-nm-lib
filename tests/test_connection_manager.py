@@ -11,7 +11,8 @@ gi.require_version("NM", "1.0")
 from gi.repository import NM
 
 PWD = os.path.dirname(os.path.abspath(__file__))
-CERT_FOLDER = os.path.join(PWD, "certificates")
+CERT_FOLDER = os.path.join(PWD, "certificates/connection_manager")
+PLUGIN_CERT_FOLDER = os.path.join(PWD, "certificates/plugin_manager")
 os.environ[ENV_CI_NAME] = "true"
 
 
@@ -53,7 +54,7 @@ class TestIntegrationConnectionManager():
 
     def test_add_correct_connection(self):
         self.cm.add_connection(
-            os.path.join(CERT_FOLDER, "TestProtonVPN.ovpn"),
+            os.path.join(PLUGIN_CERT_FOLDER, "TestProtonVPN.ovpn"),
             self.user,
             self.pwd,
             CertificateManager.delete_cached_certificate
