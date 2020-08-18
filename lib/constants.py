@@ -6,6 +6,10 @@
 import os
 from xdg import XDG_CACHE_HOME
 # XDG_CONFIG_HOME, XDG_DATA_HOME
+from .enums import (
+    ProtocolImplementationEnum,
+    ProtocolEnum
+)
 
 PWD = os.path.dirname(os.path.abspath(__file__))
 
@@ -22,3 +26,11 @@ CACHED_OPENVPN_CERTIFICATE = os.path.join(
 DEFAULT_KEYRING_SERVICE = "ProtonVPN"
 DEFAULT_KEYRING_USERNAME = "AuthData"
 ENV_CI_NAME = "protonvpn_ci"
+
+SUPPORTED_PROTOCOLS = {
+    ProtocolImplementationEnum.OPENVPN: [ProtocolEnum.TCP, ProtocolEnum.UDP],
+    # ProtocolImplementationEnum.STRONGSWAN: [ProtocolEnum.IKEV2],
+    # ProtocolImplementationEnum.WIREGUARD: [ProtocolEnum.WIREGUARD],
+}
+
+VIRTUAL_DEVICE_NAME = "proton0"
