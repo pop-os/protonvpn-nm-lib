@@ -6,16 +6,10 @@ gi.require_version("NM", "1.0")
 from gi.repository import NM
 
 from lib import exceptions
-from lib.supported_protocols import (ProtocolImplementationEnum,
-                                     SupportedProtocolEnum)
+from lib.constants import SUPPORTED_PROTOCOLS
 
 
 class PluginManager():
-    PROTOCOL_DICT = dict(
-        openvpn=["tcp", "udp"],
-        strongswan=["ikev2"]
-    )
-
     def import_connection_from_file(self, filename):
         """Import connection from file
 
@@ -87,16 +81,11 @@ class PluginManager():
 
     def get_protocol_implementation_type(self, vpn_protocol):
         """Find and return protocol implementation type"""
-        vpn_protocol = vpn_protocol.lower()
+        for plugin_name, protocol_types in SUPPORTED_PROTOCOLS.items():
+            if vpn_protocol in protocol_types:
+                return plugin_name
 
-        if vpn_protocol in SupportedProtocolEnum.OPENVPN:
-            return ProtocolImplementationEnum.OPENVPN
-        elif vpn_protocol in SupportedProtocolEnum.STRONGSWAN:
-            return ProtocolImplementationEnum.STRONGSWAN
-        elif vpn_protocol in SupportedProtocolEnum.WIREGUARD:
-            return ProtocolImplementationEnum.WIREGUARD
-        else:
-            raise exceptions.IllegalVPNProtocol("Selected protocol was not found")
+        raise exceptions.IllegalVPNProtocol("Selected protocol was not found")
 
     def get_matching_plugin(self, protocol_implementation_type):
         """Find and return matching plugin"""
