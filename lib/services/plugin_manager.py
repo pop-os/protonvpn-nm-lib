@@ -18,10 +18,10 @@ class PluginManager():
         Args:
             filename (string): path to file
         """
-        vpn_protocol = self.extract_vpn_protocol(filename)
+        vpn_protocol = self.extract_openvpn_protocol(filename)
 
         if not vpn_protocol:
-            raise Exception("Alternative protocols are not yet supported")
+            raise Exception("IKEv2/Wireguard protocols are not yet supported")
 
         protocol_implementation_type = self.get_protocol_implementation_type(
             vpn_protocol
@@ -45,7 +45,7 @@ class PluginManager():
                 print("Connection was normalized")
             return connection
 
-    def extract_vpn_protocol(self, filename):
+    def extract_openvpn_protocol(self, filename):
         """Extract vpn protocol from file
 
         Args:
