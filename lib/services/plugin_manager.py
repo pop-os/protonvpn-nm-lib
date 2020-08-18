@@ -11,7 +11,7 @@ from lib.constants import SUPPORTED_PROTOCOLS
 
 class PluginManager():
     def import_connection_from_file(self, filename):
-        """Import connection from file
+        """Import connection from file.
 
         Args:
             filename (string): path to file
@@ -44,7 +44,7 @@ class PluginManager():
             return connection
 
     def extract_openvpn_protocol(self, filename):
-        """Extract vpn protocol from file
+        """Extract vpn protocol from file.
 
         Args:
             filename (string): path to certificate
@@ -80,7 +80,14 @@ class PluginManager():
         return vpn_protocol
 
     def get_protocol_implementation_type(self, vpn_protocol):
-        """Find and return protocol implementation type"""
+        """Find and return protocol implementation type.
+
+        Args:
+            vpn_protocol (ProtocolEnum): ProtocolEnum.TCP/ProtocolEnum.UDP ...
+        Returns:
+            ProtocolImplementationEnum:
+                protocol implementation type (openvpn/strongswan/wireguard)
+        """
         for plugin_name, protocol_types in SUPPORTED_PROTOCOLS.items():
             if vpn_protocol in protocol_types:
                 return plugin_name
@@ -88,7 +95,14 @@ class PluginManager():
         raise exceptions.IllegalVPNProtocol("Selected protocol was not found")
 
     def get_matching_plugin(self, protocol_implementation_type):
-        """Find and return matching plugin"""
+        """Find and return matching protocol plugin.
+
+        Args:
+            protocol_implementation_type (ProtocolImplementationEnum):
+                OPENVPN/STRONSWAN/WIREGUARD
+        Returns:
+            NM.VpnEditorPlugin: matching protocol implementation instance
+        """
         plugin_info = NM.VpnPluginInfo
 
         # returns [NM.VpnPluginInfo] plugins

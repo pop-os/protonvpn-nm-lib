@@ -28,11 +28,13 @@ class UserSessionManager:
         keyring_service=DEFAULT_KEYRING_SERVICE,
         keyring_username=DEFAULT_KEYRING_USERNAME
     ):
-        """Load a stored user session from keychain.
+        """Load stored user session from keychain.
 
         Args:
             keyring_service (string): the keyring servicename (optional)
             keyring_username (string): the keyring username (optional)
+        Returns:
+            session (proton.api.Session)
         """
         stored_session = self.get_stored_user_session(
             keyring_service,
@@ -51,7 +53,7 @@ class UserSessionManager:
         keyring_service=DEFAULT_KEYRING_SERVICE,
         keyring_username=DEFAULT_KEYRING_USERNAME
     ):
-        """Store a user session in the keychain.
+        """Store user session in keychain.
 
         Args:
             keyring_service (string): the keyring servicename (optional)
@@ -85,11 +87,13 @@ class UserSessionManager:
         keyring_service=DEFAULT_KEYRING_SERVICE,
         keyring_username=DEFAULT_KEYRING_USERNAME
     ):
-        """Get the stored user session from keychain.
+        """Get stored user session from keychain.
 
         Args:
             keyring_service (string): the keyring servicename (optional)
             keyring_username (string): the keyring username (optional)
+        Returns:
+            json: json encoded authentication data
         """
         try:
             stored_session = keyring.get_password(
@@ -117,7 +121,7 @@ class UserSessionManager:
         keyring_service=DEFAULT_KEYRING_SERVICE,
         keyring_username=DEFAULT_KEYRING_USERNAME
     ):
-        """Delete a stored user session from keychain.
+        """Delete stored user session from keychain.
 
         Args:
             keyring_service (string): the keyring servicename (optional)
@@ -144,6 +148,8 @@ class UserSessionManager:
         Args:
             auth_data (string): api response containg json headers
             action (string): [save, load]
+        Returns:
+            string or json
         """
         json_action = json.dumps
 
@@ -162,7 +168,10 @@ class UserSessionManager:
         #     raise exceptions.JSONAuthDataError(e)
 
     def set_optimum_keyring_backend(self):
-        """Determines the optimum keyring backend to be used"""
+        """Determines the optimum keyring backend to be used.
+
+        Default backend: SecretService
+        """
         optimum_backend = None
         search_in_str = re.search
         supported_backends = ["kwallet", "SecretService"]

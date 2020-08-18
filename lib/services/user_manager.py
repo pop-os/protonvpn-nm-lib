@@ -17,6 +17,12 @@ class UserManager(UserSessionManager):
         super().__init__()
 
     def login(self, username, password):
+        """Login and store user session, with ProtonVPN credentials.
+
+        Args:
+            username (string): ProtonVPN username
+            password (string): ProtonVPN password
+        """
         if not isinstance(username, str):
             raise TypeError(
                 "Incorrect object type, "
@@ -47,14 +53,17 @@ class UserManager(UserSessionManager):
             )
 
     def logout(self):
+        """Logout user."""
         self.delete_user_session(self.keyring_service, self.keyring_username)
 
     def fetch_vpn_credentials(self):
+        """Fetch vpn credentials from api."""
         session = self.load_session()
         api_resp = session.api_request('/vpn')
         return (api_resp["VPN"]["Name"], api_resp["VPN"]["Password"])
 
     def load_session(self):
+        """Load stored user session."""
         return self.load_stored_user_session(
             self.keyring_service, self.keyring_username
         )

@@ -19,7 +19,7 @@ class ConnectionManager():
         self.virtual_device_name = virtual_device_name
 
     def add_connection(self, filename, username, password, delete_cached_cert):
-        """Setup and add ProtonVPN connection
+        """Setup and add ProtonVPN connection.
 
             Args:
                 filename (string): certificate filename
@@ -100,7 +100,7 @@ class ConnectionManager():
         main_loop.run()
 
     def start_connection(self):
-        """Start ProtonVPN connection"""
+        """Start ProtonVPN connection."""
         client = NM.Client.new(None)
         main_loop = GLib.MainLoop()
 
@@ -128,7 +128,11 @@ class ConnectionManager():
         main_loop.run()
 
     def stop_connection(self, client=None):
-        """Stop ProtonVPN connection"""
+        """Stop ProtonVPN connection.
+
+        Args(optional):
+            client (NM.Client): new NetworkManager Client object
+        """
         if not client:
             client = NM.Client.new(None)
 
@@ -156,7 +160,7 @@ class ConnectionManager():
         main_loop.run()
 
     def remove_connection(self):
-        """Stop and remove ProtonVPN connection"""
+        """Stop and remove ProtonVPN connection."""
         client = NM.Client.new(None)
         main_loop = GLib.MainLoop()
         conn = self.get_proton_connection("all_connections", client)
@@ -187,6 +191,13 @@ class ConnectionManager():
         main_loop.run()
 
     def dynamic_callback(self, client, result, data):
+        """Dynamic callback method.
+
+        Args:
+            client (NM.Client): nm client object
+            result (Gio.AsyncResult): function
+            data (dict): optional extra data
+        """
         callback_type = data.get("callback_type")
         main_loop = data.get("main_loop")
         conn_name = data.get("conn_name")
@@ -232,7 +243,13 @@ class ConnectionManager():
         main_loop.quit()
 
     def extract_virtual_device_type(self, filename):
-        """Get virtual device type from .ovpn file"""
+        """Extract virtual device type from .ovpn file.
+
+        Args:
+            filename (string): path to cached certificate
+        Returns:
+            string: "tap" or "tun", otherwise raises exception
+        """
         virtual_dev_type_list = ["tun", "tap"]
 
         with open(filename, "r") as f:
@@ -257,7 +274,12 @@ class ConnectionManager():
                 return virtual_dev_type_list[index]
 
     def set_virtual_device_type(self, vpn_settings, filename):
-        """Set virtual device type from .ovpn file"""
+        """Set virtual device type and name.
+
+        Args:
+            vpn_settings (SettingVpn): vpn settings object
+            filename (string): path to cached certificate
+        """
         virtual_device_type = self.extract_virtual_device_type(filename)
 
         # Changes virtual tunnel name
@@ -265,7 +287,17 @@ class ConnectionManager():
         vpn_settings.add_data_item("dev-type", virtual_device_type)
 
     def get_proton_connection(self, connection_type, client=None):
-        """Get saved ProtonVPN connection"""
+        """Get ProtonVPN connection.
+
+        Args:
+            connection_type (string): can either be
+                all_connections - check all connections
+                active_connections - check only active connections
+            client (NM.Client): nm client object (optional)
+
+        Returns:
+            tuple: (bool|Empty) or (connection, connection_id)
+        """
         return_conn = [False]
 
         if not client:

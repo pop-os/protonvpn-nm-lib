@@ -14,6 +14,18 @@ class CertificateManager:
         self, protocol, session,
         servername, ip_list, cached_cert=CACHED_OPENVPN_CERTIFICATE
     ):
+        """Abstract method that generates a vpn certificate.
+
+        Args:
+            protocol (ProtocolEnum): ProtocolEnum.TCP, ProtocolEnum.UDP ...
+            session (proton.api.Session): the current user session
+            servername (string): servername [PT#1]
+            ip_list (list): the ips for the selected server
+            cached_cert (string): path to where a certificate is to be cached
+                (optional)
+        Returns:
+            string: path to cached certificate
+        """
         protocol_dict = {
             ProtocolEnum.TCP: self.generate_openvpn_cert,
             ProtocolEnum.UDP: self.generate_openvpn_cert,
@@ -63,6 +75,16 @@ class CertificateManager:
         self, servername, ip_list,
         cached_cert, protocol
     ):
+        """Generates openvpn certificate.
+
+        Args:
+            protocol (ProtocolEnum): ProtocolEnum.TCP, ProtocolEnum.UDP ...
+            servername (string): servername [PT#1]
+            ip_list (list): the ips for the selected server
+            cached_cert (string): path to where a certificate is to be cached
+        Returns:
+            string: path to where a certificate is cached
+        """
         ports = {
             ProtocolEnum.TCP: ProtocolPortEnum.TCP,
             ProtocolEnum.UDP: ProtocolPortEnum.UDP
@@ -90,6 +112,15 @@ class CertificateManager:
         self, servername, ip_list,
         cached_cert, _=None
     ):
+        """Generates ikev2/strongswan certificate.
+
+        Args:
+            servername (string): servername [PT#1]
+            ip_list (list): the ips for the selected server
+            cached_cert (string): path to where a certificate is to be cached
+        Returns:
+            bool
+        """
         print("Generate strongswan")
         return True
 
@@ -97,9 +128,23 @@ class CertificateManager:
         self, servername, ip_list,
         cached_cert, _=None
     ):
+        """Generates wireguard certificate.
+
+        Args:
+            servername (string): servername [PT#1]
+            ip_list (list): the ips for the selected server
+            cached_cert (string): path to where a certificate is to be cached
+        Returns:
+            bool
+        """
         print("Generate wireguard")
         return True
 
     @staticmethod
     def delete_cached_certificate(filename):
+        """Delete cached certificate.
+
+        Args:
+            filename (string): path to cached certificate
+        """
         os.remove(filename)
