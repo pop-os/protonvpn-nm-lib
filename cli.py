@@ -10,6 +10,7 @@ from lib.services.connection_manager import ConnectionManager
 from lib.services.plugin_manager import PluginManager
 from lib.services.server_manager import ServerManager
 from lib.services.user_manager import UserManager
+from lib.enums import ProtocolEnum
 
 
 class NetworkManagerPrototypeCLI():
@@ -25,7 +26,8 @@ class NetworkManagerPrototypeCLI():
         if not args.command or not hasattr(self, args.command):
             print(
                 "python filename.py "
-                + "[connect [<servername>|-f|-r|--p2p|--sc|--tor|--cc <iso_country_code>] [-p] | disconnect | login | logout]"
+                + "[connect [<servername>|-f|-r|--p2p|--sc|--tor|--cc "
+                + "<iso_country_code>] [-p] | disconnect | login | logout]"
             )
             parser.exit(1)
 
@@ -77,19 +79,20 @@ class NetworkManagerPrototypeCLI():
         )
         parser.add_argument(
             "-p", "--protocol", help="Connect via specified protocol.",
-            choices=["udp", "tcp"], metavar="", type=str.lower
+            choices=[
+                ProtocolEnum.TCP,
+                ProtocolEnum.UDP,
+            ], metavar="", type=str.lower
         )
 
         args = parser.parse_args(sys.argv[2:])
 
-        protocol = args.protocol
-
-        if protocol and protocol.lower().strip() in ["tcp", "udp"]:
-            protocol = protocol.lower().strip()
+        try:
+            protocol = args.protocol.lower().strip()
+        except AttributeError:
+            protocol = ProtocolEnum.TCP
         else:
-            protocol = "tcp"
-
-        delattr(args, "protocol")
+            delattr(args, "protocol")
 
         try:
             session = self.user_manager.load_session()

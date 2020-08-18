@@ -6,6 +6,7 @@ from proton.api import Session
 from lib import exceptions
 from lib.constants import (CACHED_OPENVPN_CERTIFICATE, OPENVPN_TEMPLATE,
                            PROTON_XDG_CACHE_HOME, TEMPLATES)
+from lib.enums import ProtocolEnum, ProtocolPortEnum
 
 
 class CertificateManager:
@@ -14,10 +15,10 @@ class CertificateManager:
         servername, ip_list, cached_cert=CACHED_OPENVPN_CERTIFICATE
     ):
         protocol_dict = {
-            "tcp": self.generate_openvpn_cert,
-            "udp": self.generate_openvpn_cert,
-            "ikve2": self.generate_strongswan_cert,
-            "wireguard": self.generate_wireguard_cert
+            ProtocolEnum.TCP: self.generate_openvpn_cert,
+            ProtocolEnum.UDP: self.generate_openvpn_cert,
+            ProtocolEnum.IKEV2: self.generate_strongswan_cert,
+            ProtocolEnum.WIREGUARD: self.generate_wireguard_cert
         }
 
         if not isinstance(protocol, str):
@@ -50,8 +51,6 @@ class CertificateManager:
 
         print(servername)
 
-        protocol = protocol.lower()
-
         try:
             return protocol_dict[protocol](
                 servername, ip_list,
@@ -64,14 +63,15 @@ class CertificateManager:
         self, servername, ip_list,
         cached_cert, protocol
     ):
-        port = {"udp": 1194, "tcp": 443}
+        ports = {
+            ProtocolEnum.TCP: ProtocolPortEnum.TCP,
+            ProtocolEnum.UDP: ProtocolPortEnum.UDP
+        }
 
-        # Ports gets casted to a list
-        # instead of just a single port to make it iterable
         j2_values = {
             "openvpn_protocol": protocol,
             "serverlist": ip_list,
-            "openvpn_ports": [port[protocol.lower()]],
+            "openvpn_ports": [ports[protocol]],
         }
 
         j2 = Environment(loader=FileSystemLoader(TEMPLATES))
