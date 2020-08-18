@@ -6,11 +6,15 @@ gi.require_version("NM", "1.0")
 from gi.repository import NM, GLib
 
 from lib import exceptions
-from lib.constants import ENV_CI_NAME
+from lib.constants import ENV_CI_NAME, VIRTUAL_DEVICE_NAME
 
 
 class ConnectionManager():
-    def __init__(self, plugin_manager, virtual_device_name="proton0"):
+    def __init__(
+        self,
+        plugin_manager,
+        virtual_device_name=VIRTUAL_DEVICE_NAME
+    ):
         self.plugin_manager = plugin_manager
         self.virtual_device_name = virtual_device_name
 
