@@ -111,32 +111,32 @@ class TestUnitServerManager:
     def teardown_class(cls):
         shutil.rmtree(TEST_CACHED_SERVERFILE)
 
-    def test_none_path_pull_server_data(self):
+    def test_none_path_cache_servers(self):
         with pytest.raises(TypeError):
-            self.server_man.pull_server_data(
+            self.server_man.cache_servers(
                 session=REAL_SESSION, cached_serverlist=None
             )
 
-    def test_integer_path_pull_server_data(self):
+    def test_integer_path_cache_servers(self):
         with pytest.raises(TypeError):
-            self.server_man.pull_server_data(
+            self.server_man.cache_servers(
                 session=REAL_SESSION, cached_serverlist=5
             )
 
-    def test_empty_path_pull_server_data(self):
+    def test_empty_path_cache_servers(self):
         with pytest.raises(FileNotFoundError):
-            self.server_man.pull_server_data(
+            self.server_man.cache_servers(
                 session=REAL_SESSION, cached_serverlist=""
             )
 
-    def test_root_path_pull_server_data(self):
+    def test_root_path_cache_servers(self):
         with pytest.raises(IsADirectoryError):
-            self.server_man.pull_server_data(
+            self.server_man.cache_servers(
                 session=REAL_SESSION, cached_serverlist="/"
             )
 
-    def test_correct_path_pull_server_data(self):
-        self.server_man.pull_server_data(
+    def test_correct_path_cache_servers(self):
+        self.server_man.cache_servers(
             session=REAL_SESSION,
             cached_serverlist=os.path.join(
                 TEST_CACHED_SERVERFILE, "test_cache_serverlist.json"
@@ -144,12 +144,12 @@ class TestUnitServerManager:
         )
 
     @pytest.mark.parametrize("servername", ["#", "", 5, None, {}, []])
-    def test_get_incorrect_ip_list(self, servername):
+    def test_get_incorrect_generate_ip_list(self, servername):
         with pytest.raises(IndexError):
-            self.server_man.get_ip_list(servername, SERVERS)
+            self.server_man.generate_ip_list(servername, SERVERS)
 
-    def test_get_correct_ip_list(self):
-        self.server_man.get_ip_list("test#5", SERVERS)
+    def test_get_correct_generate_ip_list(self):
+        self.server_man.generate_ip_list("test#5", SERVERS)
 
     @pytest.fixture
     def empty_server_pool(self):
@@ -176,8 +176,8 @@ class TestUnitServerManager:
             "test#6", "test#5",
         ]
     )
-    def test_correct_get_server_value(self, servername):
-        self.server_man.get_server_value(servername, "Servers", SERVERS)
+    def test_correct_extract_server_data(self, servername):
+        self.server_man.extract_server_data(servername, "Servers", SERVERS)
 
     @pytest.mark.parametrize(
         "servername",
@@ -188,9 +188,9 @@ class TestUnitServerManager:
             False
         ]
     )
-    def test_incorrect_get_server_value(self, servername):
+    def test_incorrect_extract_server_data(self, servername):
         with pytest.raises(IndexError):
-            self.server_man.get_server_value(servername, "Servers", SERVERS)
+            self.server_man.extract_server_data(servername, "Servers", SERVERS)
 
     @pytest.mark.parametrize(
         "cc,country",
@@ -205,7 +205,7 @@ class TestUnitServerManager:
         ]
     )
     def test_correct_country_name(self, cc, country):
-        assert self.server_man.get_country_name(cc) == country
+        assert self.server_man.extract_country_name(cc) == country
 
     @pytest.mark.parametrize(
         "cc,country",
@@ -221,8 +221,8 @@ class TestUnitServerManager:
             (5, "Guyana"),
         ]
     )
-    def test_incorrect_country_name(self, cc, country):
-        assert self.server_man.get_country_name(cc) != country
+    def test_incorrect_extract_country_name(self, cc, country):
+        assert self.server_man.extract_country_name(cc) != country
 
     @pytest.mark.parametrize(
         "servername",

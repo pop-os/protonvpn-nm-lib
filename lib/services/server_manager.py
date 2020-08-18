@@ -15,11 +15,11 @@ class ServerManager():
         self.cert_manager = cert_manager
 
     def fastest(self, session, protocol, *_):
-        """Connect to the fastest server.
+        """Connect to fastest server.
 
         Args:
             session (proton.api.Session): current user session
-            protocol (string): protocol to be used
+            protocol (ProtocolEnum): ProtocolEnum.TCP, ProtocolEnum.UDP ...
         Returns:
             string: path to certificate file that is to be imported into nm
         """
@@ -40,9 +40,9 @@ class ServerManager():
                 "The provided argument \"protocol\" is empty"
             )
 
-        self.pull_server_data(session)
+        self.cache_servers(session)
 
-        servers = self.get_servers(session)
+        servers = self.filter_servers(session)
         # ProtonVPN Features: 1: SECURE-CORE, 2: TOR, 4: P2P, 8: Streaming
         excluded_features = [1, 2]
 
@@ -55,7 +55,7 @@ class ServerManager():
         servername = self.get_fastest_server(server_pool)
 
         try:
-            ip_list = self.get_ip_list(servername, servers)
+            ip_list = self.generate_ip_list(servername, servers)
         except IndexError:
             raise exceptions.IllegalServername(
                 "\"{}\" is not a valid server".format(servername)
@@ -67,11 +67,11 @@ class ServerManager():
         )
 
     def country_f(self, session, protocol, *args):
-        """Connect to the fastest server in a specific country.
+        """Connect to fastest server in a specific country.
 
         Args:
             session (proton.api.Session): current user session
-            protocol (string): protocol to be used
+            protocol (ProtocolEnum): ProtocolEnum.TCP, ProtocolEnum.UDP ...
             args (tuple(list)): country code [PT|SE|CH]
         Returns:
             string: path to certificate file that is to be imported into nm
@@ -113,8 +113,8 @@ class ServerManager():
                 + "instead"
             )
 
-        self.pull_server_data(session)
-        servers = self.get_servers(session)
+        self.cache_servers(session)
+        servers = self.filter_servers(session)
 
         # ProtonVPN Features: 1: SECURE-CORE, 2: TOR, 4: P2P
         excluded_features = [1, 2]
@@ -137,7 +137,7 @@ class ServerManager():
         servername = self.get_fastest_server(server_pool)
 
         try:
-            ip_list = self.get_ip_list(servername, servers)
+            ip_list = self.generate_ip_list(servername, servers)
         except IndexError:
             raise exceptions.IllegalServername(
                 "\"{}\" is not a valid server".format(servername)
@@ -149,11 +149,11 @@ class ServerManager():
         )
 
     def direct(self, session, protocol, *args):
-        """Connect to a single given server directly.
+        """Connect directly to specified server.
 
         Args:
             session (proton.api.Session): current user session
-            protocol (string): protocol to be used
+            protocol (ProtocolEnum): ProtocolEnum.TCP, ProtocolEnum.UDP ...
             args (tuple(list)|tuple): servername to connect to
         Returns:
             string: path to certificate file that is to be imported into nm
@@ -201,11 +201,11 @@ class ServerManager():
                 "Unexpected servername {}".format(user_input)
             )
 
-        self.pull_server_data(session)
-        servers = self.get_servers(session)
+        self.cache_servers(session)
+        servers = self.filter_servers(session)
 
         try:
-            ip_list = self.get_ip_list(servername, servers)
+            ip_list = self.generate_ip_list(servername, servers)
         except IndexError:
             raise exceptions.IllegalServername(
                 "\"{}\" is not an existing server".format(servername)
@@ -223,12 +223,12 @@ class ServerManager():
         )
 
     def feature_f(self, session, protocol, *args):
-        """Connect to the fastest server based on specified feature.
+        """Connect to fastest server based on specified feature.
 
         Args:
             session (proton.api.Session): current user session
-            protocol (string): protocol to be used
-            args (tuple(list)): literal feature to be used [p2p|tor|sc]
+            protocol (ProtocolEnum): ProtocolEnum.TCP, ProtocolEnum.UDP ...
+            args (tuple(list)): literal feature [p2p|tor|sc]
         Returns:
             string: path to certificate file that is to be imported into nm
         """
@@ -278,9 +278,9 @@ class ServerManager():
         except KeyError:
             raise ValueError("Feature is non-existent")
 
-        self.pull_server_data(session)
+        self.cache_servers(session)
 
-        servers = self.get_servers(session)
+        servers = self.filter_servers(session)
 
         server_pool = [s for s in servers if s["Features"] == feature]
 
@@ -292,7 +292,7 @@ class ServerManager():
         servername = self.get_fastest_server(server_pool)
 
         try:
-            ip_list = self.get_ip_list(servername, servers)
+            ip_list = self.generate_ip_list(servername, servers)
         except IndexError:
             raise exceptions.IllegalServername(
                 "\"{}\" is not a valid server".format(servername)
@@ -308,7 +308,7 @@ class ServerManager():
 
         Args:
             session (proton.api.Session): current user session
-            protocol (string): protocol to be used
+            protocol (ProtocolEnum): ProtocolEnum.TCP, ProtocolEnum.UDP ...
         Returns:
             string: path to certificate file that is to be imported into nm
         """
@@ -329,12 +329,12 @@ class ServerManager():
                 "The provided argument \"protocol\" is empty"
             )
 
-        servers = self.get_servers(session)
+        servers = self.filter_servers(session)
 
         servername = random.choice(servers)["Name"]
 
         try:
-            ip_list = self.get_ip_list(servername, servers)
+            ip_list = self.generate_ip_list(servername, servers)
         except IndexError:
             raise exceptions.IllegalServername(
                 "\"{}\" is not a valid server".format(servername)
@@ -345,14 +345,14 @@ class ServerManager():
             servername, ip_list
         )
 
-    def pull_server_data(
+    def cache_servers(
         self, session,
         force=False, cached_serverlist=CACHED_SERVERLIST
     ):
         """Cache server data from API.
 
         Args:
-            session (proton.api.Session): the current user session
+            session (proton.api.Session): current user session
             cached_serverlist (string): path to cached server list
             force (bool): wether refresh interval shuld be ignored or not
         """
@@ -398,47 +398,49 @@ class ServerManager():
             with open(cached_serverlist, "w") as f:
                 json.dump(data, f)
 
-    def get_ip_list(self, servername, servers):
-        """Exctracts the IP from the server list, based on servername.
+    def generate_ip_list(self, servername, servers):
+        """Exctract IPs from server list, based on servername.
 
         Args:
             servername (string): servername [PT#1]
-            servers (list): a curated list containing the servers
+            servers (list): curated list containing the servers
         Returns:
-            list: the ips for the selected server
+            list: IPs for the selected server
         """
         try:
-            subservers = self.get_server_value(servername, "Servers", servers)
+            subservers = self.extract_server_data(
+                servername, "Servers", servers
+            )
         except IndexError as e:
             raise IndexError(e)
         ip_list = [subserver["EntryIP"] for subserver in subservers]
 
         return ip_list
 
-    def get_servers(self, session):
-        """Return a list of all servers based on tier.
+    def filter_servers(self, session):
+        """Filter servers based on user tier.
 
         Args:
-            session (proton.api.Session): the current user session
+            session (proton.api.Session): current user session
         Returns:
-            list: the serverlist extracted from raw json, based on user tier
+            list: serverlist extracted from raw json, based on user tier
         """
 
         with open(CACHED_SERVERLIST, "r") as f:
             server_data = json.load(f)
 
-        user_tier = self.get_user_tier(session)
+        user_tier = self.fetch_user_tier(session)
 
         servers = server_data["LogicalServers"]
 
         # Sort server IDs by Tier
         return [server for server in servers if server["Tier"] <= user_tier and server["Status"] == 1] # noqa
 
-    def get_user_tier(self, session):
-        """Feches a users tier from the API.
+    def fetch_user_tier(self, session):
+        """Fetches a users tier from the API.
 
         Args:
-            session (proton.api.Session): the current user session
+            session (proton.api.Session): current user session
         Returns:
             int: current user session tier
         """
@@ -446,12 +448,12 @@ class ServerManager():
         return data["VPN"]["MaxTier"]
 
     def get_fastest_server(self, server_pool):
-        """Return the fastest server from a list of servers.
+        """Get fastest server from a list of servers.
 
         Args:
-            server_pool (list): a pool with servers
+            server_pool (list): pool with servers
         Returns:
-            string: The servername with the highest score (fastest)
+            string: servername with the highest score (fastest)
         """
         if not isinstance(server_pool, list):
             raise TypeError(
@@ -474,13 +476,15 @@ class ServerManager():
 
         return fastest_server
 
-    def get_server_value(self, servername, key, servers):
-        """Return the value of a key for a given server.
+    def extract_server_data(self, servername, key, servers):
+        """Extract server data based on servername.
 
         Args:
             servername (string): servername [PT#1]
             key (string): keyword that contains servernames in json
             servers (list): a list containing the servers
+        Returns:
+            string: server name [PT#1]
         """
         value = [
             server[key] for server
@@ -489,20 +493,20 @@ class ServerManager():
         ]
         return value[0]
 
-    def get_country_name(self, code):
-        """Return the full name of a country from a specified code.
+    def extract_country_name(self, code):
+        """Extract country name based on specified code.
 
         Args:
             code (string): country code [PT|SE|CH]
         Returns:
             string:
-                country name if found, else returns the code
+                country name if found, else returns country code
         """
         from lib.country_codes import country_codes
         return country_codes.get(code, code)
 
     def is_servername_valid(self, servername):
-        """Checks if the provided servername is in a valid format.
+        """Check if the provided servername is in a valid format.
 
         Args:
             servername (string): the servername [SE-PT#1]
