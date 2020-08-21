@@ -1,5 +1,5 @@
 FROM ubuntu:latest
-RUN apt-get update 
+RUN apt-get update
 RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata
 
 # Install a few useful packages
@@ -46,4 +46,7 @@ RUN usermod -a -G sudo user
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 COPY docker_entry.sh /usr/local/bin
+
+WORKDIR /home/user/protonvpn-nm-core
+
 ENTRYPOINT ["/usr/local/bin/docker_entry.sh"]
