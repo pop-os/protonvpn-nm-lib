@@ -18,10 +18,14 @@ RUN apt-get install -y net-tools \
 
 RUN apt-get install -y \
     python3-pip \
-    libcairo2-dev \
+    python3-xdg \
+    python3-keyring \
     python3-jinja2 \
+    python3-dialog \
+    python3-pytest \
+    libcairo2-dev \
     libgirepository1.0-dev \
-    gir1.2-nm-1.0 
+    gir1.2-nm-1.0
 
 RUN python3 -m pip install cython && \
     python3 -m pip install proton-client && \
