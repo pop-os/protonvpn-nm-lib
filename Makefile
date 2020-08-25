@@ -1,8 +1,9 @@
 .PHONY: image
 
+-include .env
 
 branch ?= master
-NAME_IMAGE ?= gitlab.protontech.ch:4567/deploy-app/fe-scripts
+NAME_IMAGE ?= "$(CI_REGISTRY_IMAGE)"
 TAG_IMAGE := branch-$(subst /,-,$(branch))
 
 # We use :latest so we can use somewhere else, but it's the same as branch-master the other one is for CI
@@ -12,10 +13,13 @@ endif
 
 
 ## Make remote image form a branch make image branch=<branchName> (master default)
-image: login copy-scripts build tag push
+image: login build tag push
 
 login:
 	docker login -u gitlab-ci-token -p "$(CI_JOB_TOKEN)" "$(CI_REGISTRY)"
+
+build:
+	docker build -t $(NAME_IMAGE):$(TAG_IMAGE) .
 
 push:
 	docker push $(NAME_IMAGE):$(TAG_IMAGE)
@@ -29,21 +33,21 @@ latest-tag:
 	docker tag $(NAME_IMAGE):branch-master $(NAME_IMAGE):latest
 	docker push $(NAME_IMAGE):latest
 
-build:
-	@ docker build -t nm-core:latest .
+## Build image on local -> name nm-core:latest
+local:
+	@ docker build -t "$(NAME_IMAGE)" .
+local: NAME_IMAGE = nm-core:latest
 
-test: build
-	@ docker run --rm -u user --privileged --volume $(PWD):/home/user/protonvpn-nm-core nm-core:latest
-## Make local image to test
+test: local
+	@ docker run \
+			--rm \
+			-u user \
+			--privileged \
+			--volume $(PWD):/home/user/protonvpn-nm-core \
+			nm-core:latest
 
-local: copy-scripts local-image
-
-local-image: SHELL:=/bin/bash
-local-image:
-	@ cd image && docker build -t $(NAME_IMAGE) .
-local: NAME_IMAGE = deploy-app/fe-scripts
-
-deploy-local: login-deploy copy-scripts build tag push
+# Build an image from your computer and push it to our repository
+deploy-local: login-deploy build tag push
 
 login-deploy:
 	docker login -u "$(CI_DEPLOY_USER)" -p "$(CI_JOB_TOKEN)" "$(CI_REGISTRY)"
