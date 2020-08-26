@@ -44,7 +44,8 @@ test: local
 			-u user \
 			--privileged \
 			--volume $(PWD):/home/user/protonvpn-nm-core \
-			nm-core:latest
+			nm-core:latest \
+			python3 -m pytest
 
 # Build an image from your computer and push it to our repository
 deploy-local: login-deploy build tag push
