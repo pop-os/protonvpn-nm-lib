@@ -18,7 +18,7 @@ image: login build tag push
 login:
 	docker login -u gitlab-ci-token -p "$(CI_JOB_TOKEN)" "$(CI_REGISTRY)"
 
-build:
+build: copy-app
 	docker build -t $(NAME_IMAGE):$(TAG_IMAGE) .
 
 push:
@@ -27,6 +27,17 @@ push:
 tag:
 	docker tag $(NAME_IMAGE):$(TAG_IMAGE) $(NAME_IMAGE):$(TAG_IMAGE)
 
+copy-app:
+	@ cd ..
+	@ rm -rf __SOURCE_APP || true
+	@ rsync \
+			-avz \
+			--exclude .git \
+			--exclude .env \
+			--exclude __SOURCE_APP \
+			. __SOURCE_APP
+	@ cd - > /dev/null
+
 latest: login latest-tag
 latest-tag:
 	docker pull $(NAME_IMAGE):branch-master
@@ -34,16 +45,18 @@ latest-tag:
 	docker push $(NAME_IMAGE):latest
 
 ## Build image on local -> name nm-core:latest
-local:
+local: copy-app
 	@ docker build -t "$(NAME_IMAGE)" .
+	@ rm -rf __SOURCE_APP || true
 local: NAME_IMAGE = nm-core:latest
 
 test: local
+	# Keep -it because with colors it's better
 	@ docker run \
 			--rm \
-			-u user \
+			-it \
 			--privileged \
-			--volume $(PWD):/home/user/protonvpn-nm-core \
+			--volume $(PWD)/.env:/home/user/protonvpn-nm-core/.env \
 			nm-core:latest \
 			python3 -m pytest
 

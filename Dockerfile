@@ -46,7 +46,9 @@ RUN usermod -a -G sudo user
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 COPY docker_entry.sh /usr/local/bin
+COPY __SOURCE_APP /home/user/protonvpn-nm-core
 
+RUN chown -R user:user /home/user/protonvpn-nm-core
 WORKDIR /home/user/protonvpn-nm-core
 
 ENTRYPOINT ["/usr/local/bin/docker_entry.sh"]

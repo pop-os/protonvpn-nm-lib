@@ -23,9 +23,8 @@ This command is going to execute:
 ```sh
 $ docker run \
     --rm \
-    -u user \
     --privileged \
-    --volume $(pwd):/home/user/protonvpn-nm-core \
+    --volume $(pwd)/.env:/home/user/protonvpn-nm-core/.env \
     nm-core:latest \
     python3 -m pytest
 
