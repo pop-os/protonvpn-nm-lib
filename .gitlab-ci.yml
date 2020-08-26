@@ -9,6 +9,7 @@ stages:
 ########## Manage the Image ##########
 .common-image:
   image: docker:stable
+  interruptible: true
   variables:
     DOCKER_HOST: tcp://docker:2375
   services:
@@ -47,7 +48,6 @@ publish-latest:
 
 test:
   stage: test
+  interruptible: true
   script:
-    - pwd
-    - ls -la
     - python3 -m pytest
