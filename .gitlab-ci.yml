@@ -48,4 +48,6 @@ publish-latest:
 test:
   stage: test
   script:
+    - pwd
+    - ls -la
     - python3 -m pytest
