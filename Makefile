@@ -1,4 +1,4 @@
-.PHONY: image
+.PHONY: image login build tag push copy-app latest latest-tag test deploy-local local login-deploy
 
 -include .env
 
@@ -27,6 +27,10 @@ push:
 tag:
 	docker tag $(NAME_IMAGE):$(TAG_IMAGE) $(NAME_IMAGE):$(TAG_IMAGE)
 
+## Copy the current app and remove some items we don't need inside the image
+# - .git -> huge and doesn't provide anything relevant
+# - .env -> it's private
+# - __SOURCE_APP -> if it exists, it should not but it's better to filter it out
 copy-app:
 	@ cd ..
 	@ rm -rf __SOURCE_APP || true
@@ -38,6 +42,7 @@ copy-app:
 			. __SOURCE_APP
 	@ cd - > /dev/null
 
+# Tag the image branch-master as latest
 latest: login latest-tag
 latest-tag:
 	docker pull $(NAME_IMAGE):branch-master
@@ -50,6 +55,17 @@ local: copy-app
 	@ rm -rf __SOURCE_APP || true
 local: NAME_IMAGE = nm-core:latest
 
+
+# Build an image from your computer and push it to our repository
+deploy-local: login-deploy build tag push
+
+# If you want to deploy an image to our registry you will need to set these variables inside .env
+login-deploy:
+	docker login -u "$(CI_DEPLOY_USER)" -p "$(CI_JOB_TOKEN)" "$(CI_REGISTRY)"
+
+######### Not linked to the image ###############
+
+## Run tests against the latest version of the image from your code
 test: local
 	# Keep -it because with colors it's better
 	@ docker run \
@@ -59,10 +75,3 @@ test: local
 			--volume $(PWD)/.env:/home/user/protonvpn-nm-core/.env \
 			nm-core:latest \
 			python3 -m pytest
-
-# Build an image from your computer and push it to our repository
-deploy-local: login-deploy build tag push
-
-login-deploy:
-	docker login -u "$(CI_DEPLOY_USER)" -p "$(CI_JOB_TOKEN)" "$(CI_REGISTRY)"
-
