@@ -3,7 +3,7 @@
 
 ### Build the image on your computer
 
-``̀ sh
+```sh
 $ make local
 ```
 
@@ -14,7 +14,7 @@ This command is going to generate an image: `nm-core:latest`
 
 > No need to build the image first, we build it before we execute the test command
 
-```
+```sh
 $ make test
 ```
 
