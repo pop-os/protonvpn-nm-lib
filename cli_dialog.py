@@ -3,9 +3,10 @@ import subprocess
 import sys
 
 from dialog import Dialog
+from lib.constants import ProtocolEnum
 
 
-def dialog(cert_manager, session):
+def dialog(server_manager, session):
     """Connect to a server with a dialog menu."""
     def show_dialog(headline, choices, stop=False):
         """Show the dialog and process response."""
@@ -28,7 +29,7 @@ def dialog(cert_manager, session):
               "Please install dialog via your package manager.")
         sys.exit(1)
 
-    # cert_manager.pull_server_data(session)
+    server_manager.cache_servers(session)
 
     features = {
         0: "Normal", 1: "Secure-Core", 2: "Tor",
@@ -36,11 +37,11 @@ def dialog(cert_manager, session):
     }
     server_tiers = {0: "F", 1: "B", 2: "P"}
 
-    servers = cert_manager.get_servers(session)
+    servers = server_manager.filter_servers(session)
 
     countries = {}
     for server in servers:
-        country = cert_manager.get_country_name(server["ExitCountry"])
+        country = server_manager.extract_country_name(server["ExitCountry"])
         if country not in countries.keys():
             countries[country] = []
         countries[country].append(server["Name"])
@@ -51,7 +52,7 @@ def dialog(cert_manager, session):
     for country in sorted(countries.keys()):
         country_features = []
         for server in countries[country]:
-            feat = int(cert_manager.get_server_value(
+            feat = int(server_manager.extract_server_value(
                 server, "Features", servers)
             )
             if not features[feat] in country_features:
@@ -64,21 +65,23 @@ def dialog(cert_manager, session):
     # lambda sorts servers by Load instead of name
     choices = []
     country_servers = sorted(countries[country],
-                             key=lambda s: cert_manager.get_server_value(
+                             key=lambda s: server_manager.extract_server_value(
                                  s, "Load", servers))
 
     for servername in country_servers:
 
         load = str(
-            cert_manager.get_server_value(servername, "Load", servers)
+            server_manager.extract_server_value(servername, "Load", servers)
         ).rjust(3, " ")
 
         feature = features[
-            cert_manager.get_server_value(servername, 'Features', servers)
+            server_manager.extract_server_value(
+                servername, 'Features', servers
+            )
         ]
 
         tier = server_tiers[
-            cert_manager.get_server_value(servername, "Tier", servers)
+            server_manager.extract_server_value(servername, "Tier", servers)
         ]
 
         choices.append((servername, "Load: {0}% | {1} | {2}".format(
@@ -89,7 +92,8 @@ def dialog(cert_manager, session):
 
     protocol_result = show_dialog(
         "Choose a protocol:", [
-            ("UDP", "Better Speed"), ("TCP", "Better Reliability")
+            (ProtocolEnum.UDP, "Better Speed"),
+            (ProtocolEnum.TCP, "Better Reliability")
         ]
     )
 
