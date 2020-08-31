@@ -4,6 +4,7 @@ gi.require_version("NM", "1.0")
 from gi.repository import NM, Gio
 from lib.services.connection_manager import ConnectionManager
 from lib.services.plugin_manager import PluginManager
+from lib import exceptions
 
 cm = ConnectionManager(PluginManager())
 last_conn_state = False
@@ -19,7 +20,7 @@ while True:
     client = NM.Client.new(Gio.Cancellable.new())
     general_conn_state = client.get_state().value_name
     if general_conn_state != "NM_STATE_CONNECTED_GLOBAL":
-        print("No internet connection: ", general_conn_state)
+        # print("No internet connection: ", general_conn_state)
         last_conn_state = general_conn_state
         continue
     else:
@@ -33,9 +34,11 @@ while True:
             try:
                 vpn[0].get_vpn_state()
             except IndexError:
-                cm.start_connection()
-
-    time.sleep(0.5)
+                try:
+                    cm.start_connection()
+                except exceptions.CustomBaseException as e:
+                    print(e)
+    # time.sleep(0.5)
 
 
 
