@@ -408,7 +408,7 @@ class ServerManager():
             list: IPs for the selected server
         """
         try:
-            subservers = self.extract_server_data(
+            subservers = self.extract_server_value(
                 servername, "Servers", servers
             )
         except IndexError as e:
@@ -476,7 +476,7 @@ class ServerManager():
 
         return fastest_server
 
-    def extract_server_data(self, servername, key, servers):
+    def extract_server_value(self, servername, key, servers):
         """Extract server data based on servername.
 
         Args:
