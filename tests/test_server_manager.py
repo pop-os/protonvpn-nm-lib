@@ -176,8 +176,8 @@ class TestUnitServerManager:
             "test#6", "test#5",
         ]
     )
-    def test_correct_extract_server_data(self, servername):
-        self.server_man.extract_server_data(servername, "Servers", SERVERS)
+    def test_correct_extract_server_value(self, servername):
+        self.server_man.extract_server_value(servername, "Servers", SERVERS)
 
     @pytest.mark.parametrize(
         "servername",
@@ -188,9 +188,11 @@ class TestUnitServerManager:
             False
         ]
     )
-    def test_incorrect_extract_server_data(self, servername):
+    def test_incorrect_extract_server_value(self, servername):
         with pytest.raises(IndexError):
-            self.server_man.extract_server_data(servername, "Servers", SERVERS)
+            self.server_man.extract_server_value(
+                servername, "Servers", SERVERS
+            )
 
     @pytest.mark.parametrize(
         "cc,country",

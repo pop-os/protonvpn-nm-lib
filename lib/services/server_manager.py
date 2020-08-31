@@ -11,6 +11,8 @@ from lib.constants import CACHED_SERVERLIST, PROTON_XDG_CACHE_HOME
 
 
 class ServerManager():
+    REFRESH_INTERVAL = 15
+
     def __init__(self, cert_manager):
         self.cert_manager = cert_manager
 
@@ -356,8 +358,6 @@ class ServerManager():
             cached_serverlist (string): path to cached server list
             force (bool): wether refresh interval shuld be ignored or not
         """
-        refresh_interval = 45
-
         if not isinstance(cached_serverlist, str):
             raise TypeError(
                 "Incorrect object type, "
@@ -385,7 +385,7 @@ class ServerManager():
             last_modified_time = datetime.datetime.now()
 
         now_time = datetime.datetime.now()
-        time_ago = now_time - datetime.timedelta(minutes=refresh_interval)
+        time_ago = now_time - datetime.timedelta(minutes=self.REFRESH_INTERVAL)
 
         if (
             not os.path.isfile(cached_serverlist)
@@ -408,7 +408,7 @@ class ServerManager():
             list: IPs for the selected server
         """
         try:
-            subservers = self.extract_server_data(
+            subservers = self.extract_server_value(
                 servername, "Servers", servers
             )
         except IndexError as e:
@@ -476,7 +476,7 @@ class ServerManager():
 
         return fastest_server
 
-    def extract_server_data(self, servername, key, servers):
+    def extract_server_value(self, servername, key, servers):
         """Extract server data based on servername.
 
         Args:
