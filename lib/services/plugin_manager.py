@@ -10,21 +10,24 @@ from lib.constants import SUPPORTED_PROTOCOLS
 
 
 class PluginManager():
-    def import_connection_from_file(self, filename):
+
+    @staticmethod
+    def import_connection_from_file(filename):
         """Import connection from file.
 
         Args:
             filename (string): path to file
         """
-        vpn_protocol = self.extract_openvpn_protocol(filename)
+        pm = PluginManager()
+        vpn_protocol = pm.extract_openvpn_protocol(filename)
 
         if not vpn_protocol:
             raise Exception("IKEv2/Wireguard protocols are not yet supported")
 
-        protocol_implementation_type = self.get_protocol_implementation_type(
+        protocol_implementation_type = pm.get_protocol_implementation_type(
             vpn_protocol
         )
-        editor_plugin = self.get_matching_plugin(protocol_implementation_type)
+        editor_plugin = pm.get_matching_plugin(protocol_implementation_type)
 
         try:
             # return a NM.SimpleConnection (NM.Connection)

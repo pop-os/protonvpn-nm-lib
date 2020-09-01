@@ -5,6 +5,7 @@ import gi
 gi.require_version("NM", "1.0")
 from gi.repository import NM, GLib
 
+from lib.services.plugin_manager import PluginManager
 from lib import exceptions
 from lib.constants import ENV_CI_NAME, VIRTUAL_DEVICE_NAME
 from getpass import getuser
@@ -13,10 +14,8 @@ from getpass import getuser
 class ConnectionManager():
     def __init__(
         self,
-        plugin_manager,
         virtual_device_name=VIRTUAL_DEVICE_NAME
     ):
-        self.plugin_manager = plugin_manager
         self.virtual_device_name = virtual_device_name
 
     def add_connection(self, filename, username, password, delete_cached_cert):
@@ -63,7 +62,7 @@ class ConnectionManager():
         client = NM.Client.new(None)
         main_loop = GLib.MainLoop()
 
-        connection = self.plugin_manager.import_connection_from_file(
+        connection = PluginManager.import_connection_from_file(
             filename
         )
         vpn_settings = connection.get_setting_vpn()
