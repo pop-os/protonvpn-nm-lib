@@ -50,8 +50,8 @@ class TestUnitPluginManager:
         vpn_proto = self.pm.extract_openvpn_protocol(
             os.path.join(CERT_FOLDER, "ProtonVPN_no_proto.ovpn")
         )
-        assert vpn_proto == False
-            
+        assert vpn_proto is False
+
     def test_extract_incorrect_path(self):
         with pytest.raises(FileNotFoundError):
             self.pm.extract_openvpn_protocol(
@@ -79,7 +79,7 @@ class TestIntegrationPluginManager:
             self.pm.import_connection_from_file(
                 os.path.join(CERT_FOLDER, "ProtonVPN_broken_cert.ovpn")
             )
-            
+
     def test_missing_remote_import(self):
         with pytest.raises(exceptions.ImportConnectionError):
             self.pm.import_connection_from_file(
