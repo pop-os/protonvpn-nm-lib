@@ -82,14 +82,15 @@ class AutoVPN(object):
             "StateChanged", self.onNetworkStateChanged
         )
         logger.info(
-            "Maintaining connection for %s, "
-            + "reattempting up to %d times with %d ms between retries",
-            vpn_name, max_attempts, delay
+            "Maintaining connection for {}, ".format(vpn_name)
+            + "reattempting up to {} times with {} ms between retries".format(
+                max_attempts, delay
+            )
         )
 
     def onNetworkStateChanged(self, state):
         """Network status handler and VPN activator."""
-        logger.debug("Network state changed: %d", state)
+        logger.debug("Network state changed: {}".format(state))
         if state == 70:
             # Also check if VPN should be running (possibly with a flag?)
             self.activate_vpn()
@@ -102,7 +103,7 @@ class AutoVPN(object):
         if state == 5 or (state == 7 and reason == 2):
             self.failed_attempts = 0
             if state == 5:
-                logger.info("VPN %s connected", self.vpn_name)
+                logger.info("VPN {} connected".format(self.vpn_name))
             else:
                 # Also Disable VPN
                 logger.info("[!] User disconnected manually")
@@ -120,8 +121,9 @@ class AutoVPN(object):
                 GLib.timeout_add(self.delay, self.activate_vpn)
             else:
                 logger.info(
-                    "[!] Connection failed, exceeded %d max attempts.",
-                    self.max_attempts
+                    "[!] Connection failed, exceeded {} max attempts.".format(
+                        self.max_attempts
+                    )
                 )
                 self.failed_attempts = 0
 
@@ -231,7 +233,7 @@ class AutoVPN(object):
 
     def activate_vpn(self):
         """VPN activator."""
-        logger.info("Activating %s VPN connection", self.vpn_name)
+        logger.info("Activating {} VPN connection".format(self.vpn_name))
         vpn_con = self.get_vpn_interface(self.vpn_name)
         active_con = self.get_active_connection()
         if active_con is None:
