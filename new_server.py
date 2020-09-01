@@ -35,7 +35,6 @@ from logging.handlers import RotatingFileHandler
 from dbus.mainloop.glib import DBusGMainLoop
 import dbus
 from gi.repository import GLib
-import sys
 
 
 logger = logging.getLogger(__name__)
@@ -63,16 +62,14 @@ logger.addHandler(file_handler)
 
 
 class AutoVPN(object):
-    """Solves two jobs, tested with NetworkManager 0.9.x:
+    """Reconnects to VPN if disconnected not by user
+    or when connecting to a new network.
 
-    * if VPN connection is not disconnected by user himself,
-    reconnect (configurable max_attempts)
-    * on new active network connection, activate VPN
-
-    :param vpn_name: Name of VPN connection that will be used for autovpn
-    :param max_attempts: Maximum number of attempts ofreconnection VPN
+    Params:
+        vpn_name (string): Name of VPN connection that will be used for autovpn
+        max_attempts (int): Maximum number of attempts ofreconnection VPN
         session on failures
-    :param delay: Miliseconds to wait before reconnecting VPN
+        param delay (int): Miliseconds to wait before reconnecting VPN
 
     """
     def __init__(self, vpn_name, max_attempts=5, delay=5000):
@@ -108,7 +105,7 @@ class AutoVPN(object):
                 logger.info("VPN %s connected", self.vpn_name)
             else:
                 # Also Disable VPN
-                logger.info("User disconnected manually")
+                logger.info("[!] User disconnected manually")
             return
         # connection failed or unknown?
         elif state in [6, 7]:
@@ -118,12 +115,12 @@ class AutoVPN(object):
             ) or (
                 self.failed_attempts < self.max_attempts
             ):
-                logger.info("Connection failed, attempting to reconnect")
+                logger.info("[!] Connection failed, attempting to reconnect")
                 self.failed_attempts += 1
                 GLib.timeout_add(self.delay, self.activate_vpn)
             else:
                 logger.info(
-                    "Connection failed, exceeded %d max attempts.",
+                    "[!] Connection failed, exceeded %d max attempts.",
                     self.max_attempts
                 )
                 self.failed_attempts = 0
@@ -137,7 +134,7 @@ class AutoVPN(object):
         return dbus.Interface(proxy, "org.freedesktop.NetworkManager")
 
     def get_vpn_interface(self, virtual_device_name):
-        """Get VPN connection interface with the specified virtual device name.
+        """Gets VPN connection interface with the specified virtual device name.
 
         Args:
             virtual_device_name (string): virtual device name (proton0, etc)
@@ -176,17 +173,21 @@ class AutoVPN(object):
                 all_settings["vpn"]["data"]["dev"] == "proton0"
             ):
                 logger.debug("Found {} interface.".format(virtual_device_name))
-                print("Iface type: ", type(iface))
                 return iface
 
         logger.error(
-            "[!] Could not find '{}' interface.".format(virtual_device_name)
+            "[!] Could not find interface belonging to '{}'.".format(
+                virtual_device_name
+            )
         )
         return None
 
     def get_active_connection(self):
-        """Gets the dbus interface of the first active
-        network connection or returns None.
+        """Gets the dbus interface of an active
+        network connection with a default route(s).
+
+        Returns:
+            dbus.ObjectPath to active connection with default route(s).
         """
         logger.debug("Getting active network connection")
         proxy = self.bus.get_object(
@@ -196,18 +197,40 @@ class AutoVPN(object):
         active_connections = iface.Get(
             "org.freedesktop.NetworkManager", "ActiveConnections"
         )
-        for active_conn in active_connections:
-            print(active_conn)
-            print()
-        sys.exit(1)
         if len(active_connections) == 0:
-            logger.info("No active connections found")
+            logger.info("No active connection were found")
             return None
-        logger.info("Found %d active connection(s)", len(active_connections))
-        return active_connections[0]
+
+        for active_conn in active_connections:
+            proxy = self.bus.get_object(
+                "org.freedesktop.NetworkManager", active_conn
+            )
+            iface = dbus.Interface(
+                proxy, "org.freedesktop.DBus.Properties"
+            )
+
+            active_conn_props = iface.GetAll(
+                "org.freedesktop.NetworkManager.Connection.Active"
+            )
+            if (
+                active_conn_props["Default"]
+            ) or (
+                active_conn_props["Default"] and active_conn_props["Default6"]
+            ):
+                logger.info(
+                    "Found ({}) active ".format(
+                        active_conn_props["Id"]
+                    )
+                    + "connection that has a default "
+                    + "IPv4: {} / IPv6: {} routes".format(
+                        active_conn_props["Default"],
+                        active_conn_props["Default6"]
+                    )
+                )
+                return active_conn
 
     def activate_vpn(self):
-        """Activates the vpn connection."""
+        """VPN activator."""
         logger.info("Activating %s VPN connection", self.vpn_name)
         vpn_con = self.get_vpn_interface(self.vpn_name)
         active_con = self.get_active_connection()
@@ -231,7 +254,9 @@ class AutoVPN(object):
                 iface.connect_to_signal(
                     "VpnStateChanged", self.onVpnStateChanged
                 )
-                logger.info("VPN %s should be active (soon)", self.vpn_name)
+                logger.info(
+                    "VPN {} should soon be active".format(self.vpn_name)
+                )
             except dbus.exceptions.DBusException:
                 # Ignore dbus connections
                 #   (in case VPN already active when this script runs)
@@ -244,5 +269,4 @@ class AutoVPN(object):
 DBusGMainLoop(set_as_default=True)
 loop = GLib.MainLoop()
 ins = AutoVPN("proton0")
-ins.activate_vpn()
 loop.run()
