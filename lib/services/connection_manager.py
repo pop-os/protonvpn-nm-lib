@@ -264,7 +264,7 @@ class ConnectionManager():
             try:
                 daemon_status = self.check_daemon_reconnector_status()
             except Exception as e:
-                raise Exception(e)
+                print(e)
             else:
                 if not os.environ.get(ENV_CI_NAME):
                     self.daemon_manager(callback_type, daemon_status)
