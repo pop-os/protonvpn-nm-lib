@@ -35,7 +35,7 @@ from logging.handlers import RotatingFileHandler
 from dbus.mainloop.glib import DBusGMainLoop
 import dbus
 from gi.repository import GLib
-
+from lib.services.connection_manager import ConnectionManager
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -92,7 +92,6 @@ class AutoVPN(object):
         """Network status handler and VPN activator."""
         logger.debug("Network state changed: {}".format(state))
         if state == 70:
-            # Also check if VPN should be running (possibly with a flag?)
             self.activate_vpn()
 
     def onVpnStateChanged(self, state, reason):
@@ -105,7 +104,8 @@ class AutoVPN(object):
             if state == 5:
                 logger.info("VPN {} connected".format(self.vpn_name))
             else:
-                # Also Disable VPN
+                cm = ConnectionManager()
+                cm.remove_connection()
                 logger.info("[!] User disconnected manually")
             return
         # connection failed or unknown?
@@ -223,8 +223,8 @@ class AutoVPN(object):
                     "Found ({}) active ".format(
                         active_conn_props["Id"]
                     )
-                    + "connection that has a default "
-                    + "IPv4: {} / IPv6: {} routes".format(
+                    + "connection that has default route(s)"
+                    + "IPv4: {} / IPv6: {}".format(
                         active_conn_props["Default"],
                         active_conn_props["Default6"]
                     )
@@ -259,7 +259,10 @@ class AutoVPN(object):
                 logger.info(
                     "VPN {} should soon be active".format(self.vpn_name)
                 )
-            except dbus.exceptions.DBusException:
+            except dbus.exceptions.DBusException as e:
+                logger.info(
+                    "Dbus exception: {}".format(e)
+                )
                 # Ignore dbus connections
                 #   (in case VPN already active when this script runs)
                 # TODO: Do this handling better;
