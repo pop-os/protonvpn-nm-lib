@@ -248,11 +248,23 @@ class ConnectionManager():
         except Exception as e:
             raise (callback_type_dict[callback_type]["exception"])(e)
 
-        if not os.environ.get(ENV_CI_NAME):
-            if callback_type == "add":
+        if callback_type == "add":
+            if not os.environ.get(ENV_CI_NAME):
                 delete_cached_cert(filename)
+        elif callback_type == "start":
+            self.start_daemon_reconnector()
 
         main_loop.quit()
+
+    def start_daemon_reconnector(self):
+        import subprocess
+        start_daemon = subprocess.run(
+            ["systemctl", "--user", "start", "protonvpn_reconnect"],
+            stdout=subprocess.PIPE
+        )
+
+        if not start_daemon.returncode == 0:
+            print("[!] Unable to start ProtonVPN reconnector service.")
 
     def extract_virtual_device_type(self, filename):
         """Extract virtual device type from .ovpn file.
