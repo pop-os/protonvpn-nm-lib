@@ -36,6 +36,9 @@ from dbus.mainloop.glib import DBusGMainLoop
 import dbus
 from gi.repository import GLib
 from lib.services.connection_manager import ConnectionManager
+import sys
+import time
+from lib.exceptions import ConnectionNotFound
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -72,8 +75,9 @@ class AutoVPN(object):
         param delay (int): Miliseconds to wait before reconnecting VPN
 
     """
-    def __init__(self, vpn_name, max_attempts=5, delay=5000):
+    def __init__(self, vpn_name, loop, max_attempts=5, delay=5000):
         self.vpn_name = vpn_name
+        self.loop = loop
         self.max_attempts = max_attempts
         self.delay = delay
         self.failed_attempts = 0
@@ -104,9 +108,14 @@ class AutoVPN(object):
             if state == 5:
                 logger.info("VPN {} connected".format(self.vpn_name))
             else:
-                cm = ConnectionManager()
-                cm.remove_connection()
+                time.sleep(1)
+                try:
+                    cm = ConnectionManager()
+                    cm.remove_connection()
+                except ConnectionNotFound:
+                    pass
                 logger.info("[!] User disconnected manually")
+                loop.quit()
             return
         # connection failed or unknown?
         elif state in [6, 7]:
@@ -273,5 +282,5 @@ class AutoVPN(object):
 
 DBusGMainLoop(set_as_default=True)
 loop = GLib.MainLoop()
-ins = AutoVPN("proton0")
+ins = AutoVPN("proton0", loop)
 loop.run()
