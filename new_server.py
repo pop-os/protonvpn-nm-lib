@@ -35,6 +35,7 @@ from logging.handlers import RotatingFileHandler
 from dbus.mainloop.glib import DBusGMainLoop
 import dbus
 from gi.repository import GLib
+import sys
 
 
 logger = logging.getLogger(__name__)
@@ -195,6 +196,10 @@ class AutoVPN(object):
         active_connections = iface.Get(
             "org.freedesktop.NetworkManager", "ActiveConnections"
         )
+        for active_conn in active_connections:
+            print(active_conn)
+            print()
+        sys.exit(1)
         if len(active_connections) == 0:
             logger.info("No active connections found")
             return None
@@ -238,5 +243,6 @@ class AutoVPN(object):
 
 DBusGMainLoop(set_as_default=True)
 loop = GLib.MainLoop()
-AutoVPN("proton0")
+ins = AutoVPN("proton0")
+ins.activate_vpn()
 loop.run()
