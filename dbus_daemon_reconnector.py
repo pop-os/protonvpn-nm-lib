@@ -112,7 +112,6 @@ class AutoVPN(object):
             if state == 5:
                 logger.info("VPN {} connected".format(self.vpn_name))
             else:
-                time.sleep(1)
                 try:
                     cm = ConnectionManager()
                     cm.remove_connection()
