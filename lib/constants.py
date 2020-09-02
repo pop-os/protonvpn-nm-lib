@@ -18,13 +18,14 @@ PWD = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES = os.path.join(PWD, "templates")
 OPENVPN_TEMPLATE = "openvpn_template.j2"
 PROTON_XDG_CACHE_HOME = os.path.join(XDG_CACHE_HOME, "protonvpn")
+PROTON_XDG_CACHE_HOME_LOGS = os.path.join(PROTON_XDG_CACHE_HOME, "logs")
 CACHED_SERVERLIST = os.path.join(
     PROTON_XDG_CACHE_HOME, "cached_serverlist.json"
 )
 CACHED_OPENVPN_CERTIFICATE = os.path.join(
     PROTON_XDG_CACHE_HOME, "ProtonVPN.ovpn"
 )
-
+LOGFILE = os.path.join(PROTON_XDG_CACHE_HOME_LOGS, "protonvpn.log")
 DEFAULT_KEYRING_SERVICE = "ProtonVPN"
 DEFAULT_KEYRING_USERNAME = "AuthData"
 ENV_CI_NAME = "protonvpn_ci"

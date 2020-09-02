@@ -30,15 +30,20 @@ official policies, either expressed or implied, of DOMEN KOZAR.
 """
 
 import logging
-from logging.handlers import RotatingFileHandler
-
-from dbus.mainloop.glib import DBusGMainLoop
-import dbus
-from gi.repository import GLib
-from lib.services.connection_manager import ConnectionManager
-import sys
 import time
+from logging.handlers import RotatingFileHandler
+import os
+
+import dbus
+from dbus.mainloop.glib import DBusGMainLoop
+from gi.repository import GLib
+
 from lib.exceptions import ConnectionNotFound
+from lib.services.connection_manager import ConnectionManager
+from lib.constants import PROTON_XDG_CACHE_HOME_LOGS, LOGFILE
+
+if not os.path.isdir(PROTON_XDG_CACHE_HOME_LOGS):
+    os.mkdir(PROTON_XDG_CACHE_HOME_LOGS)
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -52,11 +57,10 @@ FORMATTER = logging.Formatter(
 
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(FORMATTER)
-console_handler.setFormatter(FORMATTER)
 
 
 file_handler = RotatingFileHandler(
-    "autovpn.log",
+    LOGFILE,
     maxBytes=3145728,
     backupCount=1
 )
@@ -183,7 +187,9 @@ class AutoVPN(object):
             ) and (
                 all_settings["vpn"]["data"]["dev"] == "proton0"
             ):
-                logger.debug("Found {} interface.".format(virtual_device_name))
+                logger.debug("Found interface for virtual device '{}'.".format(
+                    virtual_device_name
+                ))
                 return iface
 
         logger.error(
