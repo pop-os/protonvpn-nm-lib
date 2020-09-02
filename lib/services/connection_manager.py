@@ -1,11 +1,11 @@
 
 import os
+import subprocess
 
 import gi
 gi.require_version("NM", "1.0")
 from gi.repository import NM, GLib
 
-from lib.services.plugin_manager import PluginManager
 from lib import exceptions
 from lib.constants import ENV_CI_NAME, VIRTUAL_DEVICE_NAME
 from getpass import getuser
@@ -48,6 +48,7 @@ class ConnectionManager():
         elif not username.strip() or not password.strip():
             raise ValueError("Both username and password must be provided")
 
+        # Check that method to delete cached certificates is implemented
         try:
             delete_cached_cert("test")
         except FileNotFoundError:
@@ -251,20 +252,74 @@ class ConnectionManager():
         if callback_type == "add":
             if not os.environ.get(ENV_CI_NAME):
                 delete_cached_cert(filename)
-        elif callback_type == "start":
-            self.start_daemon_reconnector()
+        elif not callback_type == "stop":
+            try:
+                daemon_status = self.check_daemon_reconnector_status()
+            except Exception as e:
+                print(e)
+            else:
+                if callback_type == "start" and not daemon_status:
+                    self.call_daemon_reconnector("start")
+                elif (
+                    callback_type == "remove"
+                ) and (
+                    daemon_status
+                ) and (
+                    not os.environ.get(ENV_CI_NAME)
+                ):
+                    self.call_daemon_reconnector("stop")
 
         main_loop.quit()
 
-    def start_daemon_reconnector(self):
-        import subprocess
-        start_daemon = subprocess.run(
-            ["systemctl", "--user", "start", "protonvpn_reconnect"],
+    def check_daemon_reconnector_status(self):
+        """Checks the status of the daemon reconnector and starts the process
+        only if it's not already running.
+
+        Returns:
+            int: indicates the status of the daemon process
+        """
+        check_daemon = subprocess.run(
+            ["systemctl", "--user", "status", "protonvpn_reconnect"],
             stdout=subprocess.PIPE
         )
+        decoded_stdout = check_daemon.stdout.decode()
+        if (
+            check_daemon.returncode == 3
+        ) and (
+            "Active: inactive (dead)" in decoded_stdout
+        ):
+            # Not running
+            return 0
+        elif (
+            check_daemon.returncode == 0
+        ) and (
+            "Active: active (running)" in decoded_stdout
+        ):
+            # Already running
+            return 1
+        else:
+            # Service threw an exception
+            raise Exception(
+                "[!] An error occurred while checking for ProtonVPN "
+                + "reconnector service: {}".format(decoded_stdout))
 
-        if not start_daemon.returncode == 0:
-            print("[!] Unable to start ProtonVPN reconnector service.")
+    def call_daemon_reconnector(self, command=["start", "stop"]):
+        """Makes calls to daemon reconnector to either
+        start or stop the process.
+
+        Args:
+            command (string): to either start or stop the process
+        """
+        call_daemon = subprocess.run(
+            ["systemctl", "--user", command, "protonvpn_reconnect"],
+            stdout=subprocess.PIPE
+        )
+        decoded_stdout = call_daemon.stdout.decode()
+        if not call_daemon.returncode == 0:
+            print(
+                "[!] An error occurred while {}ing ProtonVPN ".format(command)
+                + "reconnector service: {}".format(decoded_stdout)
+            )
 
     def extract_virtual_device_type(self, filename):
         """Extract virtual device type from .ovpn file.
