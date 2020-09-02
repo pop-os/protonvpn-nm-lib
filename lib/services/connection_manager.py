@@ -285,9 +285,11 @@ class ConnectionManager():
         decoded_stdout = check_daemon.stdout.decode()
         if (
             check_daemon.returncode == 3
-        ) and (
+        ) and ((
             "Active: inactive (dead)" in decoded_stdout
-        ):
+        ) or (
+            "Active: failed" in decoded_stdout
+        )):
             # Not running
             return 0
         elif (
@@ -301,7 +303,11 @@ class ConnectionManager():
             # Service threw an exception
             raise Exception(
                 "[!] An error occurred while checking for ProtonVPN "
-                + "reconnector service: {}".format(decoded_stdout))
+                + "reconnector service:\n"
+                + "Return code: {} \nException: {}".format(
+                    check_daemon.returncode, decoded_stdout
+                )
+            )
 
     def call_daemon_reconnector(self, command=["start", "stop"]):
         """Makes calls to daemon reconnector to either
