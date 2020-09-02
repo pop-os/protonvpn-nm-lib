@@ -86,6 +86,8 @@ class AutoVPN(object):
         self.delay = delay
         self.failed_attempts = 0
         self.bus = dbus.SystemBus()
+        # Auto connect at startup (Listen for StateChanged going forward)
+        # self.activate_vpn()
         self.get_network_manager().connect_to_signal(
             "StateChanged", self.onNetworkStateChanged
         )
@@ -112,12 +114,12 @@ class AutoVPN(object):
             if state == 5:
                 logger.info("VPN {} connected".format(self.vpn_name))
             else:
+                logger.info("[!] User disconnected manually")
                 try:
                     cm = ConnectionManager()
                     cm.remove_connection()
                 except ConnectionNotFound:
                     pass
-                logger.info("[!] User disconnected manually")
                 loop.quit()
             return
         # connection failed or unknown?
