@@ -11,6 +11,8 @@ from .enums import (
     ProtocolEnum
 )
 
+APP_VERSION = '0.0.1'
+
 PWD = os.path.dirname(os.path.abspath(__file__))
 
 TEMPLATES = os.path.join(PWD, "templates")

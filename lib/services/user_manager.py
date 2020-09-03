@@ -1,7 +1,8 @@
 import proton
 
 from lib import exceptions
-from lib.constants import DEFAULT_KEYRING_SERVICE, DEFAULT_KEYRING_USERNAME
+from lib.constants import (APP_VERSION, DEFAULT_KEYRING_SERVICE,
+                           DEFAULT_KEYRING_USERNAME)
 
 from .user_session_manager import UserSessionManager
 
@@ -36,7 +37,10 @@ class UserManager(UserSessionManager):
         elif not username.strip() or not password.strip():
             raise ValueError("Both username and password must be provided")
 
-        session = proton.Session("https://api.protonvpn.ch")
+        session = proton.Session(
+            api_url="https://api.protonvpn.ch",
+            appversion="LinuxVPN_" + APP_VERSION
+        )
 
         try:
             session.authenticate(username, password)
