@@ -30,17 +30,17 @@ official policies, either expressed or implied, of DOMEN KOZAR.
 """
 
 import logging
-import time
-from logging.handlers import RotatingFileHandler
 import os
+from logging.handlers import RotatingFileHandler
 
 import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
 
-from lib.exceptions import ConnectionNotFound
+from lib.constants import LOGFILE, PROTON_XDG_CACHE_HOME_LOGS
+from lib.exceptions import (ConnectionNotFound, StartConnectionFinishError,
+                            StopConnectionFinishError)
 from lib.services.connection_manager import ConnectionManager
-from lib.constants import PROTON_XDG_CACHE_HOME_LOGS, LOGFILE
 
 if not os.path.isdir(PROTON_XDG_CACHE_HOME_LOGS):
     os.mkdir(PROTON_XDG_CACHE_HOME_LOGS)
@@ -68,12 +68,13 @@ file_handler.setFormatter(FORMATTER)
 logger.addHandler(file_handler)
 
 
-class AutoVPN(object):
+class ProtonVPNReconnector(object):
     """Reconnects to VPN if disconnected not by user
     or when connecting to a new network.
 
     Params:
-        vpn_name (string): Name of VPN connection that will be used for autovpn
+        vpn_name (string): Name of VPN connection that will be used
+        for ProtonVPNReconnector
         max_attempts (int): Maximum number of attempts ofreconnection VPN
         session on failures
         param delay (int): Miliseconds to wait before reconnecting VPN
@@ -87,28 +88,36 @@ class AutoVPN(object):
         self.failed_attempts = 0
         self.bus = dbus.SystemBus()
         # Auto connect at startup (Listen for StateChanged going forward)
-        # self.activate_vpn()
+        self.vpn_monitor()
         self.get_network_manager().connect_to_signal(
-            "StateChanged", self.onNetworkStateChanged
+            "StateChanged", self.on_network_state_changed
         )
         logger.info(
-            "Maintaining connection for {}, ".format(vpn_name)
-            + "reattempting up to {} times with {} ms between retries".format(
+            "____Monitoring connection "
+            + "for {}, ".format(vpn_name)
+            + "reattempting up to {} times with {} ".format(
                 max_attempts, delay
             )
+            + "ms between retries____\n\n"
         )
 
-    def onNetworkStateChanged(self, state):
+    def on_network_state_changed(self, state):
         """Network status handler and VPN activator."""
         logger.debug("Network state changed: {}".format(state))
         if state == 70:
-            self.activate_vpn()
+            self.vpn_monitor()
 
-    def onVpnStateChanged(self, state, reason):
+    def on_vpn_state_changed(self, state, reason):
         """VPN status handler and reconnector."""
         # vpn connected or user disconnected manually?
         # reason: enum NMActiveConnectionStateReason
         # state: enum NMVpnConnectionState
+        logger.info(
+            "State(NMVpnConnectionState): {} - ".format(state)
+            + "Reason(NMActiveConnectionStateReason): {}".format(
+                reason
+            )
+        )
         if state == 5 or (state == 7 and reason == 2):
             self.failed_attempts = 0
             if state == 5:
@@ -118,9 +127,16 @@ class AutoVPN(object):
                 try:
                     cm = ConnectionManager()
                     cm.remove_connection()
-                except ConnectionNotFound:
-                    pass
-                loop.quit()
+                except (
+                    ConnectionNotFound, StopConnectionFinishError,
+                    StartConnectionFinishError
+                ) as e:
+                    logger.info(
+                        "Unable to remove connection via daemon."
+                        + "Exception: {}".format(e)
+                    )
+                finally:
+                    loop.quit()
             return
         # connection failed or unknown?
         elif state in [6, 7]:
@@ -132,7 +148,7 @@ class AutoVPN(object):
             ):
                 logger.info("[!] Connection failed, attempting to reconnect")
                 self.failed_attempts += 1
-                GLib.timeout_add(self.delay, self.activate_vpn)
+                GLib.timeout_add(self.delay, self.vpn_monitor)
             else:
                 logger.info(
                     "[!] Connection failed, exceeded {} max attempts.".format(
@@ -149,7 +165,7 @@ class AutoVPN(object):
         )
         return dbus.Interface(proxy, "org.freedesktop.NetworkManager")
 
-    def get_vpn_interface(self, virtual_device_name):
+    def get_vpn_interface(self, virtual_device_name, return_properties=False):
         """Gets VPN connection interface with the specified virtual device name.
 
         Args:
@@ -160,22 +176,11 @@ class AutoVPN(object):
         logger.debug(
             "Searching after {} VPN DBUS interface", virtual_device_name
         )
-        proxy = self.bus.get_object(
-            "org.freedesktop.NetworkManager",
-            "/org/freedesktop/NetworkManager/Settings"
-        )
-        iface = dbus.Interface(
-            proxy, "org.freedesktop.NetworkManager.Settings"
-        )
-        connections = iface.ListConnections()
+        connections = self.get_all_conns()
         for connection in connections:
-            proxy = self.bus.get_object(
-                "org.freedesktop.NetworkManager", connection
+            all_settings, iface = self.get_all_conn_settings(
+                connection, return_iface=True
             )
-            iface = dbus.Interface(
-                proxy, "org.freedesktop.NetworkManager.Settings.Connection"
-            )
-            all_settings = iface.GetSettings()
             # all_settings[
             #   connection dbus.Dictionary
             #   vpn dbus.Dictionary
@@ -186,11 +191,14 @@ class AutoVPN(object):
             if (
                 all_settings["connection"]["type"] == "vpn"
             ) and (
-                all_settings["vpn"]["data"]["dev"] == "proton0"
+                all_settings["vpn"]["data"]["dev"] == virtual_device_name
             ):
-                logger.debug("Found interface for virtual device '{}'.".format(
-                    virtual_device_name
-                ))
+                logger.debug(
+                    "Detected interface for virtual device "
+                    + "'{}'.".format(virtual_device_name)
+                )
+                if return_properties:
+                    return all_settings
                 return iface
 
         logger.error(
@@ -208,38 +216,23 @@ class AutoVPN(object):
             dbus.ObjectPath to active connection with default route(s).
         """
         logger.debug("Getting active network connection")
-        proxy = self.bus.get_object(
-            "org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager"
-        )
-        iface = dbus.Interface(proxy, "org.freedesktop.DBus.Properties")
-        active_connections = iface.Get(
-            "org.freedesktop.NetworkManager", "ActiveConnections"
-        )
+        active_connections = self.get_all_active_conns()
         if len(active_connections) == 0:
-            logger.info("No active connection were found")
+            logger.info("No active connection were found.")
             return None
 
         for active_conn in active_connections:
-            proxy = self.bus.get_object(
-                "org.freedesktop.NetworkManager", active_conn
-            )
-            iface = dbus.Interface(
-                proxy, "org.freedesktop.DBus.Properties"
-            )
-
-            active_conn_props = iface.GetAll(
-                "org.freedesktop.NetworkManager.Connection.Active"
-            )
+            active_conn_props = self.get_active_conn_props(active_conn)
             if (
                 active_conn_props["Default"]
             ) or (
                 active_conn_props["Default"] and active_conn_props["Default6"]
             ):
                 logger.info(
-                    "Found ({}) active ".format(
+                    "Detected ({}) active ".format(
                         active_conn_props["Id"]
                     )
-                    + "connection that has default route(s)"
+                    + "connection that has default route(s) "
                     + "IPv4: {} / IPv6: {}".format(
                         active_conn_props["Default"],
                         active_conn_props["Default6"]
@@ -247,47 +240,124 @@ class AutoVPN(object):
                 )
                 return active_conn
 
-    def activate_vpn(self):
-        """VPN activator."""
-        logger.info("Activating {} VPN connection".format(self.vpn_name))
-        vpn_con = self.get_vpn_interface(self.vpn_name)
+    def get_all_conn_settings(self, active_conn, return_iface=False):
+        proxy = self.bus.get_object(
+            "org.freedesktop.NetworkManager", active_conn
+        )
+        iface = dbus.Interface(
+            proxy, "org.freedesktop.NetworkManager.Settings.Connection"
+        )
+        if return_iface:
+            return (iface.GetSettings(), iface)
+
+        return iface.GetSettings()
+
+    def get_active_conn_props(self, active_conn, return_iface=False):
+        proxy = self.bus.get_object(
+            "org.freedesktop.NetworkManager", active_conn
+        )
+        iface = dbus.Interface(
+            proxy, "org.freedesktop.DBus.Properties"
+        )
+        if return_iface:
+            return (
+                iface.GetAll(
+                    "org.freedesktop.NetworkManager.Connection.Active"
+                ),
+                iface
+            )
+        return iface.GetAll(
+            "org.freedesktop.NetworkManager.Connection.Active"
+        )
+
+    def get_all_conns(self):
+        """Get all existing connections
+
+        Returns:
+            list: contains path to connection(object) settings
+        """
+        proxy = self.bus.get_object(
+            "org.freedesktop.NetworkManager",
+            "/org/freedesktop/NetworkManager/Settings"
+        )
+        iface = dbus.Interface(
+            proxy, "org.freedesktop.NetworkManager.Settings"
+        )
+        return iface.ListConnections()
+
+    def get_all_active_conns(self):
+        """Get all active connections
+
+        Returns:
+            list: contains path to active connection(object)
+        """
+        proxy = self.bus.get_object(
+            "org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager"
+        )
+        iface = dbus.Interface(proxy, "org.freedesktop.DBus.Properties")
+
+        return iface.Get(
+            "org.freedesktop.NetworkManager", "ActiveConnections"
+        )
+
+    def vpn_monitor(self):
+        """VPN monitor."""
+        logger.info("Starting {} VPN monitor".format(self.vpn_name))
+        vpn_interface = self.get_vpn_interface(self.vpn_name)
         active_con = self.get_active_connection()
         if active_con is None:
             return
 
-        # activate vpn and watch for reconnects
-        if vpn_con and active_con:
+        if vpn_interface and active_con:
             try:
                 new_con = self.get_network_manager().ActivateConnection(
-                    vpn_con,
+                    vpn_interface,
                     dbus.ObjectPath("/"),
                     active_con,
                 )
-                proxy = self.bus.get_object(
-                    "org.freedesktop.NetworkManager", new_con
-                )
-                iface = dbus.Interface(
-                    proxy, "org.freedesktop.NetworkManager.VPN.Connection"
-                )
-                iface.connect_to_signal(
-                    "VpnStateChanged", self.onVpnStateChanged
-                )
+                self.vpn_signal_handler(new_con)
                 logger.info(
                     "VPN {} should soon be active".format(self.vpn_name)
                 )
             except dbus.exceptions.DBusException as e:
-                logger.info(
-                    "Dbus exception: {}".format(e)
-                )
-                # Ignore dbus connections
-                #   (in case VPN already active when this script runs)
-                # TODO: Do this handling better;
-                #   maybe check active/inactive status above
-                #   and bail if already active?
+                if "ConnectionAlreadyActive" in str(e):
+                    logger.info(
+                        "Detected active connection with virtual "
+                        + "device ({}) ".format(
+                            self.vpn_name
+                        )
+                        + "after ActivateConnection, "
+                        + "attaching signal handler."
+                    )
+                    vpn_interface = self.get_vpn_interface(self.vpn_name)
+                    self.vpn_signal_handler(vpn_interface, is_iface=True)
+                else:
+                    logger.error(
+                        "Dbus exception: {}".format(e)
+                    )
                 pass
+
+    def vpn_signal_handler(self, conn, is_iface=False):
+        iface = conn
+        if not is_iface:
+            proxy = self.bus.get_object(
+                "org.freedesktop.NetworkManager", conn
+            )
+            iface = dbus.Interface(
+                proxy, "org.freedesktop.NetworkManager.VPN.Connection"
+            )
+        try:
+            logger.info("Interface settings: {}".format(iface.GetSettings()))
+        except dbus.exceptions.DBusException:
+            logger.info("No GetSettings() for active connection {}".format(
+                iface.GetAll()["Id"])
+            )
+        iface.connect_to_signal(
+            "VpnStateChanged", self.on_vpn_state_changed
+        )
 
 
 DBusGMainLoop(set_as_default=True)
 loop = GLib.MainLoop()
-ins = AutoVPN("proton0", loop)
+ins = ProtonVPNReconnector("proton0", loop)
 loop.run()
