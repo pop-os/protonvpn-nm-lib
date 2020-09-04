@@ -73,15 +73,15 @@ class ProtonVPNReconnector(object):
     or when connecting to a new network.
 
     Params:
-        vpn_name (string): Name of VPN connection that will be used
+        virtual_device_name (string): Name of virtual device that will be used
         for ProtonVPNReconnector
         max_attempts (int): Maximum number of attempts ofreconnection VPN
         session on failures
         param delay (int): Miliseconds to wait before reconnecting VPN
 
     """
-    def __init__(self, vpn_name, loop, max_attempts=5, delay=5000):
-        self.vpn_name = vpn_name
+    def __init__(self, virtual_device_name, loop, max_attempts=5, delay=5000):
+        self.virtual_device_name = virtual_device_name
         self.loop = loop
         self.max_attempts = max_attempts
         self.delay = delay
@@ -94,7 +94,7 @@ class ProtonVPNReconnector(object):
         )
         logger.info(
             "____Monitoring connection "
-            + "for {}, ".format(vpn_name)
+            + "for {}, ".format(virtual_device_name)
             + "reattempting up to {} times with {} ".format(
                 max_attempts, delay
             )
@@ -108,11 +108,11 @@ class ProtonVPNReconnector(object):
             self.vpn_monitor()
 
     def on_vpn_state_changed(self, state, reason):
-        """VPN status handler and reconnector."""
+        """VPN status handler."""
         # vpn connected or user disconnected manually?
         # reason: enum NMActiveConnectionStateReason
         # state: enum NMVpnConnectionState
-        logger.info(
+        logger.debug(
             "State(NMVpnConnectionState): {} - ".format(state)
             + "Reason(NMActiveConnectionStateReason): {}".format(
                 reason
@@ -121,17 +121,22 @@ class ProtonVPNReconnector(object):
         if state == 5 or (state == 7 and reason == 2):
             self.failed_attempts = 0
             if state == 5:
-                logger.info("VPN {} connected".format(self.vpn_name))
+                logger.info(
+                    "ProtonVPN with virtual device '{}' is running.".format(
+                        self.virtual_device_name
+                    )
+                )
             else:
-                logger.info("[!] User disconnected manually")
+                logger.info("[!] User disconnected manually.")
                 try:
                     cm = ConnectionManager()
                     cm.remove_connection()
                 except (
-                    ConnectionNotFound, StopConnectionFinishError,
+                    ConnectionNotFound,
+                    StopConnectionFinishError,
                     StartConnectionFinishError
                 ) as e:
-                    logger.info(
+                    logger.error(
                         "Unable to remove connection via daemon."
                         + "Exception: {}".format(e)
                     )
@@ -146,11 +151,11 @@ class ProtonVPNReconnector(object):
             ) or (
                 self.failed_attempts < self.max_attempts
             ):
-                logger.info("[!] Connection failed, attempting to reconnect")
+                logger.info("[!] Connection failed, attempting to reconnect.")
                 self.failed_attempts += 1
                 GLib.timeout_add(self.delay, self.vpn_monitor)
             else:
-                logger.info(
+                logger.warning(
                     "[!] Connection failed, exceeded {} max attempts.".format(
                         self.max_attempts
                     )
@@ -173,8 +178,10 @@ class ProtonVPNReconnector(object):
         Returns:
             dbus.proxies.Interface
         """
-        logger.debug(
-            "Searching after {} VPN DBUS interface", virtual_device_name
+        logger.info(
+            "Searching for '{}' virtual device dbus interface.".format(
+                virtual_device_name
+            )
         )
         connections = self.get_all_conns()
         for connection in connections:
@@ -193,7 +200,7 @@ class ProtonVPNReconnector(object):
             ) and (
                 all_settings["vpn"]["data"]["dev"] == virtual_device_name
             ):
-                logger.debug(
+                logger.info(
                     "Detected interface for virtual device "
                     + "'{}'.".format(virtual_device_name)
                 )
@@ -217,12 +224,22 @@ class ProtonVPNReconnector(object):
         """
         logger.debug("Getting active network connection")
         active_connections = self.get_all_active_conns()
-        if len(active_connections) == 0:
-            logger.info("No active connection were found.")
-            return None
+        logger.debug(
+            "All active conns in get_active_connection: {}".format(
+                active_connections
+            )
+        )
 
         for active_conn in active_connections:
-            active_conn_props = self.get_active_conn_props(active_conn)
+            try:
+                active_conn_props = self.get_active_conn_props(active_conn)
+            except TypeError as e:
+                logger.error(
+                    "No active connections were found. "
+                    + "Exception: {}.".format(e)
+                )
+                return None
+
             if (
                 active_conn_props["Default"]
             ) or (
@@ -233,7 +250,7 @@ class ProtonVPNReconnector(object):
                         active_conn_props["Id"]
                     )
                     + "connection that has default route(s) "
-                    + "IPv4: {} / IPv6: {}".format(
+                    + "IPv4: {} / IPv6: {}.".format(
                         active_conn_props["Default"],
                         active_conn_props["Default6"]
                     )
@@ -283,7 +300,9 @@ class ProtonVPNReconnector(object):
         iface = dbus.Interface(
             proxy, "org.freedesktop.NetworkManager.Settings"
         )
-        return iface.ListConnections()
+        all_conns = iface.ListConnections()
+        for conn in all_conns:
+            yield conn
 
     def get_all_active_conns(self):
         """Get all active connections
@@ -296,46 +315,116 @@ class ProtonVPNReconnector(object):
         )
         iface = dbus.Interface(proxy, "org.freedesktop.DBus.Properties")
 
-        return iface.Get(
+        all_active_conns_list = iface.Get(
             "org.freedesktop.NetworkManager", "ActiveConnections"
+        )
+        for active_conn in all_active_conns_list:
+            yield active_conn
+
+    def is_protonvpn_being_prepared(self):
+        all_active_conns = self.get_all_active_conns()
+
+        protonvpn_conn_info = [False, None, None]
+        for active_conn in all_active_conns:
+            active_conn_props = self.get_active_conn_props(active_conn)
+            vpn_all_settings = self.get_all_conn_settings(
+                active_conn_props["Connection"]
+            )
+            if (
+                active_conn_props["Type"] == "vpn"
+            ) and (
+                vpn_all_settings["vpn"]["data"]["dev"]
+                == self.virtual_device_name
+            ):
+                protonvpn_conn_info[0] = True
+                protonvpn_conn_info[1] = active_conn_props["State"]
+                protonvpn_conn_info[2] = active_conn
+
+        logger.debug("ProtonVPN conn info: {}".format(protonvpn_conn_info))
+        return tuple(protonvpn_conn_info)
+
+    def check_active_vpn_conn(self, active_conn):
+        """
+        """
+        active_conn_all_settings = [False, None]
+
+        try:
+            active_conn_props = self.get_active_conn_props(active_conn)
+        except dbus.exceptions.DBusException as e:
+            logger.error(
+                "Error occured while getting properties from active "
+                + "connection: '{}'. Exception: {}.".format(active_conn, e)
+            )
+        else:
+            if (
+                active_conn_props["Type"] == "vpn"
+            ) and (
+                # NMActiveConnectionState
+                # State 1 = a network connection is being prepared
+                # State 2 = there is a connection to the network
+                active_conn_props["State"] == 2
+            ):
+                active_conn_all_settings[0] = True
+                active_conn_all_settings[1] = self.get_all_conn_settings(
+                    active_conn_props["Connection"]
+                )
+        return active_conn_all_settings
+
+    def setup_new_protonvpn_conn(self, active_con, vpn_interface):
+        new_con = self.get_network_manager().ActivateConnection(
+            vpn_interface,
+            dbus.ObjectPath("/"),
+            active_con,
+        )
+        self.vpn_signal_handler(new_con)
+        logger.info(
+            "Starting new ProtonVPN connection with '{}'.".format(
+                self.virtual_device_name
+            )
         )
 
     def vpn_monitor(self):
         """VPN monitor."""
-        logger.info("Starting {} VPN monitor".format(self.vpn_name))
-        vpn_interface = self.get_vpn_interface(self.vpn_name)
+        logger.info(
+            "Starting monitor for '{}' virtual device.".format(
+                self.virtual_device_name
+            )
+        )
+        vpn_interface = self.get_vpn_interface(self.virtual_device_name)
         active_con = self.get_active_connection()
-        if active_con is None:
+
+        if active_con is None or vpn_interface is None:
             return
 
-        if vpn_interface and active_con:
-            try:
-                new_con = self.get_network_manager().ActivateConnection(
-                    vpn_interface,
-                    dbus.ObjectPath("/"),
-                    active_con,
-                )
-                self.vpn_signal_handler(new_con)
-                logger.info(
-                    "VPN {} should soon be active".format(self.vpn_name)
-                )
-            except dbus.exceptions.DBusException as e:
-                if "ConnectionAlreadyActive" in str(e):
-                    logger.info(
-                        "Detected active connection with virtual "
-                        + "device ({}) ".format(
-                            self.vpn_name
-                        )
-                        + "after ActivateConnection, "
-                        + "attaching signal handler."
-                    )
-                    vpn_interface = self.get_vpn_interface(self.vpn_name)
-                    self.vpn_signal_handler(vpn_interface, is_iface=True)
-                else:
+        is_active_conn_vpn, all_vpn_settings = self.check_active_vpn_conn(
+            active_con
+        )
+
+        # Check if primary active connection was started by ProtonVPN client
+        if (
+            is_active_conn_vpn
+        ) and (
+            all_vpn_settings["vpn"]["data"]["dev"]
+            == self.virtual_device_name
+        ):
+            self.vpn_signal_handler(active_con)
+        else:
+            is_protonvpn, state, conn = self.is_protonvpn_being_prepared()
+            # Check if connection is being prepared
+            if is_protonvpn and state == 1:
+                self.vpn_signal_handler(conn)
+            else:
+                try:
+                    self.setup_new_protonvpn_conn(active_con, vpn_interface)
+                except dbus.exceptions.DBusException as e:
                     logger.error(
-                        "Dbus exception: {}".format(e)
+                        "Unable to start VPN connection: {}.".format(e)
                     )
-                pass
+                else:
+                    logger.info(
+                        "New ProtonVPN connection has been started "
+                        + "from service."
+                    )
 
     def vpn_signal_handler(self, conn, is_iface=False):
         iface = conn
@@ -346,15 +435,21 @@ class ProtonVPNReconnector(object):
             iface = dbus.Interface(
                 proxy, "org.freedesktop.NetworkManager.VPN.Connection"
             )
+
         try:
-            logger.info("Interface settings: {}".format(iface.GetSettings()))
-        except dbus.exceptions.DBusException:
-            logger.info("No GetSettings() for active connection {}".format(
-                iface.GetAll()["Id"])
+            active_conn_props = self.get_active_conn_props(conn)
+            logger.info("Adding listener to active {} connection at {}".format(
+                active_conn_props["Id"],
+                conn)
             )
-        iface.connect_to_signal(
-            "VpnStateChanged", self.on_vpn_state_changed
-        )
+        except dbus.exceptions.DBusException:
+            logger.info(
+                "{} is not an active connection.".format(conn)
+            )
+        else:
+            iface.connect_to_signal(
+                "VpnStateChanged", self.on_vpn_state_changed
+            )
 
 
 DBusGMainLoop(set_as_default=True)
