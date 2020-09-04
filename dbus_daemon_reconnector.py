@@ -37,10 +37,14 @@ import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
 
-from lib.constants import LOGFILE, PROTON_XDG_CACHE_HOME_LOGS
+from lib.constants import (LOGFILE, PROTON_XDG_CACHE_HOME,
+                           PROTON_XDG_CACHE_HOME_LOGS)
 from lib.exceptions import (ConnectionNotFound, StartConnectionFinishError,
                             StopConnectionFinishError)
 from lib.services.connection_manager import ConnectionManager
+
+if not os.path.isdir(PROTON_XDG_CACHE_HOME):
+    os.mkdir(PROTON_XDG_CACHE_HOME)
 
 if not os.path.isdir(PROTON_XDG_CACHE_HOME_LOGS):
     os.mkdir(PROTON_XDG_CACHE_HOME_LOGS)
