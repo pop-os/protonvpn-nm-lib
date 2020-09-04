@@ -102,16 +102,23 @@ class ProtonVPNReconnector(object):
         )
 
     def on_network_state_changed(self, state):
-        """Network status handler and VPN activator."""
+        """Network status signal handler.
+
+        Args:
+            state (int): connection state (NMState)
+        """
         logger.debug("Network state changed: {}".format(state))
         if state == 70:
             self.vpn_monitor()
 
     def on_vpn_state_changed(self, state, reason):
-        """VPN status handler."""
-        # vpn connected or user disconnected manually?
-        # reason: enum NMActiveConnectionStateReason
-        # state: enum NMVpnConnectionState
+        """VPN status signal handler.
+
+        Args:
+            reason (int): vpn connection state reason
+                                    (NMActiveConnectionStateReason)
+            state (int): vpn connection state (NMVpnConnectionState)
+        """
         logger.debug(
             "State(NMVpnConnectionState): {} - ".format(state)
             + "Reason(NMActiveConnectionStateReason): {}".format(
@@ -163,7 +170,11 @@ class ProtonVPNReconnector(object):
                 self.failed_attempts = 0
 
     def get_network_manager(self):
-        """Gets the network manager dbus interface."""
+        """Get network manager dbus interface.
+
+        Returns:
+            dbus.Interface(dbus.Proxy): to ProtonVPN connection
+        """
         logger.debug("Getting NetworkManager DBUS interface")
         proxy = self.bus.get_object(
             "org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager"
@@ -171,12 +182,12 @@ class ProtonVPNReconnector(object):
         return dbus.Interface(proxy, "org.freedesktop.NetworkManager")
 
     def get_vpn_interface(self, virtual_device_name, return_properties=False):
-        """Gets VPN connection interface with the specified virtual device name.
+        """Get VPN connection interface based on virtual device name.
 
         Args:
-            virtual_device_name (string): virtual device name (proton0, etc)
+            virtual_device_name (string): virtual device name (ie: proton0)
         Returns:
-            dbus.proxies.Interface
+            dbus.Interface(dbus.Proxy): to ProtonVPN connection
         """
         logger.info(
             "Searching for '{}' virtual device dbus interface.".format(
@@ -216,11 +227,11 @@ class ProtonVPNReconnector(object):
         return None
 
     def get_active_connection(self):
-        """Gets the dbus interface of an active
-        network connection with a default route(s).
+        """Get interface of active
+        network connection with default route(s).
 
         Returns:
-            dbus.ObjectPath to active connection with default route(s).
+            string: active connection path that has default route(s)
         """
         logger.debug("Getting active network connection")
         active_connections = self.get_all_active_conns()
@@ -257,9 +268,20 @@ class ProtonVPNReconnector(object):
                 )
                 return active_conn
 
-    def get_all_conn_settings(self, active_conn, return_iface=False):
+    def get_all_conn_settings(self, conn, return_iface=False):
+        """Get all settings of a connection.
+
+        Args:
+            conn (string): connection path
+            return_iface (bool): also return the interface
+        Returns:
+            dict | tuple:
+                dict: only properties are returned
+                tuple: dict with properties is returned
+                    and also the interface to the connection
+        """
         proxy = self.bus.get_object(
-            "org.freedesktop.NetworkManager", active_conn
+            "org.freedesktop.NetworkManager", conn
         )
         iface = dbus.Interface(
             proxy, "org.freedesktop.NetworkManager.Settings.Connection"
@@ -269,29 +291,29 @@ class ProtonVPNReconnector(object):
 
         return iface.GetSettings()
 
-    def get_active_conn_props(self, active_conn, return_iface=False):
+    def get_active_conn_props(self, active_conn):
+        """Get active connection properties.
+
+        Args:
+            active_conn (string): active connection path
+        Returns:
+            dict: properties of an active connection
+        """
         proxy = self.bus.get_object(
             "org.freedesktop.NetworkManager", active_conn
         )
         iface = dbus.Interface(
             proxy, "org.freedesktop.DBus.Properties"
         )
-        if return_iface:
-            return (
-                iface.GetAll(
-                    "org.freedesktop.NetworkManager.Connection.Active"
-                ),
-                iface
-            )
         return iface.GetAll(
             "org.freedesktop.NetworkManager.Connection.Active"
         )
 
     def get_all_conns(self):
-        """Get all existing connections
+        """Get all existing connections.
 
         Returns:
-            list: contains path to connection(object) settings
+            list(string): path to existing connections
         """
         proxy = self.bus.get_object(
             "org.freedesktop.NetworkManager",
@@ -305,10 +327,10 @@ class ProtonVPNReconnector(object):
             yield conn
 
     def get_all_active_conns(self):
-        """Get all active connections
+        """Get all active connections.
 
         Returns:
-            list: contains path to active connection(object)
+            list(string): path to active connections
         """
         proxy = self.bus.get_object(
             "org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager"
@@ -322,6 +344,13 @@ class ProtonVPNReconnector(object):
             yield active_conn
 
     def is_protonvpn_being_prepared(self):
+        """Checks ProtonVPN connection status.
+
+        Returns:
+            [0]: bool
+            [1]: None | int (NMActiveConnectionState)
+            [2]: None | string (active connection path)
+        """
         all_active_conns = self.get_all_active_conns()
 
         protonvpn_conn_info = [False, None, None]
@@ -344,7 +373,13 @@ class ProtonVPNReconnector(object):
         return tuple(protonvpn_conn_info)
 
     def check_active_vpn_conn(self, active_conn):
-        """
+        """Check if active connection is VPN.
+
+        Args:
+            active_conn (string): active connection path
+        Returns:
+            [0]: bool
+            [1]: None | dict with all connection settings
         """
         active_conn_all_settings = [False, None]
 
@@ -371,6 +406,12 @@ class ProtonVPNReconnector(object):
         return active_conn_all_settings
 
     def setup_new_protonvpn_conn(self, active_con, vpn_interface):
+        """Setup and start new ProtonVPN connection.
+
+        Args:
+            active_con (string): path to active connection
+            vpn_interface (dbus.Proxy): proxy interface to vpn connection
+        """
         new_con = self.get_network_manager().ActivateConnection(
             vpn_interface,
             dbus.ObjectPath("/"),
@@ -384,7 +425,7 @@ class ProtonVPNReconnector(object):
         )
 
     def vpn_monitor(self):
-        """VPN monitor."""
+        """Monitor and activate ProtonVPN connections."""
         logger.info(
             "Starting monitor for '{}' virtual device.".format(
                 self.virtual_device_name
@@ -426,15 +467,18 @@ class ProtonVPNReconnector(object):
                         + "from service."
                     )
 
-    def vpn_signal_handler(self, conn, is_iface=False):
-        iface = conn
-        if not is_iface:
-            proxy = self.bus.get_object(
-                "org.freedesktop.NetworkManager", conn
-            )
-            iface = dbus.Interface(
-                proxy, "org.freedesktop.NetworkManager.VPN.Connection"
-            )
+    def vpn_signal_handler(self, conn):
+        """Add signal handler to ProtonVPN connection.
+
+        Args:
+            vpn_conn_path (string): path to ProtonVPN connection
+        """
+        proxy = self.bus.get_object(
+            "org.freedesktop.NetworkManager", conn
+        )
+        iface = dbus.Interface(
+            proxy, "org.freedesktop.NetworkManager.VPN.Connection"
+        )
 
         try:
             active_conn_props = self.get_active_conn_props(conn)
