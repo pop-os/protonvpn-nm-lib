@@ -181,10 +181,15 @@ class UserSessionManager:
             backend_str = str(k)
 
             backend_string_object = backend_str.split()[0]
-            backend_name = backend_string_object.split(".")[2]
-            backend_priority = search_in_str(
-                r"\(\w+:\W(\d+\.?\d*)\)", backend_str
-            )
+
+            try:
+                backend_name = backend_string_object.split(".")[2]
+            except IndexError:
+                backend_priority = None
+            else:
+                backend_priority = search_in_str(
+                    r"\(\w+:\W(\d+\.?\d*)\)", backend_str
+                )
 
             if backend_priority is not None:
                 try:
