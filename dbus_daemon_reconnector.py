@@ -120,8 +120,36 @@ class ProtonVPNReconnector(object):
 
         Args:
             reason (int): vpn connection state reason
-                                    (NMActiveConnectionStateReason)
-            state (int): vpn connection state (NMVpnConnectionState)
+                (NMActiveConnectionStateReason)
+                0:  The reason for the active connection state change
+                        is unknown.
+                1:  No reason was given for the active connection state change.
+                2:  The active connection changed state because the user
+                        disconnected it.
+                3:  The active connection changed state because the device it
+                        was using was disconnected.
+                4:  The service providing the VPN connection was stopped.
+                5:  The IP config of the active connection was invalid.
+                6:  The connection attempt to the VPN service timed out.
+                7:  A timeout occurred while starting the service providing
+                        the VPN connection.
+                8:  Starting the service providing the VPN connection failed.
+                9:  Necessary secrets for the connection were not provided.
+                10: Authentication to the server failed.
+                11: The connection was deleted from settings.
+                12: Master connection of this connection failed to activate.
+                13: Could not create the software device link.
+                14: The device this connection depended on disappeared.
+            state (int): vpn connection state
+                (NMVpnConnectionState)
+                0: The state of the VPN connection is unknown.
+                1: The VPN connection is preparing to connect.
+                2: The VPN connection needs authorization credentials.
+                3: The VPN connection is being established.
+                4: The VPN connection is getting an IP address.
+                5: The VPN connection is active.
+                6: The VPN connection failed.
+                7: The VPN connection is disconnected.
         """
         logger.debug(
             "State(NMVpnConnectionState): {} - ".format(state)
@@ -129,34 +157,33 @@ class ProtonVPNReconnector(object):
                 reason
             )
         )
-        if state == 5 or (state == 7 and reason == 2):
+        if state == 5:
             self.failed_attempts = 0
-            if state == 5:
-                logger.info(
-                    "ProtonVPN with virtual device '{}' is running.".format(
-                        self.virtual_device_name
-                    )
+            logger.info(
+                "ProtonVPN with virtual device '{}' is running.".format(
+                    self.virtual_device_name
                 )
-            else:
-                logger.info("[!] User disconnected manually.")
-                try:
-                    cm = ConnectionManager()
-                    cm.remove_connection()
-                except (
-                    ConnectionNotFound,
-                    StopConnectionFinishError,
-                    StartConnectionFinishError
-                ) as e:
-                    logger.error(
-                        "Unable to remove connection via daemon."
-                        + "Exception: {}".format(e)
-                    )
-                finally:
-                    loop.quit()
+            )
+        elif state == 7 and reason == 2:
+            self.failed_attempts = 0
+            logger.info("[!] User disconnected manually.")
+            try:
+                cm = ConnectionManager()
+                cm.remove_connection()
+            except (
+                ConnectionNotFound,
+                StopConnectionFinishError,
+                StartConnectionFinishError
+            ) as e:
+                logger.error(
+                    "Unable to remove connection via daemon."
+                    + "Exception: {}".format(e)
+                )
+            finally:
+                loop.quit()
             return
-        # connection failed or unknown?
         elif state in [6, 7]:
-            # reconnect if we haven't reached max_attempts
+            # reconnect if haven't reached max_attempts
             if (
                 not self.max_attempts
             ) or (
