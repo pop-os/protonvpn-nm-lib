@@ -39,9 +39,6 @@ from gi.repository import GLib
 
 from lib.constants import (LOGFILE, PROTON_XDG_CACHE_HOME,
                            PROTON_XDG_CACHE_HOME_LOGS)
-from lib.exceptions import (ConnectionNotFound, StartConnectionFinishError,
-                            StopConnectionFinishError)
-from lib.services.connection_manager import ConnectionManager
 
 if not os.path.isdir(PROTON_XDG_CACHE_HOME):
     os.mkdir(PROTON_XDG_CACHE_HOME)
@@ -165,23 +162,23 @@ class ProtonVPNReconnector(object):
                 )
             )
         elif state == 7 and reason == 2:
-            self.failed_attempts = 0
-            logger.info("[!] User disconnected manually.")
+            logger.info("ProtonVPN connection was manually disconnected.")
+            vpn_iface, settings = self.get_vpn_interface(
+                self.virtual_device_name, True
+            )
             try:
-                cm = ConnectionManager()
-                cm.remove_connection()
-            except (
-                ConnectionNotFound,
-                StopConnectionFinishError,
-                StartConnectionFinishError
-            ) as e:
+                vpn_iface.Delete()
+            except dbus.exceptions.DBusException as e:
                 logger.error(
-                    "Unable to remove connection via daemon."
+                    "[!] Unable to remove connection."
                     + "Exception: {}".format(e)
                 )
+            else:
+                logger.info("Manually removed ProtonVPN connection.")
+                self.failed_attempts = 0
             finally:
                 loop.quit()
-            return
+
         elif state in [6, 7]:
             # reconnect if haven't reached max_attempts
             if (
@@ -247,7 +244,7 @@ class ProtonVPNReconnector(object):
                     + "'{}'.".format(virtual_device_name)
                 )
                 if return_properties:
-                    return all_settings
+                    return (iface, all_settings)
                 return iface
 
         logger.error(
