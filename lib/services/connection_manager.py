@@ -258,16 +258,11 @@ class ConnectionManager():
             except Exception as e:
                 print(e)
             else:
-                if callback_type == "start" and not daemon_status:
-                    self.call_daemon_reconnector("start")
-                elif (
-                    callback_type == "remove"
-                ) and (
-                    daemon_status
-                ) and (
-                    not os.environ.get(ENV_CI_NAME)
-                ):
-                    self.call_daemon_reconnector("stop")
+                if not os.environ.get(ENV_CI_NAME):
+                    if callback_type == "start" and not daemon_status:
+                        self.call_daemon_reconnector("start")
+                    elif callback_type == "remove" and daemon_status:
+                        self.call_daemon_reconnector("stop")
 
         main_loop.quit()
 
@@ -280,7 +275,7 @@ class ConnectionManager():
         """
         check_daemon = subprocess.run(
             ["systemctl", "--user", "status", "protonvpn_reconnect"],
-            stdout=subprocess.PIPE
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         decoded_stdout = check_daemon.stdout.decode()
         if (
@@ -303,9 +298,10 @@ class ConnectionManager():
             # Service threw an exception
             raise Exception(
                 "[!] An error occurred while checking for ProtonVPN "
-                + "reconnector service:\n"
-                + "Return code: {} \nException: {}".format(
-                    check_daemon.returncode, decoded_stdout
+                + "reconnector service: "
+                + "(Return code: {}; Exception: {} {})".format(
+                    check_daemon.returncode, decoded_stdout,
+                    check_daemon.stderr.decode().strip("\n")
                 )
             )
 
