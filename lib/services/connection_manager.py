@@ -276,7 +276,7 @@ class ConnectionManager():
             int: indicates the status of the daemon process
         """
         check_daemon = subprocess.run(
-            ["systemctl", "--user", "status", "protonvpn_reconnect"],
+            ["systemctl", "status", "protonvpn_reconnect"],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         decoded_stdout = check_daemon.stdout.decode()
@@ -315,7 +315,7 @@ class ConnectionManager():
             command (string): to either start or stop the process
         """
         call_daemon = subprocess.run(
-            ["systemctl", "--user", command, "protonvpn_reconnect"],
+            ["systemctl", command, "protonvpn_reconnect"],
             stdout=subprocess.PIPE
         )
         decoded_stdout = call_daemon.stdout.decode()
