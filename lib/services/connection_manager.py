@@ -222,7 +222,8 @@ class ConnectionManager():
             callback_type_dict = dict(
                 remove=dict(
                     finish_function=client.delete_finish,
-                    exception=exceptions.RemoveConnectionFinishError
+                    exception=exceptions.RemoveConnectionFinishError,
+                    msg="removed"
                 )
             )
         except AttributeError:
@@ -230,14 +231,17 @@ class ConnectionManager():
                 add=dict(
                     finish_function=client.add_connection_finish,
                     exception=exceptions.AddConnectionFinishError,
+                    msg="added"
                 ),
                 start=dict(
                     finish_function=client.activate_connection_finish,
                     exception=exceptions.StartConnectionFinishError,
+                    msg="started"
                 ),
                 stop=dict(
                     finish_function=client.deactivate_connection_finish,
                     exception=exceptions.StopConnectionFinishError,
+                    msg="stopped"
                 )
             )
 
@@ -245,7 +249,10 @@ class ConnectionManager():
             (callback_type_dict[callback_type]["finish_function"])(result)
             print(
                 "The connection profile "
-                + "\"{}\" has been {}ed".format(conn_name, callback_type)
+                + "\"{}\" has been {}.".format(
+                    conn_name,
+                    callback_type_dict[callback_type]["msg"]
+                )
             )
         except Exception as e:
             raise (callback_type_dict[callback_type]["exception"])(e)
@@ -264,6 +271,12 @@ class ConnectionManager():
         main_loop.quit()
 
     def daemon_manager(self, callback_type, daemon_status):
+        """Start/stop daemon reconnector.
+
+        Args:
+            callback_type (string): start, stop, remove
+            daemon_status (int): 1 or 0
+        """
         if callback_type == "start" and not daemon_status:
             self.call_daemon_reconnector("start")
         elif callback_type == "remove" and daemon_status:
