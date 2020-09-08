@@ -10,7 +10,6 @@ from lib import exceptions
 from lib.constants import ENV_CI_NAME, VIRTUAL_DEVICE_NAME
 from lib.services.plugin_manager import PluginManager
 from getpass import getuser
-from lib.services.plugin_manager import PluginManager
 
 
 class ConnectionManager():
@@ -258,15 +257,17 @@ class ConnectionManager():
             try:
                 daemon_status = self.check_daemon_reconnector_status()
             except Exception as e:
-                print(e)
+                raise Exception(e)
             else:
                 if not os.environ.get(ENV_CI_NAME):
-                    if callback_type == "start" and not daemon_status:
-                        self.call_daemon_reconnector("start")
-                    elif callback_type == "remove" and daemon_status:
-                        self.call_daemon_reconnector("stop")
-
+                    self.daemon_manager(callback_type, daemon_status)
         main_loop.quit()
+
+    def daemon_manager(self, callback_type, daemon_status):
+        if callback_type == "start" and not daemon_status:
+            self.call_daemon_reconnector("start")
+        elif callback_type == "remove" and daemon_status:
+            self.call_daemon_reconnector("stop")
 
     def check_daemon_reconnector_status(self):
         """Checks the status of the daemon reconnector and starts the process
