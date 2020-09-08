@@ -49,7 +49,7 @@ if not os.path.isdir(PROTON_XDG_CACHE_HOME_LOGS):
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
-    level=logging.info,
+    level=logging.INFO,
     filemode="a",
 )
 
