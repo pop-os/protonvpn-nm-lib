@@ -7,6 +7,7 @@ from gi.repository import NM, GLib
 
 from lib import exceptions
 from lib.constants import ENV_CI_NAME, VIRTUAL_DEVICE_NAME
+from getpass import getuser
 
 
 class ConnectionManager():
@@ -65,17 +66,10 @@ class ConnectionManager():
         connection = self.plugin_manager.import_connection_from_file(
             filename
         )
-
-        # returns NM.SettingVpn if the connection contains one, otherwise None
-        # https://lazka.github.io/pgi-docs/NM-1.0/classes/SettingVpn.html
         vpn_settings = connection.get_setting_vpn()
 
-        try:
-            vpn_settings.add_data_item("username", username)
-            vpn_settings.add_secret("password", password)
-        except Exception as e:
-            raise exceptions.AddConnectionCredentialsError(e)
-
+        self.make_vpn_user_owned(connection)
+        self.add_vpn_credentials(vpn_settings, username, password)
         self.set_virtual_device_type(vpn_settings, filename)
 
         try:
@@ -98,6 +92,25 @@ class ConnectionManager():
         )
 
         main_loop.run()
+
+    def make_vpn_user_owned(self, connection):
+        # returns NM.SettingConnection
+        # https://lazka.github.io/pgi-docs/NM-1.0/classes/SettingConnection.html#NM.SettingConnection
+        connection_settings = connection.get_setting_connection()
+        connection_settings.add_permission(
+            "user",
+            getuser(),
+            None
+        )
+
+    def add_vpn_credentials(self, vpn_settings, username, password):
+        # returns NM.SettingVpn if the connection contains one, otherwise None
+        # https://lazka.github.io/pgi-docs/NM-1.0/classes/SettingVpn.html
+        try:
+            vpn_settings.add_data_item("username", username)
+            vpn_settings.add_secret("password", password)
+        except Exception as e:
+            raise exceptions.AddConnectionCredentialsError(e)
 
     def start_connection(self):
         """Start ProtonVPN connection."""
