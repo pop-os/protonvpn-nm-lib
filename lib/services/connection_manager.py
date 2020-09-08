@@ -8,6 +8,7 @@ from gi.repository import NM, GLib
 
 from lib import exceptions
 from lib.constants import ENV_CI_NAME, VIRTUAL_DEVICE_NAME
+from lib.services.plugin_manager import PluginManager
 from getpass import getuser
 
 
