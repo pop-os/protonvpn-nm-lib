@@ -29,45 +29,13 @@ are those of the authors and should not be interpreted as representing
 official policies, either expressed or implied, of DOMEN KOZAR.
 """
 
-import logging
-import os
-from logging.handlers import RotatingFileHandler
 import getpass
 
 import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
 
-from lib.constants import (LOGFILE, PROTON_XDG_CACHE_HOME,
-                           PROTON_XDG_CACHE_HOME_LOGS)
-
-if not os.path.isdir(PROTON_XDG_CACHE_HOME):
-    os.mkdir(PROTON_XDG_CACHE_HOME)
-
-if not os.path.isdir(PROTON_XDG_CACHE_HOME_LOGS):
-    os.mkdir(PROTON_XDG_CACHE_HOME_LOGS)
-
-logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.INFO,
-    filemode="a",
-)
-
-FORMATTER = logging.Formatter(
-    "%(asctime)s — %(name)s — %(levelname)s — %(funcName)s:%(lineno)d — %(message)s" # noqa
-)
-
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(FORMATTER)
-
-
-file_handler = RotatingFileHandler(
-    LOGFILE,
-    maxBytes=3145728,
-    backupCount=1
-)
-file_handler.setFormatter(FORMATTER)
-logger.addHandler(file_handler)
+from lib.logger import logger
 
 
 class ProtonVPNReconnector(object):
