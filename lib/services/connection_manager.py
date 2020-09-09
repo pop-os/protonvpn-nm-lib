@@ -1,5 +1,6 @@
 
 import os
+import subprocess
 
 import gi
 gi.require_version("NM", "1.0")
@@ -7,16 +8,15 @@ from gi.repository import NM, GLib
 
 from lib import exceptions
 from lib.constants import ENV_CI_NAME, VIRTUAL_DEVICE_NAME
+from lib.services.plugin_manager import PluginManager
 from getpass import getuser
 
 
 class ConnectionManager():
     def __init__(
         self,
-        plugin_manager,
         virtual_device_name=VIRTUAL_DEVICE_NAME
     ):
-        self.plugin_manager = plugin_manager
         self.virtual_device_name = virtual_device_name
 
     def add_connection(self, filename, username, password, delete_cached_cert):
@@ -49,6 +49,7 @@ class ConnectionManager():
         elif not username.strip() or not password.strip():
             raise ValueError("Both username and password must be provided")
 
+        # Check that method to delete cached certificates is implemented
         try:
             delete_cached_cert("test")
         except FileNotFoundError:
@@ -63,7 +64,7 @@ class ConnectionManager():
         client = NM.Client.new(None)
         main_loop = GLib.MainLoop()
 
-        connection = self.plugin_manager.import_connection_from_file(
+        connection = PluginManager.import_connection_from_file(
             filename
         )
         vpn_settings = connection.get_setting_vpn()
@@ -221,7 +222,8 @@ class ConnectionManager():
             callback_type_dict = dict(
                 remove=dict(
                     finish_function=client.delete_finish,
-                    exception=exceptions.RemoveConnectionFinishError
+                    exception=exceptions.RemoveConnectionFinishError,
+                    msg="removed"
                 )
             )
         except AttributeError:
@@ -229,14 +231,17 @@ class ConnectionManager():
                 add=dict(
                     finish_function=client.add_connection_finish,
                     exception=exceptions.AddConnectionFinishError,
+                    msg="added"
                 ),
                 start=dict(
                     finish_function=client.activate_connection_finish,
                     exception=exceptions.StartConnectionFinishError,
+                    msg="started"
                 ),
                 stop=dict(
                     finish_function=client.deactivate_connection_finish,
                     exception=exceptions.StopConnectionFinishError,
+                    msg="stopped"
                 )
             )
 
@@ -244,16 +249,95 @@ class ConnectionManager():
             (callback_type_dict[callback_type]["finish_function"])(result)
             print(
                 "The connection profile "
-                + "\"{}\" has been {}ed".format(conn_name, callback_type)
+                + "\"{}\" has been {}.".format(
+                    conn_name,
+                    callback_type_dict[callback_type]["msg"]
+                )
             )
         except Exception as e:
             raise (callback_type_dict[callback_type]["exception"])(e)
 
-        if not os.environ.get(ENV_CI_NAME):
-            if callback_type == "add":
+        if callback_type == "add":
+            if not os.environ.get(ENV_CI_NAME):
                 delete_cached_cert(filename)
-
+        elif not callback_type == "stop":
+            try:
+                daemon_status = self.check_daemon_reconnector_status()
+            except Exception as e:
+                print(e)
+            else:
+                if not os.environ.get(ENV_CI_NAME):
+                    self.daemon_manager(callback_type, daemon_status)
         main_loop.quit()
+
+    def daemon_manager(self, callback_type, daemon_status):
+        """Start/stop daemon reconnector.
+
+        Args:
+            callback_type (string): start, stop, remove
+            daemon_status (int): 1 or 0
+        """
+        if callback_type == "start" and not daemon_status:
+            self.call_daemon_reconnector("start")
+        elif callback_type == "remove" and daemon_status:
+            self.call_daemon_reconnector("stop")
+
+    def check_daemon_reconnector_status(self):
+        """Checks the status of the daemon reconnector and starts the process
+        only if it's not already running.
+
+        Returns:
+            int: indicates the status of the daemon process
+        """
+        check_daemon = subprocess.run(
+            ["systemctl", "status", "protonvpn_reconnect"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        decoded_stdout = check_daemon.stdout.decode()
+        if (
+            check_daemon.returncode == 3
+        ) and ((
+            "Active: inactive (dead)" in decoded_stdout
+        ) or (
+            "Active: failed" in decoded_stdout
+        )):
+            # Not running
+            return 0
+        elif (
+            check_daemon.returncode == 0
+        ) and (
+            "Active: active (running)" in decoded_stdout
+        ):
+            # Already running
+            return 1
+        else:
+            # Service threw an exception
+            raise Exception(
+                "[!] An error occurred while checking for ProtonVPN "
+                + "reconnector service: "
+                + "(Return code: {}; Exception: {} {})".format(
+                    check_daemon.returncode, decoded_stdout,
+                    check_daemon.stderr.decode().strip("\n")
+                )
+            )
+
+    def call_daemon_reconnector(self, command=["start", "stop"]):
+        """Makes calls to daemon reconnector to either
+        start or stop the process.
+
+        Args:
+            command (string): to either start or stop the process
+        """
+        call_daemon = subprocess.run(
+            ["systemctl", command, "protonvpn_reconnect"],
+            stdout=subprocess.PIPE
+        )
+        decoded_stdout = call_daemon.stdout.decode()
+        if not call_daemon.returncode == 0:
+            print(
+                "[!] An error occurred while {}ing ProtonVPN ".format(command)
+                + "reconnector service: {}".format(decoded_stdout)
+            )
 
     def extract_virtual_device_type(self, filename):
         """Extract virtual device type from .ovpn file.

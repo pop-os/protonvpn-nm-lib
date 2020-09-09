@@ -9,7 +9,6 @@ from lib import exceptions
 from lib.constants import ENV_CI_NAME
 from lib.services.certificate_manager import CertificateManager
 from lib.services.connection_manager import ConnectionManager
-from lib.services.plugin_manager import PluginManager
 from lib.services.user_manager import UserManager
 
 
@@ -20,7 +19,7 @@ os.environ[ENV_CI_NAME] = "true"
 
 
 class TestUnitConnectionManager:
-    cm = ConnectionManager(PluginManager())
+    cm = ConnectionManager()
 
     def test_wrong_device_type(self):
         with pytest.raises(exceptions.IllegalVirtualDevice):
@@ -37,7 +36,6 @@ class TestUnitConnectionManager:
 
 class TestIntegrationConnectionManager():
     cm = ConnectionManager(
-        PluginManager(),
         virtual_device_name="testTunnel0"
     )
     um = UserManager()

@@ -7,14 +7,13 @@ from cli_dialog import dialog
 from lib import exceptions
 from lib.services.certificate_manager import CertificateManager
 from lib.services.connection_manager import ConnectionManager
-from lib.services.plugin_manager import PluginManager
 from lib.services.server_manager import ServerManager
 from lib.services.user_manager import UserManager
 from lib.enums import ProtocolEnum
 
 
 class NetworkManagerPrototypeCLI():
-    connection_manager = ConnectionManager(PluginManager())
+    connection_manager = ConnectionManager()
     user_manager = UserManager()
     server_manager = ServerManager(CertificateManager())
 
