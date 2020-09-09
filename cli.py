@@ -108,10 +108,7 @@ class NetworkManagerPrototypeCLI():
 
         try:
             session = self.user_manager.load_session()
-        except exceptions.JSONAuthDataEmptyError as e:
-            logger.exception(
-                "[!] JSONAuthDataEmptyError: {}".format(e)
-            )
+        except exceptions.JSONAuthDataEmptyError:
             print(
                 "[!] The stored session might be corrupted, "
                 + "please try to login again."
@@ -120,16 +117,10 @@ class NetworkManagerPrototypeCLI():
         except (
             exceptions.JSONAuthDataError,
             exceptions.JSONAuthDataNoneError
-        ) as e:
-            logger.exception(
-                "[!] JSONAuthDataError/JSONAuthDataNoneError: {}".format(e)
-            )
+        ):
             print("[!] There is no stored sessio, please login first.")
             sys.exit(1)
-        except exceptions.AccessKeyringError as e:
-            logger.exception(
-                "[!] AccessKeyringError: {}".format(e)
-            )
+        except exceptions.AccessKeyringError:
             print(
                 "[!] Unable to load session. Could not access keyring."
             )
@@ -167,10 +158,7 @@ class NetworkManagerPrototypeCLI():
             username, password = self.user_manager.fetch_vpn_credentials(
                 session
             )
-        except exceptions.JSONAuthDataEmptyError as e:
-            logger.exception(
-                "[!] JSONAuthDataEmptyError: {}".format(e)
-            )
+        except exceptions.JSONAuthDataEmptyError:
             print(
                 "[!] The stored session might be corrupted, "
                 + "please try to login again."
@@ -179,10 +167,7 @@ class NetworkManagerPrototypeCLI():
         except (
             exceptions.JSONAuthDataError,
             exceptions.JSONAuthDataNoneError
-        )as e:
-            logger.exception(
-                "[!] JSONAuthDataError/JSONAuthDataNoneError: {}".format(e)
-            )
+        ):
             print("[!] There is no stored session, please login first.")
             sys.exit(1)
         except Exception as e:
@@ -199,10 +184,7 @@ class NetworkManagerPrototypeCLI():
                 certificate_filename, username,
                 password, CertificateManager.delete_cached_certificate
             )
-        except exceptions.ImportConnectionError as e:
-            logger.exception(
-                "[!] ImportConnectionError: {}".format(e)
-            )
+        except exceptions.ImportConnectionError:
             print("An error occured upon importing connection.")
         except Exception as e:
             logger.exception(
@@ -221,23 +203,17 @@ class NetworkManagerPrototypeCLI():
         try:
             self.connection_manager.remove_connection()
         except exceptions.ConnectionNotFound as e:
-            logger.exception(
-                "[!] ConnectionNotFound: {}".format(e)
-            )
             print("[!] Unable to disconnect: {}".format(e))
         except (
             exceptions.RemoveConnectionFinishError,
             exceptions.StopConnectionFinishError
         ) as e:
-            logger.exception(
-                "[!] Remove/RemoveConnectionFinishError: {}".format(e)
-            )
             print("[!] Unable to disconnect: {}".format(e))
         except Exception as e:
             logger.exception(
                 "[!] Unknown error: {}".format(e)
             )
-            print("[!] Unknown error: {}".format(e))
+            print("[!] Unknown error occured: {}".format(e))
         finally:
             sys.exit()
 
@@ -267,10 +243,7 @@ class NetworkManagerPrototypeCLI():
 
         try:
             self.user_manager.load_session()
-        except exceptions.JSONAuthDataEmptyError as e:
-            logger.exception(
-                "[!] JSONAuthDataEmptyError: {}".format(e)
-            )
+        except exceptions.JSONAuthDataEmptyError:
             print(
                 "[!] The stored session might be corrupted, "
                 + "please try to login again."
@@ -279,15 +252,9 @@ class NetworkManagerPrototypeCLI():
         except (
             exceptions.JSONAuthDataError,
             exceptions.JSONAuthDataNoneError
-        ) as e:
-            logger.error(
-                "[!] JSONAuthDataError/JSONAuthDataNoneError: {}".format(e)
-            )
+        ):
             session_exists = False
         except exceptions.AccessKeyringError as e:
-            logger.exception(
-                "[!] AccessKeyringError: {}".format(e)
-            )
             print(
                 "[!] Unable to load session. Could not access keyring: "
                 + "{}".format(e)
@@ -310,30 +277,19 @@ class NetworkManagerPrototypeCLI():
         try:
             self.user_manager.login(username, password)
         except (TypeError, ValueError) as e:
-            logger.exception(
-                "[!] TypeError/ValueError: {}".format(e)
-            )
             print("[!] Unable to authenticate. {}".format(e))
-        except exceptions.IncorrectCredentialsError as e:
-            logger.exception(
-                "[!] IncorrectCredentialsError: "
-                + "{}".format(e)
-            )
+        except exceptions.IncorrectCredentialsError:
             print(
                 "[!] Unable to authenticate. "
                 + "The provided credentials are incorrect"
             )
-        except exceptions.APIAuthenticationError as e:
-            logger.exception(
-                "[!] APIAuthenticationError: "
-                + "{}".format(e)
-            )
+        except exceptions.APIAuthenticationError:
             print("[!] Unable to authenticate. Unexpected API response.")
         except Exception as e:
             logger.exception(
                 "[!] Unknown error: {}".format(e)
             )
-            print("[!] Unknown error: {}".format(e))
+            print("[!] Unknown error occured: {}".format(e))
         else:
             logger.info("Successful login.")
             print("\nLogin successful!")
@@ -343,15 +299,9 @@ class NetworkManagerPrototypeCLI():
     def logout(self):
         try:
             self.user_manager.delete_user_session()
-        except exceptions.StoredSessionNotFound as e:
-            logger.exception(
-                "[!] StoredSessionNotFound: {}".format(e)
-            )
+        except exceptions.StoredSessionNotFound:
             print("[!] Unable to logout. No session was found.")
-        except exceptions.AccessKeyringError as e:
-            logger.exception(
-                "[!] AccessKeyringError: {}".format(e)
-            )
+        except exceptions.AccessKeyringError:
             print("[!] Unable to logout. Could not access keyring.")
         except Exception as e:
             logger.exception(
