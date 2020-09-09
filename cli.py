@@ -2,14 +2,16 @@ import argparse
 import getpass
 import inspect
 import sys
+import traceback
 
 from cli_dialog import dialog
 from lib import exceptions
+from lib.enums import ProtocolEnum
+from lib.logger import logger
 from lib.services.certificate_manager import CertificateManager
 from lib.services.connection_manager import ConnectionManager
 from lib.services.server_manager import ServerManager
 from lib.services.user_manager import UserManager
-from lib.enums import ProtocolEnum
 
 
 class NetworkManagerPrototypeCLI():
@@ -30,6 +32,7 @@ class NetworkManagerPrototypeCLI():
             )
             parser.exit(1)
 
+        logger.info("CLI command: {}".format(args))
         getattr(self, args.command)()
 
     def c(self):
@@ -85,6 +88,7 @@ class NetworkManagerPrototypeCLI():
         )
 
         args = parser.parse_args(sys.argv[2:])
+        logger.info("CLI sub-command: {}".format(args))
 
         try:
             protocol = args.protocol.lower().strip()
@@ -98,7 +102,8 @@ class NetworkManagerPrototypeCLI():
         except (
             exceptions.JSONAuthDataNoneError,
             exceptions.JSONAuthDataEmptyError
-        ):
+        ) as e:
+            logger.exception("[!] Stored session not found: {}".format(e))
             print("[!] No stored session was found, please try to first login")
             sys.exit(1)
 
@@ -118,6 +123,8 @@ class NetworkManagerPrototypeCLI():
             if cls_attr[0] in cli_commands and cls_attr[1]:
                 command = list(cls_attr)
 
+        logger.info("CLI connect type: {}".format(command))
+
         try:
             certificate_filename = cli_commands[command[0]](
                 session, protocol, command
@@ -134,9 +141,13 @@ class NetworkManagerPrototypeCLI():
 
         try:
             username, password = self.user_manager.fetch_vpn_credentials()
+            logger.info("Username and password were fetched.")
         except (
             exceptions.JSONAuthDataNoneError, exceptions.JSONAuthDataEmptyError
         ) as e:
+            logger.exception(
+                "[!] The stored session might be corrupted: {}".format(e)
+            )
             print(
                 "[!] The stored session might be corrupted, please re-login."
                 + "\nException: {}".format(e))
@@ -148,11 +159,19 @@ class NetworkManagerPrototypeCLI():
                 password, CertificateManager.delete_cached_certificate
             )
         except exceptions.ImportConnectionError as e:
+            logger.exception(
+                "[!] ImportConnectionError: {}".format(e)
+            )
             print(e)
-        else:
-            self.connection_manager.start_connection()
-        finally:
-            sys.exit(1)
+        except exceptions.CustomBaseException:
+            error = traceback.format_exc()
+            logger.exception(
+                "[!] {}".format(error)
+            )
+            print("{}".format(error))
+
+        self.connection_manager.start_connection()
+        sys.exit(1)
 
     def d(self):
         self.disconnect()
@@ -161,11 +180,16 @@ class NetworkManagerPrototypeCLI():
         try:
             self.connection_manager.remove_connection()
         except exceptions.ConnectionNotFound as e:
+            logger.exception(
+                "[!] ConnectionNotFound: {}".format(e)
+            )
             print("[!] {}".format(e))
         finally:
             sys.exit(1)
 
     def login(self):
+        session_exists = False
+
         def ask_username_password():
             """Set the ProtonVPN Username and Password."""
 
@@ -195,32 +219,51 @@ class NetworkManagerPrototypeCLI():
         except (
             exceptions.JSONAuthDataNoneError,
             exceptions.JSONAuthDataEmptyError
-        ):
-            username, password = ask_username_password()
-            try:
-                self.user_manager.login(username, password)
-            except (
-                exceptions.IncorrectCredentialsError,
-                exceptions.APIAuthenticationError,
-                ValueError
-            ) as exp:
-                print("Unable to authenticate: {}".format(exp))
-            else:
-                print("\nLogin successful!")
+        ) as e:
+            logger.exception(
+                "[!] No local session was found: {}.".format(e)
+            )
+            session_exists = False
         else:
+            logger.info("User already logged in, local session was found.")
+            session_exists = True
+
+        if session_exists:
             print("\nYou are already logged in!")
+            sys.exit()
+
+        username, password = ask_username_password()
+
+        try:
+            self.user_manager.login(username, password)
+        except (
+            exceptions.IncorrectCredentialsError,
+            exceptions.APIAuthenticationError,
+            ValueError
+        ) as e:
+            logger.exception(
+                "[!] Unable to authenticate: {}".format(e)
+            )
+            print("Unable to authenticate: {}".format(e))
+        else:
+            logger.info("Successful login.")
+            print("\nLogin successful!")
         finally:
-            sys.exit(1)
+            sys.exit()
 
     def logout(self):
         try:
             self.user_manager.delete_user_session()
-        except Exception as e:
-            print(e)
+        except exceptions.StoredSessionNotFound as e:
+            logger.exception(
+                "[!] Unable to logout: {}".format(e)
+            )
+            print("[!] Unable to logout, no session was found.")
         else:
+            logger.info("Successful logout.")
             print("Logout successful!")
         finally:
-            sys.exit(1)
+            sys.exit()
 
 
 NetworkManagerPrototypeCLI()
