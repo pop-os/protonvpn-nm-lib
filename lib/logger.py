@@ -8,7 +8,7 @@ from lib.constants import PROTON_XDG_CACHE_HOME, PROTON_XDG_CACHE_HOME_LOGS
 def get_logger():
     """Create the logger."""
     FORMATTER = logging.Formatter(
-        "%(asctime)s — %(name)s — %(levelname)s — %(funcName)s:%(lineno)d — %(message)s" # noqa
+        "%(asctime)s — %(filename)s — %(levelname)s — %(funcName)s:%(lineno)d — %(message)s" # noqa
     )
 
     if not os.path.isdir(PROTON_XDG_CACHE_HOME):
