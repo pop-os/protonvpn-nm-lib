@@ -171,13 +171,19 @@ class NetworkManagerPrototypeCLI():
             logger.exception(
                 "[!] JSONAuthDataEmptyError: {}".format(e)
             )
-            print("[!] The stored session might be corrupted, please try to login again.")
+            print(
+                "[!] The stored session might be corrupted, "
+                + "please try to login again."
+            )
             sys.exit(1)
-        except (exceptions.JSONAuthDataError, exceptions.JSONAuthDataNoneError):
+        except (
+            exceptions.JSONAuthDataError,
+            exceptions.JSONAuthDataNoneError
+        )as e:
             logger.exception(
                 "[!] JSONAuthDataError/JSONAuthDataNoneError: {}".format(e)
             )
-            print("[!] There is no stored sessio, please login first.")
+            print("[!] There is no stored session, please login first.")
             sys.exit(1)
         except Exception as e:
             logger.exception(
@@ -273,7 +279,10 @@ class NetworkManagerPrototypeCLI():
         except (
             exceptions.JSONAuthDataError,
             exceptions.JSONAuthDataNoneError
-        ):
+        ) as e:
+            logger.error(
+                "[!] JSONAuthDataError/JSONAuthDataNoneError: {}".format(e)
+            )
             session_exists = False
         except exceptions.AccessKeyringError as e:
             logger.exception(
