@@ -27,15 +27,15 @@ class UserManager(UserSessionManager):
         if not isinstance(username, str):
             raise TypeError(
                 "Incorrect object type, "
-                + "str is expected but got {} instead".format(type(username))
+                + "str is expected but got {} instead.".format(type(username))
             )
         elif not isinstance(password, str):
             raise TypeError(
                 "Incorrect object type, "
-                + "str is expected but got {} instead".format(type(password))
+                + "str is expected but got {} instead.".format(type(password))
             )
         elif not username.strip() or not password.strip():
-            raise ValueError("Both username and password must be provided")
+            raise ValueError("Both username and password must be provided.")
 
         session = proton.Session(
             api_url="https://api.protonvpn.ch",
@@ -60,9 +60,10 @@ class UserManager(UserSessionManager):
         """Logout user."""
         self.delete_user_session(self.keyring_service, self.keyring_username)
 
-    def fetch_vpn_credentials(self):
+    def fetch_vpn_credentials(self, session=False):
         """Fetch vpn credentials from api."""
-        session = self.load_session()
+        if not session:
+            session = self.load_session()
         api_resp = session.api_request('/vpn')
         return (api_resp["VPN"]["Name"], api_resp["VPN"]["Password"])
 
