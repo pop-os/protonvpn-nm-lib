@@ -1,6 +1,6 @@
-
 import os
 import subprocess
+from getpass import getuser
 
 import gi
 gi.require_version("NM", "1.0")
@@ -8,8 +8,8 @@ from gi.repository import NM, GLib
 
 from lib import exceptions
 from lib.constants import ENV_CI_NAME, VIRTUAL_DEVICE_NAME
+from lib.logger import logger
 from lib.services.plugin_manager import PluginManager
-from getpass import getuser
 
 
 class ConnectionManager():
@@ -22,43 +22,67 @@ class ConnectionManager():
     def add_connection(self, filename, username, password, delete_cached_cert):
         """Setup and add ProtonVPN connection.
 
-            Args:
-                filename (string): certificate filename
-                username (string): openvpn username
-                password (string): openvpn password
-                delete_cached_cert (method): method that delete cached cert
+        Args:
+            filename (string): certificate filename
+            username (string): openvpn username
+            password (string): openvpn password
+            delete_cached_cert (method): method that delete cached cert
         """
+        logger.info("Adding VPN connection")
         if not isinstance(filename, str):
-            raise TypeError(
-                "Incorrect object type, "
-                + "str is expected but got {} instead".format(type(filename))
+            err_msg = "Incorrect object type, "
+            + "str is expected but got {} instead".format(type(filename))
+
+            logger.error(
+                "[!] TypeError: {}".format(err_msg)
             )
+            raise TypeError(err_msg)
+
         elif not filename.strip():
-            raise ValueError("A valid filename must be provided")
+            err_msg = "A valid filename must be provided"
+
+            logger.error(
+                "[!] ValueError: {}".format(err_msg)
+            )
+            raise ValueError(err_msg)
 
         if not isinstance(username, str):
-            raise TypeError(
-                "Incorrect object type, "
-                + "str is expected but got {} instead".format(type(username))
+            err_msg = "Incorrect object type, "
+            + "str is expected but got {} instead".format(type(username))
+
+            logger.error(
+                "[!] TypeError: {}".format(err_msg)
             )
+            raise TypeError(err_msg)
+
         elif not isinstance(password, str):
-            raise TypeError(
-                "Incorrect object type, "
-                + "str is expected but got {} instead".format(type(password))
+            err_msg = "Incorrect object type, "
+            + "str is expected but got {} instead".format(type(password))
+            logger.error(
+                "[!] TypeError: {}".format(err_msg)
             )
+            raise TypeError(err_msg)
+
         elif not username.strip() or not password.strip():
-            raise ValueError("Both username and password must be provided")
+            err_msg = "Both username and password must be provided"
+            logger.error(
+                "[!] ValueError: {}".format(err_msg)
+            )
+            raise ValueError(err_msg)
 
         # Check that method to delete cached certificates is implemented
         try:
             delete_cached_cert("test")
         except FileNotFoundError:
             pass
-        except Exception:
-            raise NotImplementedError(
-                "Expects object method, "
-                + "{} was passed".format(delete_cached_cert)
+        except Exception as e:
+            err_msg = "Expects object method, {} was passed".format(
+                delete_cached_cert
             )
+            logger.exception(
+                "[!] NotImplementedError: {}".format(e)
+            )
+            raise NotImplementedError(err_msg)
 
         # https://lazka.github.io/pgi-docs/NM-1.0/classes/Client.html
         client = NM.Client.new(None)
@@ -71,11 +95,15 @@ class ConnectionManager():
 
         self.make_vpn_user_owned(connection)
         self.add_vpn_credentials(vpn_settings, username, password)
-        self.set_virtual_device_type(vpn_settings, filename)
+        self.apply_virtual_device_type(vpn_settings, filename)
 
         try:
             self.remove_connection()
         except exceptions.ConnectionNotFound:
+            logger.info(
+                "Attempted to remove connection. "
+                + "No connection was found prior to adding a new one."
+            )
             pass
 
         client.add_connection_async(
@@ -97,6 +125,7 @@ class ConnectionManager():
     def make_vpn_user_owned(self, connection):
         # returns NM.SettingConnection
         # https://lazka.github.io/pgi-docs/NM-1.0/classes/SettingConnection.html#NM.SettingConnection
+        logger.info("Making VPN connection be user owned")
         connection_settings = connection.get_setting_connection()
         connection_settings.add_permission(
             "user",
@@ -107,21 +136,30 @@ class ConnectionManager():
     def add_vpn_credentials(self, vpn_settings, username, password):
         # returns NM.SettingVpn if the connection contains one, otherwise None
         # https://lazka.github.io/pgi-docs/NM-1.0/classes/SettingVpn.html
+        logger.info("Adding VPN credentials")
         try:
             vpn_settings.add_data_item("username", username)
             vpn_settings.add_secret("password", password)
         except Exception as e:
+            logger.exception("[!] {}".format(e))
             raise exceptions.AddConnectionCredentialsError(e)
 
     def start_connection(self):
         """Start ProtonVPN connection."""
+        logger.info("Starting VPN connection")
         client = NM.Client.new(None)
         main_loop = GLib.MainLoop()
 
         conn = self.get_proton_connection("all_connections", client=client)
 
         if len(conn) < 2 and conn[0] is False:
-            raise exceptions.ConnectionNotFound("Connection not found")
+            logger.error(
+                "[!] ConnectionNotFound: Connection not found, "
+                + "raising exception"
+            )
+            raise exceptions.ConnectionNotFound(
+                "ProtonVPN connection was not found"
+            )
 
         conn_name = conn[1]
         conn = conn[0]
@@ -147,6 +185,7 @@ class ConnectionManager():
         Args(optional):
             client (NM.Client): new NetworkManager Client object
         """
+        logger.info("Stopping VPN connection")
         if not client:
             client = NM.Client.new(None)
 
@@ -155,6 +194,7 @@ class ConnectionManager():
         conn = self.get_proton_connection("active_connections", client)
 
         if len(conn) < 2 and conn[0] is False:
+            logger.info("Connection not found")
             return False
 
         conn_name = conn[1]
@@ -175,11 +215,16 @@ class ConnectionManager():
 
     def remove_connection(self):
         """Stop and remove ProtonVPN connection."""
+        logger.info("Removing VPN connection")
         client = NM.Client.new(None)
         main_loop = GLib.MainLoop()
         conn = self.get_proton_connection("all_connections", client)
 
         if len(conn) < 2 and conn[0] is False:
+            logger.error(
+                "[!] ConnectionNotFound: Connection not found, "
+                + "raising exception"
+            )
             raise exceptions.ConnectionNotFound(
                 "ProtonVPN connection was not found"
             )
@@ -213,6 +258,7 @@ class ConnectionManager():
             data (dict): optional extra data
         """
         callback_type = data.get("callback_type")
+        logger.info("Callback: \"{}\"".format(callback_type))
         main_loop = data.get("main_loop")
         conn_name = data.get("conn_name")
         delete_cached_cert = data.get("delete_cached_cert")
@@ -247,14 +293,19 @@ class ConnectionManager():
 
         try:
             (callback_type_dict[callback_type]["finish_function"])(result)
-            print(
-                "The connection profile "
-                + "\"{}\" has been {}.".format(
-                    conn_name,
-                    callback_type_dict[callback_type]["msg"]
+            msg = "The connection profile \"{}\" has been {}.".format(
+                conn_name,
+                callback_type_dict[callback_type]["msg"]
+            )
+            logger.info(msg)
+            print(msg)
+        except Exception as e:
+            logger.exception(
+                "[!] {}: {}".format(
+                    callback_type_dict[callback_type]["exception"],
+                    e
                 )
             )
-        except Exception as e:
             raise (callback_type_dict[callback_type]["exception"])(e)
 
         if callback_type == "add":
@@ -264,8 +315,10 @@ class ConnectionManager():
             try:
                 daemon_status = self.check_daemon_reconnector_status()
             except Exception as e:
+                logger.exception("[!] Exception: {}".format(e))
                 print(e)
             else:
+                logger.info("Daemon status: {}".format(daemon_status))
                 if not os.environ.get(ENV_CI_NAME):
                     self.daemon_manager(callback_type, daemon_status)
         main_loop.quit()
@@ -277,6 +330,11 @@ class ConnectionManager():
             callback_type (string): start, stop, remove
             daemon_status (int): 1 or 0
         """
+        logger.info(
+            "Managing daemon: cb_type-> \"{}\"; daemon_status -> {}".format(
+                callback_type, daemon_status
+            )
+        )
         if callback_type == "start" and not daemon_status:
             self.call_daemon_reconnector("start")
         elif callback_type == "remove" and daemon_status:
@@ -289,6 +347,7 @@ class ConnectionManager():
         Returns:
             int: indicates the status of the daemon process
         """
+        logger.info("Checking daemon reconnector status")
         check_daemon = subprocess.run(
             ["systemctl", "status", "protonvpn_reconnect"],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE
@@ -328,16 +387,23 @@ class ConnectionManager():
         Args:
             command (string): to either start or stop the process
         """
+        logger.info("Calling daemon reconnector")
         call_daemon = subprocess.run(
             ["systemctl", command, "protonvpn_reconnect"],
-            stdout=subprocess.PIPE
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         decoded_stdout = call_daemon.stdout.decode()
+        decoded_stderr = call_daemon.stderr.decode().strip("\n")
+
         if not call_daemon.returncode == 0:
-            print(
-                "[!] An error occurred while {}ing ProtonVPN ".format(command)
-                + "reconnector service: {}".format(decoded_stdout)
+            msg = "[!] An error occurred while {}ing ProtonVPN ".format(
+                command
+            ) + "reconnector service: {} {}".format(
+                decoded_stdout,
+                decoded_stderr
             )
+            logger.error(msg)
+            print(msg)
 
     def extract_virtual_device_type(self, filename):
         """Extract virtual device type from .ovpn file.
@@ -347,6 +413,7 @@ class ConnectionManager():
         Returns:
             string: "tap" or "tun", otherwise raises exception
         """
+        logger.info("Extracting virtual device type")
         virtual_dev_type_list = ["tun", "tap"]
 
         with open(filename, "r") as f:
@@ -354,14 +421,16 @@ class ConnectionManager():
             dev_type = [dev.rstrip() for dev in content_list if "dev" in dev]
             try:
                 dev_type = dev_type[0].split()[1]
-            except IndexError:
+            except IndexError as e:
+                logger.exception("[!] VirtualDeviceNotFound: {}".format(e))
                 raise exceptions.VirtualDeviceNotFound(
                     "No virtual device type was specified in .ovpn file"
                 )
 
             try:
                 index = virtual_dev_type_list.index(dev_type)
-            except (ValueError, KeyError, TypeError):
+            except (ValueError, KeyError, TypeError) as e:
+                logger.exception("[!] IllegalVirtualDevice: {}".format(e))
                 raise exceptions.IllegalVirtualDevice(
                     "Only {} are permitted, though \"{}\" "
                     .format(' and '.join(virtual_dev_type_list), dev_type)
@@ -370,13 +439,14 @@ class ConnectionManager():
             else:
                 return virtual_dev_type_list[index]
 
-    def set_virtual_device_type(self, vpn_settings, filename):
-        """Set virtual device type and name.
+    def apply_virtual_device_type(self, vpn_settings, filename):
+        """Apply virtual device type and name.
 
         Args:
             vpn_settings (SettingVpn): vpn settings object
             filename (string): path to cached certificate
         """
+        logger.info("Applying virtual device type to VPN")
         virtual_device_type = self.extract_virtual_device_type(filename)
 
         # Changes virtual tunnel name
@@ -395,6 +465,7 @@ class ConnectionManager():
         Returns:
             tuple: (bool|Empty) or (connection, connection_id)
         """
+        logger.info("Getting VPN connection: \"{}\"".format(connection_type))
         return_conn = [False]
 
         if not client:
@@ -422,5 +493,9 @@ class ConnectionManager():
                 ):
                     return_conn = [conn, conn.get_id()]
                     break
-
+        logger.info(
+            "VPN connection: {}".format(
+                None if return_conn[0] is False else return_conn
+            )
+        )
         return tuple(return_conn)
