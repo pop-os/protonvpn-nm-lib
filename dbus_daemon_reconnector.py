@@ -62,14 +62,6 @@ class ProtonVPNReconnector(object):
         self.get_network_manager().connect_to_signal(
             "StateChanged", self.on_network_state_changed
         )
-        logger.info(
-            "____Monitoring connection "
-            + "for {}, ".format(virtual_device_name)
-            + "reattempting up to {} times with {} ".format(
-                max_attempts, delay
-            )
-            + "ms between retries____\n\n"
-        )
 
     def on_network_state_changed(self, state):
         """Network status signal handler.
@@ -427,9 +419,12 @@ class ProtonVPNReconnector(object):
     def vpn_monitor(self):
         """Monitor and activate ProtonVPN connections."""
         logger.info(
-            "Starting monitor for '{}' virtual device.".format(
-                self.virtual_device_name
+            "____Monitoring connection "
+            + "for {}, ".format(self.virtual_device_name)
+            + "reattempting up to {} times with {} ".format(
+                self.max_attempts, self.delay
             )
+            + "ms between retries____"
         )
         vpn_interface = self.get_vpn_interface(self.virtual_device_name)
         active_con = self.get_active_connection()
