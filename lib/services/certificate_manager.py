@@ -75,6 +75,7 @@ class CertificateManager:
             raise ValueError("No servers were provided")
 
         print(servername)
+        logger.info("Servername: \"{}\"".format(servername))
 
         try:
             return protocol_dict[protocol](
