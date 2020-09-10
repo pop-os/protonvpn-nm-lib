@@ -10,17 +10,6 @@ from lib.logger import logger
 
 def dialog(server_manager, session):
     """Connect to a server with a dialog menu."""
-    def show_dialog(headline, choices, stop=False):
-        """Show the dialog and process response."""
-        d = Dialog(dialog="dialog")
-
-        code, tag = d.menu(headline, title="ProtonVPN-CLI", choices=choices)
-        if code == "ok":
-            return tag
-        else:
-            os.system("clear")
-            print("Canceled.")
-            sys.exit(1)
 
     # Check if dialog is installed
     dialog_check = subprocess.run(['which', 'dialog'],
@@ -31,20 +20,28 @@ def dialog(server_manager, session):
               "Please install dialog via your package manager.")
         sys.exit(1)
 
-    server_manager.cache_servers(session)
-
     server_tiers = {0: "F", 1: "B", 2: "P"}
-
+    server_manager.cache_servers(session)
     servers = server_manager.filter_servers(session)
-
-    countries = {}
-    for server in servers:
-        country = server_manager.extract_country_name(server["ExitCountry"])
-        if country not in countries.keys():
-            countries[country] = []
-        countries[country].append(server["Name"])
+    countries = generate_country_dict(server_manager, servers)
 
     # Fist dialog
+    country = display_country(countries, server_manager, servers)
+
+    # Second dialog
+    server = display_servers(
+        countries, server_manager,
+        servers, country,
+        server_tiers
+    )
+
+    protocol = display_protocol()
+
+    os.system("clear")
+    return server, protocol
+
+
+def display_country(countries, server_manager, servers):
     choices = []
 
     for country in sorted(countries.keys()):
@@ -57,9 +54,10 @@ def dialog(server_manager, session):
                 country_features.append(SUPPORTED_FEATURES[feat])
         choices.append((country, " | ".join(sorted(country_features))))
 
-    country = show_dialog("Choose a country:", choices)
+    return display_dialog("Choose a country:", choices)
 
-    # Second dialog
+
+def display_servers(countries, server_manager, servers, country, server_tiers):
     # lambda sorts servers by Load instead of name
     choices = []
     country_servers = sorted(countries[country],
@@ -86,14 +84,37 @@ def dialog(server_manager, session):
             load, tier, feature
         )))
 
-    server_result = show_dialog("Choose the server to connect:", choices)
+    return display_dialog("Choose the server to connect:", choices)
 
-    protocol_result = show_dialog(
+
+def display_protocol():
+    return display_dialog(
         "Choose a protocol:", [
             (ProtocolEnum.UDP, "Better Speed"),
             (ProtocolEnum.TCP, "Better Reliability")
         ]
     )
 
-    os.system("clear")
-    return server_result, protocol_result
+
+def display_dialog(headline, choices, stop=False):
+    """Show the dialog and process response."""
+    d = Dialog(dialog="dialog")
+
+    code, tag = d.menu(headline, title="ProtonVPN-CLI", choices=choices)
+    if code == "ok":
+        return tag
+    else:
+        os.system("clear")
+        print("Canceled.")
+        sys.exit(1)
+
+
+def generate_country_dict(server_manager, servers):
+    countries = {}
+    for server in servers:
+        country = server_manager.extract_country_name(server["ExitCountry"])
+        if country not in countries.keys():
+            countries[country] = []
+        countries[country].append(server["Name"])
+
+    return countries
