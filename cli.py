@@ -3,14 +3,23 @@ import getpass
 import inspect
 import sys
 
+import sentry_sdk
+from sentry_sdk import capture_exception  # noqa
+
 from cli_dialog import dialog
 from lib import exceptions
+from lib.constants import APP_VERSION
 from lib.enums import ProtocolEnum
 from lib.logger import logger
 from lib.services.certificate_manager import CertificateManager
 from lib.services.connection_manager import ConnectionManager
 from lib.services.server_manager import ServerManager
 from lib.services.user_manager import UserManager
+
+sentry_sdk.init(
+    dsn="https://f9d7d18c83374b7a901f20036f8583e1@sentry.protontech.ch/62",
+    release=APP_VERSION,
+)
 
 
 class NetworkManagerPrototypeCLI():
@@ -126,6 +135,7 @@ class NetworkManagerPrototypeCLI():
             )
             sys.exit(1)
         except Exception as e:
+            capture_exception(e)
             logger.exception(
                 "[!] Unknown error: {}".format(e)
             )
@@ -171,6 +181,7 @@ class NetworkManagerPrototypeCLI():
             print("[!] There is no stored session, please login first.")
             sys.exit(1)
         except Exception as e:
+            capture_exception(e)
             logger.exception(
                 "[!] Unknown error: {}".format(e)
             )
@@ -187,6 +198,7 @@ class NetworkManagerPrototypeCLI():
         except exceptions.ImportConnectionError:
             print("An error occured upon importing connection.")
         except Exception as e:
+            capture_exception(e)
             logger.exception(
                 "[!] Unknown error: {}".format(e)
             )
@@ -210,6 +222,7 @@ class NetworkManagerPrototypeCLI():
         ) as e:
             print("[!] Unable to disconnect: {}".format(e))
         except Exception as e:
+            capture_exception(e)
             logger.exception(
                 "[!] Unknown error: {}".format(e)
             )
@@ -260,6 +273,7 @@ class NetworkManagerPrototypeCLI():
                 + "{}".format(e)
             )
         except Exception as e:
+            capture_exception(e)
             logger.exception(
                 "[!] Unknown error: {}".format(e)
             )
@@ -286,6 +300,7 @@ class NetworkManagerPrototypeCLI():
         except exceptions.APIAuthenticationError:
             print("[!] Unable to authenticate. Unexpected API response.")
         except Exception as e:
+            capture_exception(e)
             logger.exception(
                 "[!] Unknown error: {}".format(e)
             )
@@ -304,6 +319,7 @@ class NetworkManagerPrototypeCLI():
         except exceptions.AccessKeyringError:
             print("[!] Unable to logout. Could not access keyring.")
         except Exception as e:
+            capture_exception(e)
             logger.exception(
                 "[!] Unknown error: {}".format(e)
             )
