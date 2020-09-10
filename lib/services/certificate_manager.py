@@ -39,9 +39,7 @@ class CertificateManager:
             err_msg = "Incorrect object type, "
             + "str is expected but got {} instead".format(type(protocol))
             logger.error(
-                "[!] TypeError: {}. Raising exception.".format(
-                    err_msg
-                )
+                "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
             raise TypeError(err_msg)
 
@@ -50,9 +48,7 @@ class CertificateManager:
             + "{} is expected ".format(type(Session))
             + "but got {} instead".format(type(protocol))
             logger.error(
-                "[!] TypeError: {}. Raising exception.".format(
-                    err_msg
-                )
+                "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
             raise TypeError(err_msg)
 
@@ -60,9 +56,7 @@ class CertificateManager:
             err_msg = "Incorrect object type, "
             + "str is expected but got {} instead".format(type(servername))
             logger.error(
-                "[!] TypeError: {}. Raising exception.".format(
-                    err_msg
-                )
+                "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
             raise TypeError(err_msg)
 
@@ -70,9 +64,7 @@ class CertificateManager:
             err_msg = "Incorrect object type, "
             + "list is expected but got {} instead".format(type(ip_list))
             logger.error(
-                "[!] TypeError: {}. Raising exception.".format(
-                    err_msg
-                )
+                "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
             raise TypeError(err_msg)
 
