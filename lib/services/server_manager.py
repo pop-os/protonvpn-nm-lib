@@ -302,6 +302,13 @@ class ServerManager():
         )
 
     def validate_session_protocol(self, session, protocol):
+        """Validates session and protocol
+
+        Args:
+            session (proton.api.Session): current user session
+            protocol (ProtocolEnum): ProtocolEnum.TCP, ProtocolEnum.UDP ...
+        """
+        logger.info("Validating session and protocol")
         if not isinstance(session, Session):
             err_msg = "Incorrect object type, "
             + "{} is expected ".format(type(Session))
@@ -342,18 +349,27 @@ class ServerManager():
             cached_serverlist (string): path to cached server list
             force (bool): wether refresh interval shuld be ignored or not
         """
+        logger.info("Caching servers")
         if not isinstance(cached_serverlist, str):
-            raise TypeError(
-                "Incorrect object type, "
-                + "str is expected but got {} instead".format(
-                    type(cached_serverlist)
-                )
+            err_msg = "Incorrect object type, "
+            + "str is expected but got {} instead".format(
+                type(cached_serverlist)
             )
+            logger.error(
+                "[!] TypeError: {}. Raising exception".format(err_msg)
+            )
+            raise TypeError(err_msg)
 
         if isinstance(cached_serverlist, str) and len(cached_serverlist) == 0:
+            logger.error(
+                "[!] FileNotFoundError: \"{}\"".format(cached_serverlist)
+            )
             raise FileNotFoundError("No such file exists")
 
         if os.path.isdir(cached_serverlist):
+            logger.error(
+                "[!] IsADirectoryError: \"{}\"".format(cached_serverlist)
+            )
             raise IsADirectoryError(
                 "Provided file path is a directory, while file path expected"
             )
@@ -391,11 +407,13 @@ class ServerManager():
         Returns:
             list: IPs for the selected server
         """
+        logger.info("Generating IP list")
         try:
             subservers = self.extract_server_value(
                 servername, "Servers", servers
             )
         except IndexError as e:
+            logger.info("[!] IndexError: {}".format(e))
             raise IndexError(e)
         ip_list = [subserver["EntryIP"] for subserver in subservers]
 
@@ -409,7 +427,7 @@ class ServerManager():
         Returns:
             list: serverlist extracted from raw json, based on user tier
         """
-
+        logger.info("Filtering servers by tier")
         with open(CACHED_SERVERLIST, "r") as f:
             server_data = json.load(f)
 
@@ -439,13 +457,16 @@ class ServerManager():
         Returns:
             string: servername with the highest score (fastest)
         """
+        logger.info("Getting fastest server")
         if not isinstance(server_pool, list):
-            raise TypeError(
-                "Incorrect object type, "
-                + "list is expected but got {} instead".format(
-                    type(server_pool)
-                )
+            err_msg = "Incorrect object type, "
+            + "list is expected but got {} instead".format(
+                type(server_pool)
             )
+            logger.error(
+                "[!] TypeError: {}. Raising exception.".format(err_msg)
+            )
+            raise TypeError(err_msg)
 
         # Sort servers by "speed" and select top n according to pool_size
         fastest_pool = sorted(
@@ -497,11 +518,14 @@ class ServerManager():
         Returns:
             bool
         """
+        logger.info("Validating servername")
         if not isinstance(servername, str):
-            raise TypeError(
-                "Incorrect object type, "
-                + "str is expected but got {} instead".format(type(servername))
+            err_msg = "Incorrect object type, "
+            + "str is expected but got {} instead".format(type(servername))
+            logger.error(
+                "[!] TypeError: {}. Raising Exception.".format(err_msg)
             )
+            raise TypeError(err_msg)
 
         re_short = re.compile(r"^((\w\w)(-|#)?(\d{1,3})-?(TOR)?)$")
         # For long format (IS-DE-01 | Secure-Core/Free/US Servers)
