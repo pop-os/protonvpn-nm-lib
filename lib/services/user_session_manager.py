@@ -20,7 +20,7 @@ class UserSessionManager:
         self.set_optimum_keyring_backend()
         current_DE = os.getenv("XDG_CURRENT_DESKTOP", "")
         current_DE = "None" if len(str(current_DE)) == 0 else current_DE
-        logger.info("Current DE: {}".format(current_DE))
+        logger.info("Current DE: \"{}\"".format(current_DE))
         print("Current DE:", current_DE)
 
     def load_stored_user_session(
@@ -232,5 +232,6 @@ class UserSessionManager:
                 keyring.backends.SecretService.Keyring()
             )
 
+        logger.info("Keyring backend: {}".format(optimum_backend))
         print("Keyring backend:", optimum_backend[0])
         keyring.set_keyring(optimum_backend[2])

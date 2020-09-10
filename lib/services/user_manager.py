@@ -17,7 +17,7 @@ class UserManager(UserSessionManager):
         self.keyring_service = keyring_service
         self.keyring_username = keyring_username
         logger.info(
-            "Initialized UserManager: service-> {}; user-> {}".format(
+            "Initialized UserManager: service-> \"{}\"; user-> \"{}\"".format(
                 self.keyring_service, self.keyring_username
             )
         )

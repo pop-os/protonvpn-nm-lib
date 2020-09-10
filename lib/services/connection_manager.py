@@ -331,9 +331,8 @@ class ConnectionManager():
             daemon_status (int): 1 or 0
         """
         logger.info(
-            "Managing daemon: cb_type-> \"{}\"; daemon_status -> {}".format(
-                callback_type, daemon_status
-            )
+            "Managing daemon: cb_type-> \"{}\"; ".format(callback_type)
+            + "daemon_status -> \"{}\"".format(daemon_status)
         )
         if callback_type == "start" and not daemon_status:
             self.call_daemon_reconnector("start")

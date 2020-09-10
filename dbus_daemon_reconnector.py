@@ -167,7 +167,7 @@ class ProtonVPNReconnector(object):
         Returns:
             dbus.Interface(dbus.Proxy): to ProtonVPN connection
         """
-        logger.info("Get NetworkManager DBUS interface")
+        logger.info("Geting NetworkManager interface")
         proxy = self.bus.get_object(
             "org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager"
         )
@@ -225,7 +225,7 @@ class ProtonVPNReconnector(object):
         Returns:
             string: active connection path that has default route(s)
         """
-        logger.info("Get active connection interface")
+        logger.info("Getting active connection interface")
         active_connections = self.get_all_active_conns()
         logger.info(
             "All active conns in get_active_connection: {}".format(
