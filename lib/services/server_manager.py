@@ -9,6 +9,7 @@ from proton.api import Session
 from lib import exceptions
 from lib.constants import CACHED_SERVERLIST, PROTON_XDG_CACHE_HOME
 from lib.logger import logger
+from lib.enums import FeatureEnum
 
 
 class ServerManager():
@@ -30,8 +31,9 @@ class ServerManager():
         self.cache_servers(session)
 
         servers = self.filter_servers(session)
-        # ProtonVPN Features: 1: SECURE-CORE, 2: TOR, 4: P2P, 8: Streaming
-        excluded_features = [1, 2]
+        excluded_features = [
+            FeatureEnum.SECURE_CORE, FeatureEnum.TOR, FeatureEnum.P2P
+        ]
 
         # Filter out excluded features
         server_pool = []
@@ -93,8 +95,9 @@ class ServerManager():
         self.cache_servers(session)
         servers = self.filter_servers(session)
 
-        # ProtonVPN Features: 1: SECURE-CORE, 2: TOR, 4: P2P
-        excluded_features = [1, 2]
+        excluded_features = [
+            FeatureEnum.SECURE_CORE, FeatureEnum.TOR, FeatureEnum.P2P
+        ]
 
         # Filter out excluded features and countries
         server_pool = []
@@ -231,9 +234,11 @@ class ServerManager():
 
         literal_feature = args[0][0].strip().lower()
         allowed_features = {
-            "sc": 1, "tor": 2,
-            "p2p": 4, "stream": 8,
-            "ipv6": 16
+            "sc": FeatureEnum.SECURE_CORE,
+            "tor": FeatureEnum.TOR,
+            "p2p": FeatureEnum.P2P,
+            "stream": FeatureEnum.STREAMING,
+            "ipv6": FeatureEnum.IPv6
         }
 
         try:
