@@ -3,7 +3,9 @@ import subprocess
 import sys
 
 from dialog import Dialog
-from lib.constants import ProtocolEnum
+
+from lib.constants import ProtocolEnum, SUPPORTED_FEATURES
+from lib.logger import logger
 
 
 def dialog(server_manager, session):
@@ -31,10 +33,6 @@ def dialog(server_manager, session):
 
     server_manager.cache_servers(session)
 
-    features = {
-        0: "Normal", 1: "Secure-Core", 2: "Tor",
-        4: "P2P", 8: "Streaming", 16: "IPv6"
-    }
     server_tiers = {0: "F", 1: "B", 2: "P"}
 
     servers = server_manager.filter_servers(session)
@@ -55,8 +53,8 @@ def dialog(server_manager, session):
             feat = int(server_manager.extract_server_value(
                 server, "Features", servers)
             )
-            if not features[feat] in country_features:
-                country_features.append(features[feat])
+            if not SUPPORTED_FEATURES[feat] in country_features:
+                country_features.append(SUPPORTED_FEATURES[feat])
         choices.append((country, " | ".join(sorted(country_features))))
 
     country = show_dialog("Choose a country:", choices)
@@ -74,7 +72,7 @@ def dialog(server_manager, session):
             server_manager.extract_server_value(servername, "Load", servers)
         ).rjust(3, " ")
 
-        feature = features[
+        feature = SUPPORTED_FEATURES[
             server_manager.extract_server_value(
                 servername, 'Features', servers
             )
