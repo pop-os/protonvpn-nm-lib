@@ -8,6 +8,7 @@ from proton.api import Session
 
 from lib import exceptions
 from lib.constants import CACHED_SERVERLIST, PROTON_XDG_CACHE_HOME
+from lib.logger import logger
 
 
 class ServerManager():
@@ -25,23 +26,7 @@ class ServerManager():
         Returns:
             string: path to certificate file that is to be imported into nm
         """
-        if not isinstance(session, Session):
-            raise TypeError(
-                "Incorrect object type, "
-                + "{} is expected ".format(type(Session))
-                + "but got {} instead".format(type(protocol))
-            )
-
-        if not isinstance(protocol, str):
-            raise TypeError(
-                "Incorrect object type, "
-                + "str is expected but got {} instead".format(type(protocol))
-            )
-        elif len(protocol) == 0:
-            raise ValueError(
-                "The provided argument \"protocol\" is empty"
-            )
-
+        self.validate_session_protocol(session, protocol)
         self.cache_servers(session)
 
         servers = self.filter_servers(session)
@@ -58,7 +43,8 @@ class ServerManager():
 
         try:
             ip_list = self.generate_ip_list(servername, servers)
-        except IndexError:
+        except IndexError as e:
+            logger.exception("[!] IllegalServername: {}".format(e))
             raise exceptions.IllegalServername(
                 "\"{}\" is not a valid server".format(servername)
             )
@@ -78,37 +64,26 @@ class ServerManager():
         Returns:
             string: path to certificate file that is to be imported into nm
         """
-        if not isinstance(session, Session):
-            raise TypeError(
-                "Incorrect object type, "
-                + "{} is expected ".format(type(Session))
-                + "but got {} instead".format(type(protocol))
-            )
-
-        if not isinstance(protocol, str):
-            raise TypeError(
-                "Incorrect object type, "
-                + "str is expected but got {} instead".format(type(protocol))
-            )
-        elif len(protocol) == 0:
-            raise ValueError(
-                "The provided argument \"protocol\" is empty"
-            )
-
+        self.validate_session_protocol(session, protocol)
         if not isinstance(args, tuple):
-            raise TypeError(
-                "Incorrect object type, "
-                + "tuple is expected but got {} instead".format(type(args))
+            err_msg = "Incorrect object type, "
+            + "tuple is expected but got {} instead".format(type(args))
+            logger.error(
+                "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
+            raise TypeError(err_msg)
         elif not isinstance(args[0], list):
-            raise TypeError(
-                "Incorrect object type, "
-                + "list is expected but got {} instead".format(type(args[0]))
+            err_msg = "Incorrect object type, "
+            + "list is expected but got {} instead".format(type(args[0]))
+            logger.error(
+                "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
+            raise TypeError(err_msg)
 
         try:
             country_code = args[0][1].strip().upper()
-        except IndexError:
+        except IndexError as e:
+            logger.exception("[!] IndexError: {}".format(e))
             raise IndexError(
                 "Incorrect object type, "
                 + "tuple(list) is expected but got {} ".format(args)
@@ -132,15 +107,18 @@ class ServerManager():
                 server_pool.append(server)
 
         if len(server_pool) == 0:
-            raise ValueError(
-                "Invalid country code \"{}\"".format(country_code)
+            err_msg = "Invalid country code \"{}\"".format(country_code)
+            logger.error(
+                "[!] ValueError: {}. Raising exception.".format(err_msg)
             )
+            raise ValueError(err_msg)
 
         servername = self.get_fastest_server(server_pool)
 
         try:
             ip_list = self.generate_ip_list(servername, servers)
-        except IndexError:
+        except IndexError as e:
+            logger.exception("[!] IllegalServername: {}".format(e))
             raise exceptions.IllegalServername(
                 "\"{}\" is not a valid server".format(servername)
             )
@@ -160,37 +138,25 @@ class ServerManager():
         Returns:
             string: path to certificate file that is to be imported into nm
         """
-        if not isinstance(session, Session):
-            raise TypeError(
-                "Incorrect object type, "
-                + "{} is expected ".format(type(Session))
-                + "but got {} instead".format(type(protocol))
-            )
-
-        if not isinstance(protocol, str):
-            raise TypeError(
-                "Incorrect object type, "
-                + "str is expected but got {} instead".format(type(protocol))
-            )
-        elif len(protocol) == 0:
-            raise ValueError(
-                "The provided argument \"protocol\" is empty"
-            )
-
+        self.validate_session_protocol(session, protocol)
         if not isinstance(args, tuple):
-            raise TypeError(
-                "Incorrect object type, "
-                + "tuple is expected but got {} ".format(type(args))
-                + "instead"
+            err_msg = "Incorrect object type, "
+            + "tuple is expected but got {} ".format(type(args))
+            + "instead"
+            logger.error(
+                "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
+            raise TypeError(err_msg)
         elif (
             isinstance(args, tuple) and len(args) == 0
         ) or (
             isinstance(args, str) and len(args) == 0
         ):
-            raise ValueError(
-                "The provided argument \"args\" is empty"
+            err_msg = "The provided argument \"args\" is empty"
+            logger.error(
+                "[!] ValueError: {}. Raising exception.".format(err_msg)
             )
+            raise ValueError(err_msg)
 
         user_input = args[0]
         if isinstance(user_input, list):
@@ -199,25 +165,30 @@ class ServerManager():
         servername = user_input.strip().upper()
 
         if not self.is_servername_valid(user_input):
-            raise exceptions.IllegalServername(
-                "Unexpected servername {}".format(user_input)
+            err_msg = "Unexpected servername {}".format(user_input)
+            logger.error(
+                "[!] IllegalServername: {}. Raising exception.".format(err_msg)
             )
+            raise exceptions.IllegalServername(err_msg)
 
         self.cache_servers(session)
         servers = self.filter_servers(session)
 
         try:
             ip_list = self.generate_ip_list(servername, servers)
-        except IndexError:
+        except IndexError as e:
+            logger.exception("[!] IllegalServername: {}".format(e))
             raise exceptions.IllegalServername(
                 "\"{}\" is not an existing server".format(servername)
             )
 
         if servername not in [server["Name"] for server in servers]:
-            raise ValueError(
-                "{} is either invalid, under maintenance ".format(servername)
-                + "or inaccessible with your plan"
+            err_msg = "{} is either invalid, ".format(servername)
+            + "under maintenance or inaccessible with your plan"
+            logger.error(
+                "[!] ValueError: {}. Raising exception.".format(err_msg)
             )
+            raise ValueError(err_msg)
 
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
@@ -234,39 +205,29 @@ class ServerManager():
         Returns:
             string: path to certificate file that is to be imported into nm
         """
-        if not isinstance(session, Session):
-            raise TypeError(
-                "Incorrect object type, "
-                + "{} is expected ".format(type(Session))
-                + "but got {} instead".format(type(protocol))
-            )
-
-        if not isinstance(protocol, str):
-            raise TypeError(
-                "Incorrect object type, "
-                + "str is expected but got {} instead".format(type(protocol))
-            )
-        elif len(protocol) == 0:
-            raise ValueError(
-                "The provided argument \"protocol\" is empty"
-            )
-
+        self.validate_session_protocol(session, protocol)
         if not isinstance(args, tuple):
-            raise TypeError(
-                "Incorrect object type, "
-                + "tuple is expected but got {} ".format(type(args))
-                + "instead"
+            err_msg = "Incorrect object type, "
+            + "tuple is expected but got {} ".format(type(args))
+            + "instead"
+            logger.error(
+                "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
+            raise TypeError(err_msg)
         elif len(args) == 0:
-            raise ValueError(
-                "The provided argument \"args\" is empty"
+            err_msg = "The provided argument \"args\" is empty"
+            logger.error(
+                "[!] ValueError: {}. Raising exception.".format(err_msg)
             )
+            raise ValueError(err_msg)
         elif not isinstance(args[0], list):
-            raise TypeError(
-                "Incorrect object type, "
-                + "list is expected but got {} ".format(type(args))
-                + "instead"
+            err_msg = "Incorrect object type, "
+            + "list is expected but got {} ".format(type(args))
+            + "instead"
+            logger.error(
+                "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
+            raise TypeError(err_msg)
 
         literal_feature = args[0][0].strip().lower()
         allowed_features = {
@@ -277,7 +238,8 @@ class ServerManager():
 
         try:
             feature = allowed_features[literal_feature]
-        except KeyError:
+        except KeyError as e:
+            logger.exception("[!] ValueError: {}".format(e))
             raise ValueError("Feature is non-existent")
 
         self.cache_servers(session)
@@ -287,15 +249,22 @@ class ServerManager():
         server_pool = [s for s in servers if s["Features"] == feature]
 
         if len(server_pool) == 0:
-            raise Exception(
-                "No servers found with the {} feature".format(literal_feature)
+            err_msg = "No servers found with the {} feature".format(
+                literal_feature
             )
+            logger.error(
+                "[!] ServerListEmptyError: {}. Raising exception.".format(
+                    err_msg
+                )
+            )
+            raise exceptions.ServerListEmptyError(err_msg)
 
         servername = self.get_fastest_server(server_pool)
 
         try:
             ip_list = self.generate_ip_list(servername, servers)
-        except IndexError:
+        except IndexError as e:
+            logger.exception("[!] IllegalServername: {}".format(e))
             raise exceptions.IllegalServername(
                 "\"{}\" is not a valid server".format(servername)
             )
@@ -314,30 +283,15 @@ class ServerManager():
         Returns:
             string: path to certificate file that is to be imported into nm
         """
-        if not isinstance(session, Session):
-            raise TypeError(
-                "Incorrect object type, "
-                + "{} is expected ".format(type(Session))
-                + "but got {} instead".format(type(protocol))
-            )
-
-        if not isinstance(protocol, str):
-            raise TypeError(
-                "Incorrect object type, "
-                + "str is expected but got {} instead".format(type(protocol))
-            )
-        elif len(protocol) == 0:
-            raise ValueError(
-                "The provided argument \"protocol\" is empty"
-            )
-
+        self.validate_session_protocol(session, protocol)
         servers = self.filter_servers(session)
 
         servername = random.choice(servers)["Name"]
 
         try:
             ip_list = self.generate_ip_list(servername, servers)
-        except IndexError:
+        except IndexError as e:
+            logger.exception("[!] IllegalServername: {}".format(e))
             raise exceptions.IllegalServername(
                 "\"{}\" is not a valid server".format(servername)
             )
@@ -346,6 +300,36 @@ class ServerManager():
             protocol, session,
             servername, ip_list
         )
+
+    def validate_session_protocol(self, session, protocol):
+        if not isinstance(session, Session):
+            err_msg = "Incorrect object type, "
+            + "{} is expected ".format(type(Session))
+            + "but got {} instead".format(type(session))
+            logger.error(
+                "[!] TypeError: {}. Raising exception.".format(
+                    err_msg
+                )
+            )
+            raise TypeError(err_msg)
+
+        if not isinstance(protocol, str):
+            err_msg = "Incorrect object type, "
+            + "str is expected but got {} instead".format(type(protocol))
+            logger.error(
+                "[!] TypeError: {}. Raising exception.".format(
+                    err_msg
+                )
+            )
+            raise TypeError(err_msg)
+        elif len(protocol) == 0:
+            err_msg = "The provided argument \"protocol\" is empty"
+            logger.error(
+                "[!] TypeError: {}. Raising exception.".format(
+                    err_msg
+                )
+            )
+            raise ValueError(err_msg)
 
     def cache_servers(
         self, session,
