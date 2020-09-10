@@ -338,6 +338,15 @@ class ConnectionManager():
             self.call_daemon_reconnector("start")
         elif callback_type == "remove" and daemon_status:
             self.call_daemon_reconnector("stop")
+            try:
+                daemon_status = self.check_daemon_reconnector_status()
+            except Exception as e:
+                logger.exception("[!] Exception: {}".format(e))
+                print(e)
+            else:
+                logger.info(
+                    "Daemon status after stopping: {}".format(daemon_status)
+                )
 
     def check_daemon_reconnector_status(self):
         """Checks the status of the daemon reconnector and starts the process
