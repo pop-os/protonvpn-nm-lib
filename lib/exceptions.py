@@ -94,3 +94,7 @@ class StoredSessionNotFound(ProtonVPNBaseException):
 
 class IllegalServername(ProtonVPNBaseException):
     """Unexpected servername"""
+
+
+class ServerListEmptyError(ProtonVPNBaseException):
+    """Server list empty error"""
