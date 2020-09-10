@@ -139,7 +139,7 @@ class ProtonVPNReconnector(object):
                     + "Exception: {}".format(e)
                 )
             else:
-                logger.info("ProtonVPN connection has been manually.")
+                logger.info("ProtonVPN connection has been manually removed.")
             finally:
                 loop.quit()
 
