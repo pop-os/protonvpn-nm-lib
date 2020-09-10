@@ -7,6 +7,7 @@ import proton
 
 from lib import exceptions
 from lib.constants import DEFAULT_KEYRING_SERVICE, DEFAULT_KEYRING_USERNAME
+from lib.logger import logger
 
 
 class UserSessionManager:
@@ -18,10 +19,9 @@ class UserSessionManager:
     def __init__(self):
         self.set_optimum_keyring_backend()
         current_DE = os.getenv("XDG_CURRENT_DESKTOP", "")
-        print(
-            "Current DE:",
-            "None" if len(str(current_DE)) == 0 else current_DE
-        )
+        current_DE = "None" if len(str(current_DE)) == 0 else current_DE
+        logger.info("Current DE: {}".format(current_DE))
+        print("Current DE:", current_DE)
 
     def load_stored_user_session(
         self,
@@ -36,6 +36,7 @@ class UserSessionManager:
         Returns:
             session (proton.api.Session)
         """
+        logger.info("Loading stored user session")
         stored_session = self.get_stored_user_session(
             keyring_service,
             keyring_username
@@ -45,6 +46,7 @@ class UserSessionManager:
         try:
             return proton.Session.load(stored_session)
         except KeyError as e:
+            logger.exception("[!] Exception: {}".format(e))
             raise Exception(e)
 
     def store_user_session(
@@ -59,12 +61,17 @@ class UserSessionManager:
             keyring_service (string): the keyring servicename (optional)
             keyring_username (string): the keyring username (optional)
         """
+        logger.info("Storing user session")
         json_auth_data = self.json_session_transform(
             auth_data,
             "save"
         )
 
         if auth_data is None or len(auth_data) < 1:
+            logger.error(
+                "[!] IllegalAuthData: Unexpected AuthData type. "
+                + "Raising exception."
+            )
             raise exceptions.IllegalAuthData("Unexpected AuthData type")
 
         try:
@@ -78,6 +85,7 @@ class UserSessionManager:
             keyring.errors.KeyringLocked,
             keyring.errors.PasswordSetError
         ) as e:
+            logger.exception("[!] AccessKeyringError: {}".format(e))
             raise exceptions.AccessKeyringError(
                 "Could not access keychain: {}".format(e)
             )
@@ -101,6 +109,7 @@ class UserSessionManager:
                 keyring_username
             )
         except (keyring.errors.InitError, keyring.errors.KeyringLocked) as e:
+            logger.exception("[!] AccessKeyringError: {}".format(e))
             raise exceptions.AccessKeyringError(
                 "Could not fetch from keychain: {}".format(e)
             )
@@ -110,10 +119,13 @@ class UserSessionManager:
                 "load"
             )
         except json.decoder.JSONDecodeError as e:
+            logger.exception("[!] JSONAuthDataEmptyError: {}".format(e))
             raise exceptions.JSONAuthDataEmptyError(e)
         except TypeError as e:
+            logger.exception("[!] JSONAuthDataNoneError: {}".format(e))
             raise exceptions.JSONAuthDataNoneError(e)
         except Exception as e:
+            logger.exception("[!] JSONAuthDataError: {}".format(e))
             raise exceptions.JSONAuthDataError(e)
 
     def delete_user_session(
@@ -127,6 +139,7 @@ class UserSessionManager:
             keyring_service (string): the keyring servicename (optional)
             keyring_username (string): the keyring username (optional)
         """
+        logger.info("Deleting user session")
         try:
             keyring.delete_password(
                 keyring_service,
@@ -136,10 +149,12 @@ class UserSessionManager:
                 keyring.errors.InitError,
                 keyring.errors.KeyringLocked
         ) as e:
+            logger.exception("[!] AccessKeyringError: {}".format(e))
             raise exceptions.AccessKeyringError(
                 "Could not access keychain: {}".format(e)
             )
         except keyring.errors.PasswordDeleteError as e:
+            logger.exception("[!] StoredSessionNotFound: {}".format(e))
             raise exceptions.StoredSessionNotFound(e)
 
     def json_session_transform(self, auth_data, action=["save", "load"]):
@@ -151,6 +166,7 @@ class UserSessionManager:
         Returns:
             string or json
         """
+        logger.info("Transforming session: \"{}\"".format(action))
         json_action = json.dumps
 
         if action == "load":
@@ -172,6 +188,7 @@ class UserSessionManager:
 
         Default backend: SecretService
         """
+        logger.info("Setting optimum backend")
         optimum_backend = None
         search_in_str = re.search
         supported_backends = ["kwallet", "SecretService"]
