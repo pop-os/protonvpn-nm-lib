@@ -2,7 +2,7 @@ import os
 import logging
 from logging.handlers import RotatingFileHandler
 
-from lib.constants import PROTON_XDG_CACHE_HOME_LOGS
+from lib.constants import PROTON_XDG_CACHE_HOME_LOGS, LOGGER_NAME
 
 
 def get_logger():
@@ -16,7 +16,7 @@ def get_logger():
 
     LOGFILE = os.path.join(PROTON_XDG_CACHE_HOME_LOGS, "protonvpn.log")
 
-    logger = logging.getLogger("protonvpn")
+    logger = logging.getLogger(LOGGER_NAME)
     logger.setLevel(logging.INFO)
 
     console_handler = logging.StreamHandler()

@@ -46,3 +46,5 @@ SUPPORTED_FEATURES = {
 }
 
 VIRTUAL_DEVICE_NAME = "proton0"
+
+LOGGER_NAME = "protonvpn"
