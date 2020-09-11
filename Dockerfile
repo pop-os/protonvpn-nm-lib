@@ -30,7 +30,8 @@ RUN apt-get install -y \
 RUN python3 -m pip install cython && \
     python3 -m pip install proton-client && \
     python3 -m pip install keyring && \
-    python3 -m pip install xdg
+    python3 -m pip install xdg && \
+    python3 -m pip install --upgrade sentry-sdk==0.10.2
 
 COPY requirements.txt /tmp
 RUN python3 -m pip install -r /tmp/requirements.txt && \
