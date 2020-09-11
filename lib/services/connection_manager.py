@@ -78,6 +78,7 @@ class ConnectionManager():
         except FileNotFoundError:
             pass
         except Exception as e:
+            capture_exception(e)
             err_msg = "Expects object method, {} was passed".format(
                 delete_cached_cert
             )
@@ -146,6 +147,7 @@ class ConnectionManager():
             vpn_settings.add_data_item("username", openvpn_username)
             vpn_settings.add_secret("password", openvpn_password)
         except Exception as e:
+            capture_exception(e)
             logger.exception(
                 "[!] AddConnectionCredentialsError: {}. ".format(e)
                 + "Raising exception."
