@@ -120,15 +120,15 @@ class NetworkManagerPrototypeCLI():
             session = self.user_manager.load_session()
         except exceptions.JSONAuthDataEmptyError:
             print(
-                "[!] The stored session might be corrupted, "
-                + "please try to login again."
+                "[!] The stored session might be corrupted. "
+                + "Please, try to login again."
             )
             sys.exit(exit_type)
         except (
             exceptions.JSONAuthDataError,
             exceptions.JSONAuthDataNoneError
         ):
-            print("[!] There is no stored sessio, please login first.")
+            print("[!] There is no stored session. Please, login first.")
             sys.exit(exit_type)
         except exceptions.AccessKeyringError:
             print(
@@ -171,15 +171,15 @@ class NetworkManagerPrototypeCLI():
             )
         except exceptions.JSONAuthDataEmptyError:
             print(
-                "[!] The stored session might be corrupted, "
-                + "please try to login again."
+                "[!] The stored session might be corrupted. "
+                + "Please, try to login again."
             )
             sys.exit(exit_type)
         except (
             exceptions.JSONAuthDataError,
             exceptions.JSONAuthDataNoneError
         ):
-            print("[!] There is no stored session, please login first.")
+            print("[!] There is no stored session. Please, login first.")
             sys.exit(exit_type)
         except Exception as e:
             capture_exception(e)
@@ -243,8 +243,8 @@ class NetworkManagerPrototypeCLI():
             self.user_manager.load_session()
         except exceptions.JSONAuthDataEmptyError:
             print(
-                "[!] The stored session might be corrupted, "
-                + "please try to login again."
+                "[!] The stored session might be corrupted. "
+                + "Please, try to login again."
             )
             session_exists = False
         except (
