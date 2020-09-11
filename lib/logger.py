@@ -2,7 +2,7 @@ import os
 import logging
 from logging.handlers import RotatingFileHandler
 
-from lib.constants import PROTON_XDG_CACHE_HOME, PROTON_XDG_CACHE_HOME_LOGS
+from lib.constants import PROTON_XDG_CACHE_HOME_LOGS
 
 
 def get_logger():
@@ -11,11 +11,8 @@ def get_logger():
         "%(asctime)s — %(filename)s — %(levelname)s — %(funcName)s:%(lineno)d — %(message)s" # noqa
     )
 
-    if not os.path.isdir(PROTON_XDG_CACHE_HOME):
-        os.mkdir(PROTON_XDG_CACHE_HOME)
-
     if not os.path.isdir(PROTON_XDG_CACHE_HOME_LOGS):
-        os.mkdir(PROTON_XDG_CACHE_HOME_LOGS)
+        os.makedirs(PROTON_XDG_CACHE_HOME_LOGS)
 
     LOGFILE = os.path.join(PROTON_XDG_CACHE_HOME_LOGS, "protonvpn.log")
 
