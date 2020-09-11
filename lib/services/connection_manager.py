@@ -11,6 +11,8 @@ from lib.constants import ENV_CI_NAME, VIRTUAL_DEVICE_NAME
 from lib.logger import logger
 from lib.services.plugin_manager import PluginManager
 
+from . import capture_exception
+
 
 class ConnectionManager():
     def __init__(
@@ -105,6 +107,8 @@ class ConnectionManager():
                 + "No connection was found prior to adding a new one."
             )
             pass
+        except Exception as e:
+            capture_exception(e)
 
         client.add_connection_async(
             connection,
@@ -438,7 +442,8 @@ class ConnectionManager():
                 raise exceptions.VirtualDeviceNotFound(
                     "No virtual device type was specified in .ovpn file"
                 )
-
+            except Exception as e:
+                capture_exception(e)
             try:
                 index = virtual_dev_type_list.index(dev_type)
             except (ValueError, KeyError, TypeError) as e:
@@ -448,6 +453,8 @@ class ConnectionManager():
                     .format(' and '.join(virtual_dev_type_list), dev_type)
                     + "was provided"
                 )
+            except Exception as e:
+                capture_exception(e)
             else:
                 return virtual_dev_type_list[index]
 
