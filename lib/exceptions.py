@@ -96,5 +96,5 @@ class IllegalServername(ProtonVPNBaseException):
     """Unexpected servername"""
 
 
-class ServerListEmptyError(ProtonVPNBaseException):
-    """Server list empty error"""
+class EmptyServerListError(ProtonVPNBaseException):
+    """Empty server list error"""

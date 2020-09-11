@@ -258,11 +258,11 @@ class ServerManager():
                 literal_feature
             )
             logger.error(
-                "[!] ServerListEmptyError: {}. Raising exception.".format(
+                "[!] EmptyServerListError: {}. Raising exception.".format(
                     err_msg
                 )
             )
-            raise exceptions.ServerListEmptyError(err_msg)
+            raise exceptions.EmptyServerListError(err_msg)
 
         servername = self.get_fastest_server(server_pool)
 
