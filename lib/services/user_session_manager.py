@@ -9,6 +9,8 @@ from lib import exceptions
 from lib.constants import DEFAULT_KEYRING_SERVICE, DEFAULT_KEYRING_USERNAME
 from lib.logger import logger
 
+from . import capture_exception
+
 
 class UserSessionManager:
     KEYRING_BACKENDS = [
@@ -48,6 +50,8 @@ class UserSessionManager:
         except KeyError as e:
             logger.exception("[!] Exception: {}".format(e))
             raise Exception(e)
+        except Exception as e:
+            capture_exception(e)
 
     def store_user_session(
         self,
@@ -89,6 +93,8 @@ class UserSessionManager:
             raise exceptions.AccessKeyringError(
                 "Could not access keychain: {}".format(e)
             )
+        except Exception as e:
+            capture_exception(e)
 
     def get_stored_user_session(
         self,
@@ -113,6 +119,9 @@ class UserSessionManager:
             raise exceptions.AccessKeyringError(
                 "Could not fetch from keychain: {}".format(e)
             )
+        except Exception as e:
+            capture_exception(e)
+
         try:
             return self.json_session_transform(
                 stored_session,
@@ -156,6 +165,8 @@ class UserSessionManager:
         except keyring.errors.PasswordDeleteError as e:
             logger.exception("[!] StoredSessionNotFound: {}".format(e))
             raise exceptions.StoredSessionNotFound(e)
+        except Exception as e:
+            capture_exception(e)
 
     def json_session_transform(self, auth_data, action=["save", "load"]):
         """JSON encode/decode auth_data.
@@ -203,6 +214,8 @@ class UserSessionManager:
                 backend_name = backend_string_object.split(".")[2]
             except IndexError:
                 backend_priority = None
+            except Exception as e:
+                capture_exception(e)
             else:
                 backend_priority = search_in_str(
                     r"\(\w+:\W(\d+\.?\d*)\)", backend_str
@@ -213,6 +226,8 @@ class UserSessionManager:
                     supported_backends.index(backend_name)
                 except ValueError:
                     continue
+                except Exception as e:
+                    capture_exception(e)
                 else:
                     backend_priority = backend_priority.group(1)
                     if (
