@@ -7,6 +7,9 @@ from gi.repository import NM
 
 from lib import exceptions
 from lib.constants import SUPPORTED_PROTOCOLS
+from lib.logger import logger
+
+from . import capture_exception
 
 
 class PluginManager():
@@ -18,6 +21,7 @@ class PluginManager():
         Args:
             filename (string): path to file
         """
+        logger.info("Importing connection from file")
         pm = PluginManager()
         vpn_protocol = pm.extract_openvpn_protocol(filename)
 
@@ -33,7 +37,8 @@ class PluginManager():
             # return a NM.SimpleConnection (NM.Connection)
             # https://lazka.github.io/pgi-docs/NM-1.0/classes/SimpleConnection.html
             connection = editor_plugin.import_(filename)
-        except Exception:
+        except Exception as e:
+            logger.exception("[!] ImportConnectionError: {}".format(e))
             raise exceptions.ImportConnectionError(
                 "The provided file \"{}\" is invalid".format(filename)
             )
@@ -52,23 +57,26 @@ class PluginManager():
         Args:
             filename (string): path to certificate
         """
+        logger.info("Extracting openvpn protocol from file")
         vpn_protocol = False
 
         if not isinstance(filename, str):
-            raise TypeError(
-                "Incorrect object type, "
-                + "str is expected but got {} instead".format(type(filename))
-            )
+            err_msg = "Incorrect object type, "
+            + "str is expected but got {} instead".format(type(filename))
+
+            logger.error("[!] TypeError: {}".format(err_msg))
+            raise TypeError(err_msg)
         elif not filename.strip():
-            raise ValueError(
-                "The provided argument \"filename\" is empty"
-            )
+            err_msg = "The provided argument \"filename\" is empty"
+            logger.error("[!] ValueError: {}".format(err_msg))
+            raise ValueError(err_msg)
 
         if not os.path.isfile(filename):
-            raise FileNotFoundError(
-                "The provided file \"{}\"".format(filename)
-                + "could not be found"
-            )
+            err_msg = "The provided file \"{}\"".format(
+                filename
+            ) + "could not be found"
+            logger.error("[!] FileNotFoundError: {}".format(err_msg))
+            raise FileNotFoundError(err_msg)
 
         with open(filename, "r") as f:
             try:
@@ -78,7 +86,10 @@ class PluginManager():
             except AttributeError:
                 pass
             except FileNotFoundError as e:
+                logger.error("[!] ImportConnectionError: {}".format(e))
                 raise exceptions.ImportConnectionError(e)
+            except Exception as e:
+                capture_exception(e)
 
         return vpn_protocol
 
@@ -91,10 +102,12 @@ class PluginManager():
             ProtocolImplementationEnum:
                 protocol implementation type (openvpn/strongswan/wireguard)
         """
+        logger.info("Getting protocol implementationtype")
         for plugin_name, protocol_types in SUPPORTED_PROTOCOLS.items():
             if vpn_protocol in protocol_types:
                 return plugin_name
 
+        logger.error("[!] IllegalVPNProtocol: Raising exception")
         raise exceptions.IllegalVPNProtocol("Selected protocol was not found")
 
     def get_matching_plugin(self, protocol_implementation_type):
@@ -106,6 +119,7 @@ class PluginManager():
         Returns:
             NM.VpnEditorPlugin: matching protocol implementation instance
         """
+        logger.info("Getting matching plugin")
         plugin_info = NM.VpnPluginInfo
 
         # returns [NM.VpnPluginInfo] plugins
@@ -118,6 +132,7 @@ class PluginManager():
         )
 
         if protocol_plugin is None:
+            logger.error("[!] ProtocolPluginNotFound: Raising exception")
             raise exceptions.ProtocolPluginNotFound(
                 "The \"{}\" ".format(protocol_implementation_type)
                 + "protocol was not found"

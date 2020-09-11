@@ -7,6 +7,8 @@ from lib import exceptions
 from lib.constants import (CACHED_OPENVPN_CERTIFICATE, OPENVPN_TEMPLATE,
                            PROTON_XDG_CACHE_HOME, TEMPLATES)
 from lib.enums import ProtocolEnum, ProtocolPortEnum
+from lib.logger import logger
+from . import capture_exception
 
 
 class CertificateManager:
@@ -26,6 +28,7 @@ class CertificateManager:
         Returns:
             string: path to cached certificate
         """
+        logger.info("Generating VPN certificate")
         protocol_dict = {
             ProtocolEnum.TCP: self.generate_openvpn_cert,
             ProtocolEnum.UDP: self.generate_openvpn_cert,
@@ -34,34 +37,46 @@ class CertificateManager:
         }
 
         if not isinstance(protocol, str):
-            raise TypeError(
-                "Incorrect object type, "
-                + "str is expected but got {} instead".format(type(protocol))
+            err_msg = "Incorrect object type, "
+            + "str is expected but got {} instead".format(type(protocol))
+            logger.error(
+                "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
+            raise TypeError(err_msg)
 
         if not isinstance(session, Session):
-            raise TypeError(
-                "Incorrect object type, "
-                + "{} is expected ".format(type(Session))
-                + "but got {} instead".format(type(protocol))
+            err_msg = "Incorrect object type, "
+            + "{} is expected ".format(type(Session))
+            + "but got {} instead".format(type(protocol))
+            logger.error(
+                "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
+            raise TypeError(err_msg)
 
         if not isinstance(servername, str):
-            raise TypeError(
-                "Incorrect object type, "
-                + "str is expected but got {} instead".format(type(servername))
+            err_msg = "Incorrect object type, "
+            + "str is expected but got {} instead".format(type(servername))
+            logger.error(
+                "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
+            raise TypeError(err_msg)
 
         if not isinstance(ip_list, list):
-            raise TypeError(
-                "Incorrect object type, "
-                + "list is expected but got {} instead".format(type(ip_list))
+            err_msg = "Incorrect object type, "
+            + "list is expected but got {} instead".format(type(ip_list))
+            logger.error(
+                "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
+            raise TypeError(err_msg)
 
         if len(ip_list) == 0:
+            logger.error(
+                "[!] ValueError: No servers were provided. Raising exception."
+            )
             raise ValueError("No servers were provided")
 
         print(servername)
+        logger.info("Servername: \"{}\"".format(servername))
 
         try:
             return protocol_dict[protocol](
@@ -69,7 +84,10 @@ class CertificateManager:
                 cached_cert, protocol
             )
         except KeyError as e:
+            logger.exception("[!] IllegalVPNProtocol: {}".format(e))
             raise exceptions.IllegalVPNProtocol(e)
+        except Exception as e:
+            capture_exception(e)
 
     def generate_openvpn_cert(
         self, servername, ip_list,
@@ -85,6 +103,7 @@ class CertificateManager:
         Returns:
             string: path to where a certificate is cached
         """
+        logger.info("Generating OpenVPN certificate")
         ports = {
             ProtocolEnum.TCP: ProtocolPortEnum.TCP,
             ProtocolEnum.UDP: ProtocolPortEnum.UDP
@@ -121,7 +140,8 @@ class CertificateManager:
         Returns:
             bool
         """
-        print("Generate strongswan")
+        logger.info("Generating strongswan certificate")
+        print("Generate Strongswan")
         return True
 
     def generate_wireguard_cert(
@@ -137,6 +157,7 @@ class CertificateManager:
         Returns:
             bool
         """
+        logger.info("Generating Wireguard certificate")
         print("Generate wireguard")
         return True
 
@@ -147,4 +168,5 @@ class CertificateManager:
         Args:
             filename (string): path to cached certificate
         """
+        logger.info("Deleting cached certificate")
         os.remove(filename)

@@ -29,45 +29,13 @@ are those of the authors and should not be interpreted as representing
 official policies, either expressed or implied, of DOMEN KOZAR.
 """
 
-import logging
-import os
-from logging.handlers import RotatingFileHandler
 import getpass
 
 import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
 
-from lib.constants import (LOGFILE, PROTON_XDG_CACHE_HOME,
-                           PROTON_XDG_CACHE_HOME_LOGS)
-
-if not os.path.isdir(PROTON_XDG_CACHE_HOME):
-    os.mkdir(PROTON_XDG_CACHE_HOME)
-
-if not os.path.isdir(PROTON_XDG_CACHE_HOME_LOGS):
-    os.mkdir(PROTON_XDG_CACHE_HOME_LOGS)
-
-logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.INFO,
-    filemode="a",
-)
-
-FORMATTER = logging.Formatter(
-    "%(asctime)s — %(name)s — %(levelname)s — %(funcName)s:%(lineno)d — %(message)s" # noqa
-)
-
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(FORMATTER)
-
-
-file_handler = RotatingFileHandler(
-    LOGFILE,
-    maxBytes=3145728,
-    backupCount=1
-)
-file_handler.setFormatter(FORMATTER)
-logger.addHandler(file_handler)
+from lib.logger import logger
 
 
 class ProtonVPNReconnector(object):
@@ -93,14 +61,6 @@ class ProtonVPNReconnector(object):
         self.vpn_monitor()
         self.get_network_manager().connect_to_signal(
             "StateChanged", self.on_network_state_changed
-        )
-        logger.info(
-            "____Monitoring connection "
-            + "for {}, ".format(virtual_device_name)
-            + "reattempting up to {} times with {} ".format(
-                max_attempts, delay
-            )
-            + "ms between retries____\n\n"
         )
 
     def on_network_state_changed(self, state):
@@ -179,7 +139,7 @@ class ProtonVPNReconnector(object):
                     + "Exception: {}".format(e)
                 )
             else:
-                logger.info("ProtonVPN connection has been manually.")
+                logger.info("ProtonVPN connection has been manually removed.")
             finally:
                 loop.quit()
 
@@ -207,7 +167,7 @@ class ProtonVPNReconnector(object):
         Returns:
             dbus.Interface(dbus.Proxy): to ProtonVPN connection
         """
-        logger.info("Get NetworkManager DBUS interface")
+        logger.info("Getting NetworkManager interface")
         proxy = self.bus.get_object(
             "org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager"
         )
@@ -265,7 +225,7 @@ class ProtonVPNReconnector(object):
         Returns:
             string: active connection path that has default route(s)
         """
-        logger.info("Get active connection interface")
+        logger.info("Getting active connection interface")
         active_connections = self.get_all_active_conns()
         logger.info(
             "All active conns in get_active_connection: {}".format(
@@ -459,9 +419,12 @@ class ProtonVPNReconnector(object):
     def vpn_monitor(self):
         """Monitor and activate ProtonVPN connections."""
         logger.info(
-            "Starting monitor for '{}' virtual device.".format(
-                self.virtual_device_name
+            "____Monitoring connection "
+            + "for {}, ".format(self.virtual_device_name)
+            + "reattempting up to {} times with {} ".format(
+                self.max_attempts, self.delay
             )
+            + "ms between retries____"
         )
         vpn_interface = self.get_vpn_interface(self.virtual_device_name)
         active_con = self.get_active_connection()

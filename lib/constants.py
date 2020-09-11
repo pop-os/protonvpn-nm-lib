@@ -8,7 +8,8 @@ from xdg import XDG_CACHE_HOME
 # XDG_CONFIG_HOME, XDG_DATA_HOME
 from .enums import (
     ProtocolImplementationEnum,
-    ProtocolEnum
+    ProtocolEnum,
+    FeatureEnum
 )
 
 APP_VERSION = '0.0.1'
@@ -35,5 +36,15 @@ SUPPORTED_PROTOCOLS = {
     # ProtocolImplementationEnum.STRONGSWAN: [ProtocolEnum.IKEV2],
     # ProtocolImplementationEnum.WIREGUARD: [ProtocolEnum.WIREGUARD],
 }
+SUPPORTED_FEATURES = {
+    FeatureEnum.NORMAL: "Normal",
+    FeatureEnum.SECURE_CORE: "Secure-Core",
+    FeatureEnum.TOR: "Tor",
+    FeatureEnum.P2P: "P2P",
+    FeatureEnum.STREAMING: "Streaming",
+    FeatureEnum.IPv6: "IPv6"
+}
 
 VIRTUAL_DEVICE_NAME = "proton0"
+LOGGER_NAME = "protonvpn"
+APP_CONFIG = os.path.join(PWD, "app.cfg")

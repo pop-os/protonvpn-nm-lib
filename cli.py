@@ -5,11 +5,13 @@ import sys
 
 from cli_dialog import dialog
 from lib import exceptions
+from lib.enums import ProtocolEnum
+from lib.logger import logger
 from lib.services.certificate_manager import CertificateManager
 from lib.services.connection_manager import ConnectionManager
 from lib.services.server_manager import ServerManager
 from lib.services.user_manager import UserManager
-from lib.enums import ProtocolEnum
+from lib.services import capture_exception
 
 
 class NetworkManagerPrototypeCLI():
@@ -30,12 +32,15 @@ class NetworkManagerPrototypeCLI():
             )
             parser.exit(1)
 
+        logger.info("CLI command: {}".format(args))
         getattr(self, args.command)()
 
     def c(self):
+        """Shortcut to connect to ProtonVPN."""
         self.connect()
 
     def connect(self):
+        """Connect to ProtonVPN."""
         parser = argparse.ArgumentParser(
             description="Connect to ProtonVPN", prog="protonvpn c"
         )
@@ -85,6 +90,18 @@ class NetworkManagerPrototypeCLI():
         )
 
         args = parser.parse_args(sys.argv[2:])
+        logger.info("Options: {}".format(args))
+        command = False
+        cli_commands = dict(
+            servername=self.server_manager.direct,
+            fastest=self.server_manager.fastest,
+            random=self.server_manager.random_c,
+            cc=self.server_manager.country_f,
+            sc=self.server_manager.feature_f,
+            p2p=self.server_manager.feature_f,
+            tor=self.server_manager.feature_f,
+        )
+        exit_type = 1
 
         try:
             protocol = args.protocol.lower().strip()
@@ -95,28 +112,38 @@ class NetworkManagerPrototypeCLI():
 
         try:
             session = self.user_manager.load_session()
+        except exceptions.JSONAuthDataEmptyError:
+            print(
+                "[!] The stored session might be corrupted. "
+                + "Please, try to login again."
+            )
+            sys.exit(exit_type)
         except (
-            exceptions.JSONAuthDataNoneError,
-            exceptions.JSONAuthDataEmptyError
+            exceptions.JSONAuthDataError,
+            exceptions.JSONAuthDataNoneError
         ):
-            print("[!] No stored session was found, please try to first login")
-            sys.exit(1)
-
-        cli_commands = dict(
-            servername=self.server_manager.direct,
-            fastest=self.server_manager.fastest,
-            random=self.server_manager.random_c,
-            cc=self.server_manager.country_f,
-            sc=self.server_manager.feature_f,
-            p2p=self.server_manager.feature_f,
-            tor=self.server_manager.feature_f,
-        )
-
-        command = False
+            print("[!] There is no stored session. Please, login first.")
+            sys.exit(exit_type)
+        except exceptions.AccessKeyringError:
+            print(
+                "[!] Unable to load session. Could not access keyring."
+            )
+            sys.exit(exit_type)
+        except Exception as e:
+            capture_exception(e)
+            logger.exception(
+                "[!] Unknown error: {}".format(e)
+            )
+            print("[!] Unknown error occured: {}.".format(e))
+            sys.exit(exit_type)
+        else:
+            logger.info("Local session was found.")
 
         for cls_attr in inspect.getmembers(args):
             if cls_attr[0] in cli_commands and cls_attr[1]:
                 command = list(cls_attr)
+
+        logger.info("CLI connect type: {}".format(command))
 
         try:
             certificate_filename = cli_commands[command[0]](
@@ -133,94 +160,164 @@ class NetworkManagerPrototypeCLI():
             )
 
         try:
-            username, password = self.user_manager.fetch_vpn_credentials()
-        except (
-            exceptions.JSONAuthDataNoneError, exceptions.JSONAuthDataEmptyError
-        ) as e:
+            openvpn_username, openvpn_password = self.user_manager.fetch_vpn_credentials( # noqa
+                session
+            )
+        except exceptions.JSONAuthDataEmptyError:
             print(
-                "[!] The stored session might be corrupted, please re-login."
-                + "\nException: {}".format(e))
-            sys.exit(1)
+                "[!] The stored session might be corrupted. "
+                + "Please, try to login again."
+            )
+            sys.exit(exit_type)
+        except (
+            exceptions.JSONAuthDataError,
+            exceptions.JSONAuthDataNoneError
+        ):
+            print("[!] There is no stored session. Please, login first.")
+            sys.exit(exit_type)
+        except Exception as e:
+            capture_exception(e)
+            logger.exception(
+                "[!] Unknown error: {}".format(e)
+            )
+            print("[!] Unknown error occured: {}.".format(e))
+            sys.exit(exit_type)
+
+        logger.info("OpenVPN credentials were fetched.")
 
         try:
             self.connection_manager.add_connection(
-                certificate_filename, username,
-                password, CertificateManager.delete_cached_certificate
+                certificate_filename, openvpn_username,
+                openvpn_password, CertificateManager.delete_cached_certificate
             )
-        except exceptions.ImportConnectionError as e:
-            print(e)
+        except exceptions.ImportConnectionError:
+            print("An error occured upon importing connection.")
+        except Exception as e:
+            capture_exception(e)
+            logger.exception(
+                "[!] Unknown error: {}".format(e)
+            )
+            print("[!] Unknown error: {}".format(e))
+            sys.exit(exit_type)
         else:
-            self.connection_manager.start_connection()
-        finally:
-            sys.exit(1)
+            exit_type = 0
+
+        self.connection_manager.start_connection()
+        sys.exit(exit_type)
 
     def d(self):
+        """Shortcut to disconnect from ProtonVPN."""
         self.disconnect()
 
     def disconnect(self):
+        """Disconnect from ProtonVPN."""
+        exit_type = 1
         try:
             self.connection_manager.remove_connection()
         except exceptions.ConnectionNotFound as e:
-            print("[!] {}".format(e))
+            print("[!] Unable to disconnect: {}".format(e))
+        except (
+            exceptions.RemoveConnectionFinishError,
+            exceptions.StopConnectionFinishError
+        ) as e:
+            print("[!] Unable to disconnect: {}".format(e))
+        except Exception as e:
+            capture_exception(e)
+            logger.exception(
+                "[!] Unknown error: {}".format(e)
+            )
+            print("[!] Unknown error occured: {}".format(e))
+        else:
+            exit_type = 1
         finally:
-            sys.exit(1)
+            sys.exit(exit_type)
 
     def login(self):
-        def ask_username_password():
-            """Set the ProtonVPN Username and Password."""
-
-            print()
-            ovpn_username = input("Enter your ProtonVPN username: ")
-
-            # Ask for the password and confirmation until both are the same
-            while True:
-                ovpn_password1 = getpass.getpass(
-                    "Enter your ProtonVPN password: "
-                )
-                ovpn_password2 = getpass.getpass(
-                    "Confirm your ProtonVPN password: "
-                )
-
-                if not ovpn_password1 == ovpn_password2:
-                    print()
-                    print("[!] The passwords do not match. Please try again.")
-                    sys.exit(1)
-                else:
-                    break
-
-            return ovpn_username, ovpn_password1
+        """Login ProtonVPN."""
+        session_exists = False
 
         try:
             self.user_manager.load_session()
+        except exceptions.JSONAuthDataEmptyError:
+            print(
+                "[!] The stored session might be corrupted. "
+                + "Please, try to login again."
+            )
+            session_exists = False
         except (
-            exceptions.JSONAuthDataNoneError,
-            exceptions.JSONAuthDataEmptyError
+            exceptions.JSONAuthDataError,
+            exceptions.JSONAuthDataNoneError
         ):
-            username, password = ask_username_password()
-            try:
-                self.user_manager.login(username, password)
-            except (
-                exceptions.IncorrectCredentialsError,
-                exceptions.APIAuthenticationError,
-                ValueError
-            ) as exp:
-                print("Unable to authenticate: {}".format(exp))
-            else:
-                print("\nLogin successful!")
+            session_exists = False
+        except exceptions.AccessKeyringError as e:
+            print(
+                "[!] Unable to load session. Could not access keyring: "
+                + "{}".format(e)
+            )
+        except Exception as e:
+            capture_exception(e)
+            logger.exception(
+                "[!] Unknown error: {}".format(e)
+            )
+            print("[!] Unknown error: {}".format(e))
         else:
+            logger.info("User already logged in, local session was found.")
+            session_exists = True
+
+        if session_exists:
             print("\nYou are already logged in!")
+            sys.exit()
+
+        protonvpn_username = input("\nEnter your ProtonVPN username: ")
+        protonvpn_password = getpass.getpass("Enter your ProtonVPN password: ")
+        exit_type = 1
+
+        try:
+            self.user_manager.login(protonvpn_username, protonvpn_password)
+        except (TypeError, ValueError) as e:
+            print("[!] Unable to authenticate. {}".format(e))
+        except exceptions.IncorrectCredentialsError:
+            print(
+                "[!] Unable to authenticate. "
+                + "The provided credentials are incorrect"
+            )
+        except exceptions.APIAuthenticationError:
+            print("[!] Unable to authenticate. Unexpected API response.")
+        except Exception as e:
+            capture_exception(e)
+            logger.exception(
+                "[!] Unknown error: {}".format(e)
+            )
+            print("[!] Unknown error occured: {}".format(e))
+        else:
+            exit_type = 0
+            logger.info("Successful login.")
+            print("\nLogin successful!")
         finally:
-            sys.exit(1)
+            sys.exit(exit_type)
 
     def logout(self):
+        """Logout ProtonVPN."""
+        exit_type = 1
+
         try:
             self.user_manager.delete_user_session()
+        except exceptions.StoredSessionNotFound:
+            print("[!] Unable to logout. No session was found.")
+        except exceptions.AccessKeyringError:
+            print("[!] Unable to logout. Could not access keyring.")
         except Exception as e:
-            print(e)
+            capture_exception(e)
+            logger.exception(
+                "[!] Unknown error: {}".format(e)
+            )
+            print("[!] Unknown error occured: {}.".format(e))
         else:
+            exit_type = 0
+            logger.info("Successful logout.")
             print("Logout successful!")
         finally:
-            sys.exit(1)
+            sys.exit(exit_type)
 
 
 NetworkManagerPrototypeCLI()
