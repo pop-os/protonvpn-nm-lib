@@ -9,6 +9,8 @@ from lib import exceptions
 from lib.constants import SUPPORTED_PROTOCOLS
 from lib.logger import logger
 
+from . import capture_exception
+
 
 class PluginManager():
 
@@ -86,6 +88,8 @@ class PluginManager():
             except FileNotFoundError as e:
                 logger.error("[!] ImportConnectionError: {}".format(e))
                 raise exceptions.ImportConnectionError(e)
+            except Exception as e:
+                capture_exception(e)
 
         return vpn_protocol
 
