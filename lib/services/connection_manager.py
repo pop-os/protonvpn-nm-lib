@@ -133,15 +133,19 @@ class ConnectionManager():
             None
         )
 
-    def add_vpn_credentials(self, vpn_settings, username, password):
+    def add_vpn_credentials(self, vpn_settings,
+                            openvpn_username, openvpn_password):
         # returns NM.SettingVpn if the connection contains one, otherwise None
         # https://lazka.github.io/pgi-docs/NM-1.0/classes/SettingVpn.html
-        logger.info("Adding VPN credentials")
+        logger.info("Adding OpenVPN credentials")
         try:
-            vpn_settings.add_data_item("username", username)
-            vpn_settings.add_secret("password", password)
+            vpn_settings.add_data_item("username", openvpn_username)
+            vpn_settings.add_secret("password", openvpn_password)
         except Exception as e:
-            logger.exception("[!] {}".format(e))
+            logger.exception(
+                "[!] AddConnectionCredentialsError: {}. ".format(e)
+                + "Raising exception."
+            )
             raise exceptions.AddConnectionCredentialsError(e)
 
     def start_connection(self):
