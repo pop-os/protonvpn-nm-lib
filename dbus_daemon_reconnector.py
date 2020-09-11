@@ -167,7 +167,7 @@ class ProtonVPNReconnector(object):
         Returns:
             dbus.Interface(dbus.Proxy): to ProtonVPN connection
         """
-        logger.info("Geting NetworkManager interface")
+        logger.info("Getting NetworkManager interface")
         proxy = self.bus.get_object(
             "org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager"
         )
