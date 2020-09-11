@@ -13,7 +13,9 @@ setup(
     version=APP_VERSION,
     packages=find_packages(),
     entry_points={
-        "console_scripts": ["protonvpn-exp = cli:NetworkManagerPrototypeCLI"]
+        "console_scripts": [
+            "protonvpn-exp = src.cli:NetworkManagerPrototypeCLI"
+        ]
     },
     description='Proton Technologies Core/CLI',
     author='Proton Technologies',

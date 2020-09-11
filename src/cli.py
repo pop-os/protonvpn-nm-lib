@@ -3,7 +3,7 @@ import getpass
 import inspect
 import sys
 
-from cli_dialog import dialog
+from .cli_dialog import dialog
 from lib import exceptions
 from lib.enums import ProtocolEnum
 from lib.logger import logger
