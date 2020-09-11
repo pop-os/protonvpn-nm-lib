@@ -11,6 +11,8 @@ from lib.constants import CACHED_SERVERLIST, PROTON_XDG_CACHE_HOME
 from lib.logger import logger
 from lib.enums import FeatureEnum
 
+from . import capture_exception
+
 
 class ServerManager():
     REFRESH_INTERVAL = 15
@@ -50,6 +52,8 @@ class ServerManager():
             raise exceptions.IllegalServername(
                 "\"{}\" is not a valid server".format(servername)
             )
+        except Exception as e:
+            capture_exception(e)
 
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
@@ -91,6 +95,8 @@ class ServerManager():
                 + "tuple(list) is expected but got {} ".format(args)
                 + "instead"
             )
+        except Exception as e:
+            capture_exception(e)
 
         self.cache_servers(session)
         servers = self.filter_servers(session)
@@ -125,6 +131,8 @@ class ServerManager():
             raise exceptions.IllegalServername(
                 "\"{}\" is not a valid server".format(servername)
             )
+        except Exception as e:
+            capture_exception(e)
 
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
@@ -184,6 +192,8 @@ class ServerManager():
             raise exceptions.IllegalServername(
                 "\"{}\" is not an existing server".format(servername)
             )
+        except Exception as e:
+            capture_exception(e)
 
         if servername not in [server["Name"] for server in servers]:
             err_msg = "{} is either invalid, ".format(servername)
@@ -246,6 +256,8 @@ class ServerManager():
         except KeyError as e:
             logger.exception("[!] ValueError: {}".format(e))
             raise ValueError("Feature is non-existent")
+        except Exception as e:
+            capture_exception(e)
 
         self.cache_servers(session)
 
@@ -273,6 +285,8 @@ class ServerManager():
             raise exceptions.IllegalServername(
                 "\"{}\" is not a valid server".format(servername)
             )
+        except Exception as e:
+            capture_exception(e)
 
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
@@ -300,6 +314,8 @@ class ServerManager():
             raise exceptions.IllegalServername(
                 "\"{}\" is not a valid server".format(servername)
             )
+        except Exception as e:
+            capture_exception(e)
 
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
@@ -388,6 +404,8 @@ class ServerManager():
             )
         except FileNotFoundError:
             last_modified_time = datetime.datetime.now()
+        except Exception as e:
+            capture_exception(e)
 
         now_time = datetime.datetime.now()
         time_ago = now_time - datetime.timedelta(minutes=self.REFRESH_INTERVAL)
@@ -420,6 +438,9 @@ class ServerManager():
         except IndexError as e:
             logger.info("[!] IndexError: {}".format(e))
             raise IndexError(e)
+        except Exception as e:
+            capture_exception(e)
+
         ip_list = [subserver["EntryIP"] for subserver in subservers]
 
         return ip_list
