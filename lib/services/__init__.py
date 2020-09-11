@@ -2,10 +2,14 @@ import sentry_sdk
 from sentry_sdk import capture_exception  # noqa
 from sentry_sdk.integrations.logging import ignore_logger
 
-from lib.constants import APP_VERSION, LOGGER_NAME
+from lib.constants import APP_VERSION, LOGGER_NAME, APP_CONFIG
+import configparser
 
 ignore_logger(LOGGER_NAME)
+config = configparser.ConfigParser()
+config.read(APP_CONFIG)
+
 sentry_sdk.init(
-    dsn="https://f9d7d18c83374b7a901f20036f8583e1@sentry.protontech.ch/62",
+    dsn=config["sentry"]["dsn"],
     release=APP_VERSION,
 )
