@@ -46,5 +46,5 @@ SUPPORTED_FEATURES = {
 }
 
 VIRTUAL_DEVICE_NAME = "proton0"
-
 LOGGER_NAME = "protonvpn"
+APP_CONFIG = os.path.join(PWD, "app.cfg")
