@@ -8,6 +8,7 @@ from lib.constants import (CACHED_OPENVPN_CERTIFICATE, OPENVPN_TEMPLATE,
                            PROTON_XDG_CACHE_HOME, TEMPLATES)
 from lib.enums import ProtocolEnum, ProtocolPortEnum
 from lib.logger import logger
+from . import capture_exception
 
 
 class CertificateManager:
@@ -85,6 +86,8 @@ class CertificateManager:
         except KeyError as e:
             logger.exception("[!] IllegalVPNProtocol: {}".format(e))
             raise exceptions.IllegalVPNProtocol(e)
+        except Exception as e:
+            capture_exception(e)
 
     def generate_openvpn_cert(
         self, servername, ip_list,
