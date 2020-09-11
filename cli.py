@@ -3,23 +3,15 @@ import getpass
 import inspect
 import sys
 
-import sentry_sdk
-from sentry_sdk import capture_exception  # noqa
-
 from cli_dialog import dialog
 from lib import exceptions
-from lib.constants import APP_VERSION
 from lib.enums import ProtocolEnum
 from lib.logger import logger
 from lib.services.certificate_manager import CertificateManager
 from lib.services.connection_manager import ConnectionManager
 from lib.services.server_manager import ServerManager
 from lib.services.user_manager import UserManager
-
-sentry_sdk.init(
-    dsn="https://f9d7d18c83374b7a901f20036f8583e1@sentry.protontech.ch/62",
-    release=APP_VERSION,
-)
+from lib.services import capture_exception
 
 
 class NetworkManagerPrototypeCLI():
@@ -44,9 +36,11 @@ class NetworkManagerPrototypeCLI():
         getattr(self, args.command)()
 
     def c(self):
+        """Shortcut to connect to ProtonVPN."""
         self.connect()
 
     def connect(self):
+        """Connect to ProtonVPN."""
         parser = argparse.ArgumentParser(
             description="Connect to ProtonVPN", prog="protonvpn c"
         )
@@ -212,9 +206,11 @@ class NetworkManagerPrototypeCLI():
         sys.exit(exit_type)
 
     def d(self):
+        """Shortcut to disconnect from ProtonVPN."""
         self.disconnect()
 
     def disconnect(self):
+        """Disconnect from ProtonVPN."""
         exit_type = 1
         try:
             self.connection_manager.remove_connection()
@@ -237,6 +233,7 @@ class NetworkManagerPrototypeCLI():
             sys.exit(exit_type)
 
     def login(self):
+        """Login ProtonVPN."""
         session_exists = False
 
         try:
@@ -300,6 +297,7 @@ class NetworkManagerPrototypeCLI():
             sys.exit(exit_type)
 
     def logout(self):
+        """Logout ProtonVPN."""
         exit_type = 1
 
         try:
