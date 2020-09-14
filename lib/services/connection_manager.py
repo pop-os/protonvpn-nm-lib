@@ -77,7 +77,7 @@ class ConnectionManager():
 
         # Check that method to delete cached certificates is implemented
         try:
-            delete_cached_cert("test")
+            delete_cached_cert("no_existing_cert.ovpn")
         except FileNotFoundError:
             pass
         except Exception as e:
