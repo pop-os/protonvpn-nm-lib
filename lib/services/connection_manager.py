@@ -21,7 +21,10 @@ class ConnectionManager():
     ):
         self.virtual_device_name = virtual_device_name
 
-    def add_connection(self, filename, username, password, delete_cached_cert):
+    def add_connection(
+        self, filename, username,
+        password, delete_cached_cert, domain
+    ):
         """Setup and add ProtonVPN connection.
 
         Args:
@@ -98,6 +101,7 @@ class ConnectionManager():
 
         self.make_vpn_user_owned(connection)
         self.add_vpn_credentials(vpn_settings, username, password)
+        self.add_server_certificate_check(vpn_settings, domain)
         self.apply_virtual_device_type(vpn_settings, filename)
 
         try:
@@ -153,6 +157,21 @@ class ConnectionManager():
                 + "Raising exception."
             )
             raise exceptions.AddConnectionCredentialsError(e)
+
+    def add_server_certificate_check(self, vpn_settings, domain):
+        logger.info("Adding server ceritificate check")
+        appened_domain = "name:" + domain
+        try:
+            vpn_settings.add_data_item(
+                "verify-x509-name", appened_domain
+            )
+        except Exception as e:
+            capture_exception(e)
+            logger.exception(
+                "[!] AddServerCertificateCheckError: {}. ".format(e)
+                + "Raising exception."
+            )
+            raise exceptions.AddServerCertificateCheckError(e)
 
     def start_connection(self):
         """Start ProtonVPN connection."""
