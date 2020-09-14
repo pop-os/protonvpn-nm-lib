@@ -44,9 +44,10 @@ class ServerManager():
                 server_pool.append(server)
 
         servername, domain = self.get_fastest_server(server_pool)
-
         try:
-            ip_list = self.generate_ip_list(servername, servers)
+            entry_IP, exit_IP, equal_IPs = self.generate_ip_list(
+                servername, servers
+            )
         except IndexError as e:
             logger.exception("[!] IllegalServername: {}".format(e))
             raise exceptions.IllegalServername(
@@ -55,9 +56,13 @@ class ServerManager():
         except Exception as e:
             capture_exception(e)
 
+        if not equal_IPs:
+            # fetch exit_IP Domain
+            pass
+
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
-            servername, ip_list
+            servername, entry_IP
         ), domain
 
     def country_f(self, session, protocol, *args):
@@ -125,7 +130,9 @@ class ServerManager():
         servername, domain = self.get_fastest_server(server_pool)
 
         try:
-            ip_list = self.generate_ip_list(servername, servers)
+            entry_IP, exit_IP, equal_IPs = self.generate_ip_list(
+                servername, servers
+            )
         except IndexError as e:
             logger.exception("[!] IllegalServername: {}".format(e))
             raise exceptions.IllegalServername(
@@ -136,7 +143,7 @@ class ServerManager():
 
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
-            servername, ip_list
+            servername, entry_IP
         ), domain
 
     def direct(self, session, protocol, *args):
@@ -186,7 +193,9 @@ class ServerManager():
         servers = self.filter_servers(session)
 
         try:
-            ip_list = self.generate_ip_list(servername, servers)
+            entry_IP, exit_IP, equal_IPs = self.generate_ip_list(
+                servername, servers
+            )
         except IndexError as e:
             logger.exception("[!] IllegalServername: {}".format(e))
             raise exceptions.IllegalServername(
@@ -211,8 +220,11 @@ class ServerManager():
 
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
-            servername, ip_list
+            servername, entry_IP
         ), domain
+
+    def get_matching_domain(self, server_pool):
+        print(server_pool)
 
     def feature_f(self, session, protocol, *args):
         """Connect to fastest server based on specified feature.
@@ -285,7 +297,9 @@ class ServerManager():
         servername, domain = self.get_fastest_server(server_pool)
 
         try:
-            ip_list = self.generate_ip_list(servername, servers)
+            entry_IP, exit_IP, equal_IPs = self.generate_ip_list(
+                servername, servers
+            )
         except IndexError as e:
             logger.exception("[!] IllegalServername: {}".format(e))
             raise exceptions.IllegalServername(
@@ -296,7 +310,7 @@ class ServerManager():
 
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
-            servername, ip_list
+            servername, entry_IP
         ), domain
 
     def random_c(self, session, protocol, *_):
@@ -316,7 +330,9 @@ class ServerManager():
         domain = random_choice["Domain"]
 
         try:
-            ip_list = self.generate_ip_list(servername, servers)
+            entry_IP, exit_IP, equal_IPs = self.generate_ip_list(
+                servername, servers
+            )
         except IndexError as e:
             logger.exception("[!] IllegalServername: {}".format(e))
             raise exceptions.IllegalServername(
@@ -327,7 +343,7 @@ class ServerManager():
 
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
-            servername, ip_list
+            servername, entry_IP
         ), domain
 
     def validate_session_protocol(self, session, protocol):
@@ -429,7 +445,10 @@ class ServerManager():
             with open(cached_serverlist, "w") as f:
                 json.dump(data, f)
 
-    def generate_ip_list(self, servername, servers):
+    def generate_ip_list(
+        self, servername, servers,
+        server_certificate_check=True
+    ):
         """Exctract IPs from server list, based on servername.
 
         Args:
@@ -449,9 +468,23 @@ class ServerManager():
         except Exception as e:
             capture_exception(e)
 
-        ip_list = [subserver["EntryIP"] for subserver in subservers]
-
-        return ip_list
+        equal_IPs = None
+        exit_IP = None
+        if server_certificate_check:
+            ip_list = [
+                (subserver["EntryIP"], subserver["ExitIP"])
+                for subserver
+                in subservers
+            ]
+            entry_IP, exit_IP = random.choice(ip_list)
+            equal_IPs = True if entry_IP == exit_IP else False
+        else:
+            entry_IP = [
+                subserver["EntryIP"]
+                for subserver
+                in subservers
+            ]
+        return [entry_IP], exit_IP, equal_IPs
 
     def filter_servers(self, session):
         """Filter servers based on user tier.
