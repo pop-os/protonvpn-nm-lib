@@ -43,7 +43,7 @@ class ServerManager():
             if server["Features"] not in excluded_features:
                 server_pool.append(server)
 
-        servername = self.get_fastest_server(server_pool)
+        servername, domain = self.get_fastest_server(server_pool)
 
         try:
             ip_list = self.generate_ip_list(servername, servers)
@@ -58,7 +58,7 @@ class ServerManager():
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
             servername, ip_list
-        )
+        ), domain
 
     def country_f(self, session, protocol, *args):
         """Connect to fastest server in a specific country.
@@ -122,7 +122,7 @@ class ServerManager():
             )
             raise ValueError(err_msg)
 
-        servername = self.get_fastest_server(server_pool)
+        servername, domain = self.get_fastest_server(server_pool)
 
         try:
             ip_list = self.generate_ip_list(servername, servers)
@@ -137,7 +137,7 @@ class ServerManager():
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
             servername, ip_list
-        )
+        ), domain
 
     def direct(self, session, protocol, *args):
         """Connect directly to specified server.
@@ -203,10 +203,16 @@ class ServerManager():
             )
             raise ValueError(err_msg)
 
+        servername, domain = [
+            (server["Name"], server["Domain"])
+            for server in servers
+            if servername == server["Name"]
+        ][0]
+
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
             servername, ip_list
-        )
+        ), domain
 
     def feature_f(self, session, protocol, *args):
         """Connect to fastest server based on specified feature.
@@ -276,7 +282,7 @@ class ServerManager():
             )
             raise exceptions.EmptyServerListError(err_msg)
 
-        servername = self.get_fastest_server(server_pool)
+        servername, domain = self.get_fastest_server(server_pool)
 
         try:
             ip_list = self.generate_ip_list(servername, servers)
@@ -291,7 +297,7 @@ class ServerManager():
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
             servername, ip_list
-        )
+        ), domain
 
     def random_c(self, session, protocol, *_):
         """Connect to a random server.
@@ -305,7 +311,9 @@ class ServerManager():
         self.validate_session_protocol(session, protocol)
         servers = self.filter_servers(session)
 
-        servername = random.choice(servers)["Name"]
+        random_choice = random.choice(servers)
+        servername = random_choice["Name"]
+        domain = random_choice["Domain"]
 
         try:
             ip_list = self.generate_ip_list(servername, servers)
@@ -320,7 +328,7 @@ class ServerManager():
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
             servername, ip_list
-        )
+        ), domain
 
     def validate_session_protocol(self, session, protocol):
         """Validates session and protocol
@@ -503,9 +511,11 @@ class ServerManager():
         else:
             pool_size = 1
 
-        fastest_server = random.choice(fastest_pool[:pool_size])["Name"]
+        random_choice = random.choice(fastest_pool[:pool_size])
+        fastest_server_name = random_choice["Name"]
+        fastest_server_domain = random_choice["Domain"]
 
-        return fastest_server
+        return fastest_server_name, fastest_server_domain
 
     def extract_server_value(self, servername, key, servers):
         """Extract server data based on servername.
@@ -515,7 +525,7 @@ class ServerManager():
             key (string): keyword that contains servernames in json
             servers (list): a list containing the servers
         Returns:
-            string: server name [PT#1]
+            list: dict with server information
         """
         value = [
             server[key] for server
