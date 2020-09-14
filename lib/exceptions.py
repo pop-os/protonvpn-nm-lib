@@ -12,6 +12,10 @@ class AddConnectionCredentialsError(ProtonVPNBaseException):
     """Add credentials to connection error."""
 
 
+class AddServerCertificateCheckError(ProtonVPNBaseException):
+    """Add server certificate check error"""
+
+
 class IncorrectCredentialsError(ProtonVPNBaseException):
     """Incorrect credentials error."""
 
