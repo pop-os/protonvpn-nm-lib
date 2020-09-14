@@ -218,13 +218,19 @@ class ServerManager():
             if servername == server["Name"]
         ][0]
 
+        if equal_IPs is not None and not equal_IPs:
+            domain = self.get_matching_domain(servers, exit_IP)
+
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
             servername, entry_IP
         ), domain
 
-    def get_matching_domain(self, server_pool):
-        print(server_pool)
+    def get_matching_domain(self, server_pool, exit_IP):
+        for server in server_pool:
+            for physical_server in server["Servers"]:
+                if exit_IP in physical_server["EntryIP"]:
+                    return physical_server["Domain"]
 
     def feature_f(self, session, protocol, *args):
         """Connect to fastest server based on specified feature.
@@ -475,6 +481,7 @@ class ServerManager():
                 (subserver["EntryIP"], subserver["ExitIP"])
                 for subserver
                 in subservers
+                if subserver["Status"] == 1
             ]
             entry_IP, exit_IP = random.choice(ip_list)
             equal_IPs = True if entry_IP == exit_IP else False
@@ -483,6 +490,7 @@ class ServerManager():
                 subserver["EntryIP"]
                 for subserver
                 in subservers
+                if subserver["Status"] == 1
             ]
         return [entry_IP], exit_IP, equal_IPs
 
