@@ -274,7 +274,10 @@ class TestIntegrationServerManager:
         os.remove(CACHED_OPENVPN_CERTIFICATE)
 
     def test_correct_generate_connect_fastest(self):
-        resp = self.server_man.fastest(REAL_SESSION, "tcp")
+        servername, domain = self.server_man.fastest(REAL_SESSION, "tcp")
+        resp = False
+        if servername and domain:
+            resp = True
         assert os.path.isfile(resp) is True
 
     @pytest.mark.parametrize(
@@ -293,9 +296,12 @@ class TestIntegrationServerManager:
 
     def test_correct_generate_connect_country(self):
         args = [["cc", "PT"]]
-        resp = self.server_man.country_f(
+        servername, domain = self.server_man.country_f(
             REAL_SESSION, "tcp", *args
         )
+        resp = False
+        if servername and domain:
+            resp = True
         assert os.path.isfile(resp) is True
 
     @pytest.mark.parametrize(
@@ -322,12 +328,18 @@ class TestIntegrationServerManager:
 
     def test_correct_generate_connect_direct(self):
         args = [["servername", "PT#5"]]
-        resp = self.server_man.direct(REAL_SESSION, "tcp", *args)
+        servername, domain = self.server_man.direct(REAL_SESSION, "tcp", *args)
+        resp = False
+        if servername and domain:
+            resp = True
         assert os.path.isfile(resp) is True
 
     def test_correct_generate_connect_direct_dialog(self):
         args = ["PT#6"]
-        resp = self.server_man.direct(REAL_SESSION, "tcp", *args)
+        servername, domain = self.server_man.direct(REAL_SESSION, "tcp", *args)
+        resp = False
+        if servername and domain:
+            resp = True
         assert os.path.isfile(resp) is True
 
     @pytest.mark.parametrize(
@@ -358,7 +370,12 @@ class TestIntegrationServerManager:
 
     def test_correct_generate_connect_feature(self):
         args = [["sc", True]]
-        resp = self.server_man.feature_f(REAL_SESSION, "tcp", *args)
+        servername, domain = self.server_man.feature_f(
+            REAL_SESSION, "tcp", *args
+        )
+        resp = False
+        if servername and domain:
+            resp = True
         assert os.path.isfile(resp) is True
 
     @pytest.mark.parametrize(
@@ -386,7 +403,10 @@ class TestIntegrationServerManager:
             self.server_man.feature_f(session, "tcp", *args)
 
     def test_correct_generate_connect_random(self):
-        resp = self.server_man.random_c(REAL_SESSION, "tcp")
+        servername, domain = self.server_man.random_c(REAL_SESSION, "tcp")
+        resp = False
+        if servername and domain:
+            resp = True
         assert os.path.isfile(resp) is True
 
     @pytest.mark.parametrize(
