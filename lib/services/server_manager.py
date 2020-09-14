@@ -44,6 +44,7 @@ class ServerManager():
                 server_pool.append(server)
 
         servername, domain = self.get_fastest_server(server_pool)
+        print("servername: ", servername, " - domain: ", domain)
         try:
             entry_IP, exit_IP, equal_IPs = self.generate_ip_list(
                 servername, servers
@@ -56,9 +57,8 @@ class ServerManager():
         except Exception as e:
             capture_exception(e)
 
-        if not equal_IPs:
-            # fetch exit_IP Domain
-            pass
+        if equal_IPs is not None and not equal_IPs:
+            domain = self.get_matching_domain(servers, exit_IP)
 
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
@@ -140,6 +140,9 @@ class ServerManager():
             )
         except Exception as e:
             capture_exception(e)
+
+        if equal_IPs is not None and not equal_IPs:
+            domain = self.get_matching_domain(servers, exit_IP)
 
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
@@ -226,12 +229,6 @@ class ServerManager():
             servername, entry_IP
         ), domain
 
-    def get_matching_domain(self, server_pool, exit_IP):
-        for server in server_pool:
-            for physical_server in server["Servers"]:
-                if exit_IP in physical_server["EntryIP"]:
-                    return physical_server["Domain"]
-
     def feature_f(self, session, protocol, *args):
         """Connect to fastest server based on specified feature.
 
@@ -314,6 +311,9 @@ class ServerManager():
         except Exception as e:
             capture_exception(e)
 
+        if equal_IPs is not None and not equal_IPs:
+            domain = self.get_matching_domain(servers, exit_IP)
+
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
             servername, entry_IP
@@ -347,10 +347,19 @@ class ServerManager():
         except Exception as e:
             capture_exception(e)
 
+        if equal_IPs is not None and not equal_IPs:
+            domain = self.get_matching_domain(servers, exit_IP)
+
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
             servername, entry_IP
         ), domain
+
+    def get_matching_domain(self, server_pool, exit_IP):
+        for server in server_pool:
+            for physical_server in server["Servers"]:
+                if exit_IP in physical_server["EntryIP"]:
+                    return physical_server["Domain"]
 
     def validate_session_protocol(self, session, protocol):
         """Validates session and protocol
