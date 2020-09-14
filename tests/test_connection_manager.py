@@ -58,7 +58,8 @@ class TestIntegrationConnectionManager():
             os.path.join(PLUGIN_CERT_FOLDER, "TestProtonVPN.ovpn"),
             self.user,
             self.pwd,
-            CertificateManager.delete_cached_certificate
+            CertificateManager.delete_cached_certificate,
+            "random.domain.to.add"
         )
         assert isinstance(
             self.cm.get_proton_connection("all_connections")[0],
@@ -71,7 +72,8 @@ class TestIntegrationConnectionManager():
                 os.path.join(CERT_FOLDER, ""),
                 self.user,
                 self.pwd,
-                CertificateManager.delete_cached_certificate
+                CertificateManager.delete_cached_certificate,
+                "random.domain.to.add"
             )
 
     @pytest.mark.parametrize(
@@ -87,7 +89,8 @@ class TestIntegrationConnectionManager():
                 os.path.join(CERT_FOLDER, "TestProtonVPN.ovpn"),
                 user,
                 pwd,
-                CertificateManager.delete_cached_certificate
+                CertificateManager.delete_cached_certificate,
+                "random.domain.to.add"
             )
 
     def test_add_missing_method_connection(self):
@@ -96,7 +99,8 @@ class TestIntegrationConnectionManager():
                 os.path.join(CERT_FOLDER, "TestProtonVPN.ovpn"),
                 self.user,
                 self.pwd,
-                ""
+                "",
+                "random.domain.to.add"
             )
 
     def test_remove_correct_connection(self):
