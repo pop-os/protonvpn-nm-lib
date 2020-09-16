@@ -275,12 +275,19 @@ class ServerManager():
             capture_exception(e)
 
         self.cache_servers(session)
+        servers = self.extract_server_list()
+        filtered_servers = self.filter_servers(
+            session,
+            servers,
+            # exclude all other features except the selected one
+            exclude_features=[
+                v
+                for k, v in allowed_features.items()
+                if not feature == v
+            ]
+        )
 
-        servers = self.filter_servers(session)
-
-        server_pool = [s for s in servers if s["Features"] == feature]
-
-        if len(server_pool) == 0:
+        if len(filtered_servers) == 0:
             err_msg = "No servers found with the {} feature".format(
                 literal_feature
             )
@@ -291,7 +298,9 @@ class ServerManager():
             )
             raise exceptions.EmptyServerListError(err_msg)
 
-        servername, domain = self.get_fastest_server(server_pool)
+        servername, domain, is_secure_core = self.get_fastest_server(
+            filtered_servers
+        )
 
         try:
             entry_IP, exit_IP = self.generate_ip_list(
@@ -305,7 +314,7 @@ class ServerManager():
         except Exception as e:
             capture_exception(e)
 
-        if equal_IPs is not None and not equal_IPs:
+        if is_secure_core:
             domain = self.get_matching_domain(servers, exit_IP)
 
         return self.cert_manager.generate_vpn_cert(
@@ -496,6 +505,7 @@ class ServerManager():
 
         Args:
             session (proton.api.Session): current user session
+            servers (list(dict)): a list containing raw servers info
             exclude_features (list): [FeatureEnum.TOR, ...] (optional)
             connect_to_country (string): country code PT|SE|CH (optional)
         Returns:
