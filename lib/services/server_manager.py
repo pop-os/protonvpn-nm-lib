@@ -44,7 +44,7 @@ class ServerManager():
                 server_pool.append(server)
 
         servername, domain = self.get_fastest_server(server_pool)
-        print("servername: ", servername, " - domain: ", domain)
+
         try:
             entry_IP, exit_IP, equal_IPs = self.generate_ip_list(
                 servername, servers
