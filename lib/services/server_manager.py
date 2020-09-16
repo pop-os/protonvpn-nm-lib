@@ -332,15 +332,18 @@ class ServerManager():
             string: path to certificate file that is to be imported into nm
         """
         self.validate_session_protocol(session, protocol)
-        servers = self.filter_servers(session)
+        self.cache_servers(session)
+        servers = self.extract_server_list()
+        filtered_serveres = self.filter_servers(session, servers)
 
-        random_server = random.choice(servers)
+        random_server = random.choice(filtered_serveres)
         servername = random_server["Name"]
         domain = random_server["Domain"]
+        is_secure_core = True if random_server["Features"] == 1 else False
 
         try:
-            entry_IP, exit_IP, equal_IPs = self.generate_ip_list(
-                servername, servers
+            entry_IP, exit_IP = self.generate_ip_list(
+                servername, filtered_serveres
             )
         except IndexError as e:
             logger.exception("[!] IllegalServername: {}".format(e))
@@ -350,7 +353,7 @@ class ServerManager():
         except Exception as e:
             capture_exception(e)
 
-        if equal_IPs is not None and not equal_IPs:
+        if is_secure_core:
             domain = self.get_matching_domain(servers, exit_IP)
 
         return self.cert_manager.generate_vpn_cert(
