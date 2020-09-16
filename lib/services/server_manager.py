@@ -31,23 +31,20 @@ class ServerManager():
         """
         self.validate_session_protocol(session, protocol)
         self.cache_servers(session)
-
-        servers = self.filter_servers(session)
+        servers = self.extract_server_list()
         excluded_features = [
             FeatureEnum.SECURE_CORE, FeatureEnum.TOR, FeatureEnum.P2P
         ]
-
-        # Filter out excluded features
-        server_pool = []
-        for server in servers:
-            if server["Features"] not in excluded_features:
-                server_pool.append(server)
-
-        servername, domain = self.get_fastest_server(server_pool)
+        filtered_servers = self.filter_servers(
+            session, servers, exclude_features=excluded_features
+        )
+        servername, domain, is_secure_core = self.get_fastest_server(
+            filtered_servers
+        )
 
         try:
-            entry_IP, exit_IP, equal_IPs = self.generate_ip_list(
-                servername, servers
+            entry_IP, exit_IP = self.generate_ip_list(
+                servername, filtered_servers
             )
         except IndexError as e:
             logger.exception("[!] IllegalServername: {}".format(e))
@@ -57,7 +54,7 @@ class ServerManager():
         except Exception as e:
             capture_exception(e)
 
-        if equal_IPs is not None and not equal_IPs:
+        if is_secure_core:
             domain = self.get_matching_domain(servers, exit_IP)
 
         return self.cert_manager.generate_vpn_cert(
@@ -104,34 +101,31 @@ class ServerManager():
             capture_exception(e)
 
         self.cache_servers(session)
-        servers = self.filter_servers(session)
-
+        servers = self.extract_server_list()
         excluded_features = [
-            FeatureEnum.SECURE_CORE, FeatureEnum.TOR, FeatureEnum.P2P
+            FeatureEnum.NORMAL, FeatureEnum.TOR, FeatureEnum.P2P
         ]
+        filtered_servers = self.filter_servers(
+            session,
+            servers,
+            exclude_features=excluded_features,
+            connect_to_country=country_code
+        )
 
-        # Filter out excluded features and countries
-        server_pool = []
-        for server in servers:
-            if (
-                server["Features"] not in excluded_features
-            ) and (
-                server["ExitCountry"] == country_code
-            ):
-                server_pool.append(server)
-
-        if len(server_pool) == 0:
+        if len(filtered_servers) == 0:
             err_msg = "Invalid country code \"{}\"".format(country_code)
             logger.error(
                 "[!] ValueError: {}. Raising exception.".format(err_msg)
             )
             raise ValueError(err_msg)
 
-        servername, domain = self.get_fastest_server(server_pool)
+        servername, domain, is_secure_core = self.get_fastest_server(
+            filtered_servers
+        )
 
         try:
-            entry_IP, exit_IP, equal_IPs = self.generate_ip_list(
-                servername, servers
+            entry_IP, exit_IP = self.generate_ip_list(
+                servername, filtered_servers
             )
         except IndexError as e:
             logger.exception("[!] IllegalServername: {}".format(e))
@@ -141,7 +135,7 @@ class ServerManager():
         except Exception as e:
             capture_exception(e)
 
-        if equal_IPs is not None and not equal_IPs:
+        if is_secure_core:
             domain = self.get_matching_domain(servers, exit_IP)
 
         return self.cert_manager.generate_vpn_cert(
@@ -300,7 +294,7 @@ class ServerManager():
         servername, domain = self.get_fastest_server(server_pool)
 
         try:
-            entry_IP, exit_IP, equal_IPs = self.generate_ip_list(
+            entry_IP, exit_IP = self.generate_ip_list(
                 servername, servers
             )
         except IndexError as e:
@@ -331,9 +325,9 @@ class ServerManager():
         self.validate_session_protocol(session, protocol)
         servers = self.filter_servers(session)
 
-        random_choice = random.choice(servers)
-        servername = random_choice["Name"]
-        domain = random_choice["Domain"]
+        random_server = random.choice(servers)
+        servername = random_server["Name"]
+        domain = random_server["Domain"]
 
         try:
             entry_IP, exit_IP, equal_IPs = self.generate_ip_list(
@@ -473,6 +467,7 @@ class ServerManager():
             list: IPs for the selected server
         """
         logger.info("Generating IP list")
+
         try:
             subservers = self.extract_server_value(
                 servername, "Servers", servers
@@ -483,44 +478,62 @@ class ServerManager():
         except Exception as e:
             capture_exception(e)
 
-        equal_IPs = None
-        exit_IP = None
-        if server_certificate_check:
-            ip_list = [
-                (subserver["EntryIP"], subserver["ExitIP"])
-                for subserver
-                in subservers
-                if subserver["Status"] == 1
-            ]
-            entry_IP, exit_IP = random.choice(ip_list)
-            equal_IPs = True if entry_IP == exit_IP else False
-        else:
-            entry_IP = [
-                subserver["EntryIP"]
-                for subserver
-                in subservers
-                if subserver["Status"] == 1
-            ]
-        return [entry_IP], exit_IP, equal_IPs
+        ip_list = [
+            (subserver["EntryIP"], subserver["ExitIP"])
+            for subserver
+            in subservers
+            if subserver["Status"] == 1
+        ]
+        entry_IP, exit_IP = random.choice(ip_list)
 
-    def filter_servers(self, session):
-        """Filter servers based on user tier.
+        return [entry_IP], exit_IP
+
+    def filter_servers(
+        self, session, servers,
+        exclude_features=None, connect_to_country=None
+    ):
+        """Filter servers based specified input.
 
         Args:
             session (proton.api.Session): current user session
+            exclude_features (list): [FeatureEnum.TOR, ...] (optional)
+            connect_to_country (string): country code PT|SE|CH (optional)
         Returns:
-            list: serverlist extracted from raw json, based on user tier
+            list: serverlist extracted from raw json
         """
         logger.info("Filtering servers by tier")
+        user_tier = self.fetch_user_tier(session)
+
+        filtered_servers = []
+        for server in servers:
+            if (
+                server["Tier"] <= user_tier
+            ) and (
+                server["Status"] == 1
+            ) and (
+                (
+                    not exclude_features
+                ) or (
+                    exclude_features
+                    and server["Features"] not in exclude_features
+                )
+            ) and (
+                (
+                    not connect_to_country
+                ) or (
+                    connect_to_country
+                    and server["ExitCountry"] == connect_to_country
+                )
+            ):
+                filtered_servers.append(server)
+
+        return filtered_servers
+
+    def extract_server_list(self):
         with open(CACHED_SERVERLIST, "r") as f:
             server_data = json.load(f)
 
-        user_tier = self.fetch_user_tier(session)
-
-        servers = server_data["LogicalServers"]
-
-        # Sort server IDs by Tier
-        return [server for server in servers if server["Tier"] <= user_tier and server["Status"] == 1] # noqa
+        return server_data["LogicalServers"]
 
     def fetch_user_tier(self, session):
         """Fetches a users tier from the API.
@@ -542,6 +555,7 @@ class ServerManager():
             string: servername with the highest score (fastest)
         """
         logger.info("Getting fastest server")
+
         if not isinstance(server_pool, list):
             err_msg = "Incorrect object type, "
             + "list is expected but got {} instead".format(
@@ -561,13 +575,17 @@ class ServerManager():
         else:
             pool_size = 1
 
-        random_choice = random.choice(fastest_pool[:pool_size])
-        fastest_server_name = random_choice["Name"]
-        fastest_server_domain = random_choice["Domain"]
+        random_server = random.choice(fastest_pool[:pool_size])
+        fastest_server_name = random_server["Name"]
+        fastest_server_domain = random_server["Domain"]
+        is_secure_core = True if random_server["Features"] == 1 else False
 
-        return fastest_server_name, fastest_server_domain
+        return fastest_server_name, fastest_server_domain, is_secure_core
 
-    def extract_server_value(self, servername, key, servers):
+    def extract_server_value(
+        self, servername,
+        key, servers
+    ):
         """Extract server data based on servername.
 
         Args:
@@ -577,12 +595,11 @@ class ServerManager():
         Returns:
             list: dict with server information
         """
-        value = [
-            server[key] for server
-            in servers if
-            server['Name'] == servername
-        ]
-        return value[0]
+        for server in servers:
+            if server["Name"] == servername and server["Status"]:
+                return server[key]
+
+        raise IndexError
 
     def extract_country_name(self, code):
         """Extract country name based on specified code.
