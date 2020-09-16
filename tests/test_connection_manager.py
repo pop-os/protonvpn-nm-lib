@@ -44,6 +44,7 @@ class TestIntegrationConnectionManager():
     um.keyring_service = "TestConnectionManager"
     um.keyring_username = "TestAuthData"
     um.login(user, pwd)
+    random_domain = "random.domain.to.add"
 
     @pytest.fixture
     def test_keyring_service(self):
@@ -58,7 +59,8 @@ class TestIntegrationConnectionManager():
             os.path.join(PLUGIN_CERT_FOLDER, "TestProtonVPN.ovpn"),
             self.user,
             self.pwd,
-            CertificateManager.delete_cached_certificate
+            CertificateManager.delete_cached_certificate,
+            self.random_domain
         )
         assert isinstance(
             self.cm.get_proton_connection("all_connections")[0],
@@ -71,7 +73,8 @@ class TestIntegrationConnectionManager():
                 os.path.join(CERT_FOLDER, ""),
                 self.user,
                 self.pwd,
-                CertificateManager.delete_cached_certificate
+                CertificateManager.delete_cached_certificate,
+                self.random_domain
             )
 
     @pytest.mark.parametrize(
@@ -87,7 +90,8 @@ class TestIntegrationConnectionManager():
                 os.path.join(CERT_FOLDER, "TestProtonVPN.ovpn"),
                 user,
                 pwd,
-                CertificateManager.delete_cached_certificate
+                CertificateManager.delete_cached_certificate,
+                self.random_domain
             )
 
     def test_add_missing_method_connection(self):
@@ -96,7 +100,8 @@ class TestIntegrationConnectionManager():
                 os.path.join(CERT_FOLDER, "TestProtonVPN.ovpn"),
                 self.user,
                 self.pwd,
-                ""
+                "",
+                self.random_domain
             )
 
     def test_remove_correct_connection(self):

@@ -146,7 +146,7 @@ class NetworkManagerPrototypeCLI():
         logger.info("CLI connect type: {}".format(command))
 
         try:
-            certificate_filename = cli_commands[command[0]](
+            certificate_filename, domain = cli_commands[command[0]](
                 session, protocol, command
             )
         except TypeError:
@@ -155,7 +155,7 @@ class NetworkManagerPrototypeCLI():
                 session,
             )
 
-            certificate_filename = self.server_manager.direct(
+            certificate_filename, domain = self.server_manager.direct(
                 session, protocol, servername
             )
 
@@ -188,7 +188,8 @@ class NetworkManagerPrototypeCLI():
         try:
             self.connection_manager.add_connection(
                 certificate_filename, openvpn_username,
-                openvpn_password, CertificateManager.delete_cached_certificate
+                openvpn_password, CertificateManager.delete_cached_certificate,
+                domain
             )
         except exceptions.ImportConnectionError:
             print("An error occured upon importing connection.")
