@@ -174,24 +174,39 @@ class ServerManager():
             raise ValueError(err_msg)
 
         user_input = args[0]
+        # This check is done since when a user uses the dialog
+        # the input passed diferently, thus it needs to be checked.
         if isinstance(user_input, list):
             user_input = user_input[1]
 
         servername = user_input.strip().upper()
 
         if not self.is_servername_valid(user_input):
-            err_msg = "Unexpected servername {}".format(user_input)
+            err_msg = "Invalid servername {}".format(user_input)
             logger.error(
                 "[!] IllegalServername: {}. Raising exception.".format(err_msg)
             )
             raise exceptions.IllegalServername(err_msg)
 
         self.cache_servers(session)
-        servers = self.filter_servers(session)
+        servers = self.extract_server_list()
+        filtered_servers = self.filter_servers(
+            session,
+            servers,
+            servername=servername
+        )
+
+        if len(filtered_servers) == 0:
+            err_msg = "{} is either invalid, ".format(servername)
+            + "under maintenance or inaccessible with your plan"
+            logger.error(
+                "[!] ValueError: {}. Raising exception.".format(err_msg)
+            )
+            raise ValueError(err_msg)
 
         try:
-            entry_IP, exit_IP, equal_IPs = self.generate_ip_list(
-                servername, servers
+            entry_IP, exit_IP = self.generate_ip_list(
+                servername, filtered_servers
             )
         except IndexError as e:
             logger.exception("[!] IllegalServername: {}".format(e))
@@ -201,23 +216,14 @@ class ServerManager():
         except Exception as e:
             capture_exception(e)
 
-        if servername not in [server["Name"] for server in servers]:
-            err_msg = "{} is either invalid, ".format(servername)
-            + "under maintenance or inaccessible with your plan"
-            logger.error(
-                "[!] ValueError: {}. Raising exception.".format(err_msg)
-            )
-            raise ValueError(err_msg)
+        random_server = random.choice(filtered_servers)
+        servername = random_server["Name"]
+        domain = random_server["Domain"]
+        is_secure_core = True if random_server["Features"] == 1 else False
 
-        servername, domain = [
-            (server["Name"], server["Domain"])
-            for server in servers
-            if servername == server["Name"]
-        ][0]
-
-        if equal_IPs is not None and not equal_IPs:
+        if is_secure_core:
             domain = self.get_matching_domain(servers, exit_IP)
-
+        print(domain)
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
             servername, entry_IP
@@ -334,16 +340,16 @@ class ServerManager():
         self.validate_session_protocol(session, protocol)
         self.cache_servers(session)
         servers = self.extract_server_list()
-        filtered_serveres = self.filter_servers(session, servers)
+        filtered_servers = self.filter_servers(session, servers)
 
-        random_server = random.choice(filtered_serveres)
+        random_server = random.choice(filtered_servers)
         servername = random_server["Name"]
         domain = random_server["Domain"]
         is_secure_core = True if random_server["Features"] == 1 else False
 
         try:
             entry_IP, exit_IP = self.generate_ip_list(
-                servername, filtered_serveres
+                servername, filtered_servers
             )
         except IndexError as e:
             logger.exception("[!] IllegalServername: {}".format(e))
@@ -502,7 +508,7 @@ class ServerManager():
 
     def filter_servers(
         self, session, servers,
-        exclude_features=None, connect_to_country=None
+        exclude_features=None, connect_to_country=None, servername=None
     ):
         """Filter servers based specified input.
 
@@ -536,6 +542,13 @@ class ServerManager():
                 ) or (
                     connect_to_country
                     and server["ExitCountry"] == connect_to_country
+                )
+            ) and (
+                (
+                    not servername
+                ) or (
+                    servername
+                    and server["Name"] == servername
                 )
             ):
                 filtered_servers.append(server)
