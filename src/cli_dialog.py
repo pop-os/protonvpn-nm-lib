@@ -28,16 +28,17 @@ def dialog(server_manager, session):
         sys.exit(1)
 
     server_manager.cache_servers(session)
-    servers = server_manager.filter_servers(session)
-    countries = generate_country_dict(server_manager, servers)
+    servers = server_manager.extract_server_list()
+    filtered_servers = server_manager.filter_servers(session, servers)
+    countries = generate_country_dict(server_manager, filtered_servers)
 
     # Fist dialog
-    country = display_country(countries, server_manager, servers)
+    country = display_country(countries, server_manager, filtered_servers)
     logger.info("Selected country: \"{}\"".format(country))
     # Second dialog
     server = display_servers(
         countries, server_manager,
-        servers, country,
+        filtered_servers, country,
     )
     logger.info("Selected server: \"{}\"".format(server))
     protocol = display_protocol()
