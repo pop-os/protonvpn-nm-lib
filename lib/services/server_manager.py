@@ -216,14 +216,13 @@ class ServerManager():
         except Exception as e:
             capture_exception(e)
 
-        random_server = random.choice(filtered_servers)
-        servername = random_server["Name"]
-        domain = random_server["Domain"]
-        is_secure_core = True if random_server["Features"] == 1 else False
+        servername, domain, is_secure_core = self.get_random_server(
+            filtered_servers
+        )
 
         if is_secure_core:
             domain = self.get_matching_domain(servers, exit_IP)
-        print(domain)
+
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
             servername, entry_IP
@@ -342,10 +341,9 @@ class ServerManager():
         servers = self.extract_server_list()
         filtered_servers = self.filter_servers(session, servers)
 
-        random_server = random.choice(filtered_servers)
-        servername = random_server["Name"]
-        domain = random_server["Domain"]
-        is_secure_core = True if random_server["Features"] == 1 else False
+        servername, domain, is_secure_core = self.get_random_server(
+            filtered_servers
+        )
 
         try:
             entry_IP, exit_IP = self.generate_ip_list(
@@ -517,6 +515,7 @@ class ServerManager():
             servers (list(dict)): a list containing raw servers info
             exclude_features (list): [FeatureEnum.TOR, ...] (optional)
             connect_to_country (string): country code PT|SE|CH (optional)
+            servername (string): servername PT#1|SE#5|CH#10 (optional)
         Returns:
             list: serverlist extracted from raw json
         """
@@ -601,12 +600,22 @@ class ServerManager():
         else:
             pool_size = 1
 
-        random_server = random.choice(fastest_pool[:pool_size])
+        return self.get_random_server(fastest_pool[:pool_size])
+
+    def get_random_server(self, server_pool):
+        """Get a random server from a server pool.
+
+        Args:
+            server_pool (list): logical servers
+        Returns:
+            tuple: (servername, domain, if_selected_server_is_secure_core)
+        """
+        random_server = random.choice(server_pool)
         fastest_server_name = random_server["Name"]
         fastest_server_domain = random_server["Domain"]
         is_secure_core = True if random_server["Features"] == 1 else False
 
-        return fastest_server_name, fastest_server_domain, is_secure_core
+        return (fastest_server_name, fastest_server_domain, is_secure_core)
 
     def extract_server_value(
         self, servername,
