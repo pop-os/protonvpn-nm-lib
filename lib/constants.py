@@ -48,3 +48,38 @@ SUPPORTED_FEATURES = {
 VIRTUAL_DEVICE_NAME = "proton0"
 LOGGER_NAME = "protonvpn"
 APP_CONFIG = os.path.join(PWD, "app.cfg")
+
+USAGE = """
+ProtonVPN CLI
+Usage:
+    protonvpn-exp login
+    protonvpn-exp logout
+    protonvpn-exp (c | connect) [<servername>] [-p <protocol>]
+    protonvpn-exp (c | connect) [-f | --fastest] [-p <protocol>]
+    protonvpn-exp (c | connect) [--cc <code>] [-p <protocol>]
+    protonvpn-exp (c | connect) [--sc] [-p <protocol>]
+    protonvpn-exp (c | connect) [--p2p] [-p <protocol>]
+    protonvpn-exp (c | connect) [--tor] [-p <protocol>]
+    protonvpn-exp (c | connect) [-r | --random] [-p <protocol>]
+    protonvpn-exp (d | disconnect)
+    protonvpn-exp (-h | --help)
+    protonvpn-exp (-v | --version)
+Options:
+    -f, --fastest       Select fastest ProtonVPN server.
+    -r, --random        Select a random ProtonVPN server.
+    --cc CODE           Determine country for fastest connect.
+    --sc                Connect to fastest Secure-Core server.
+    --p2p               Connect to fastest torrent server.
+    --tor               Connect to fastest Tor server.
+    -p PROTOCOL         Determine protocol (UDP or TCP).
+    -h, --help          Show this help message.
+    -v, --version       Display version.
+Commands:
+    login               Login ProtonVPN.
+    logout              Logout ProtonVPN.
+    c, connect          Connect to a ProtonVPN server.
+    r, reconnect        Reconnect to the last server.
+    d, disconnect       Disconnect the current session.
+Arguments:
+    <servername>        Servername (CH#4, CH-US-1, HK5-Tor).
+"""
