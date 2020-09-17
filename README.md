@@ -20,3 +20,21 @@
  - Manjaro >= 20: works
  - Debian 9: does not work (tls-pinning will fail due to keyring)
  - Debian 10: not tested
+
+### How to use
+
+| **Command**                       | **Description**                                       |
+|:----------------------------------|:------------------------------------------------------|
+|`protonvpn login`                  | Login with ProtonVPN credentials.                     |
+|`protonvpn logout`                 | Logout from ProtonVPN.                                |
+|`protonvpn connect, c`             | Select a ProtonVPN server and connect to it.          |
+|`protonvpn c [servername]`         | Connect to a specified server.                        |
+|`protonvpn c -r`                   | Connect to a random server.                           |
+|`protonvpn c -f`                   | Connect to the fastest server.                        |
+|`protonvpn c --p2p`                | Connect to the fastest P2P server.                    |
+|`protonvpn c --cc [countrycode]`   | Connect to the fastest server in a specified country. |
+|`protonvpn c --sc`                 | Connect to the fastest Secure Core server.            |
+|`protonvpn disconnect, d`          | Disconnect the current session.                       |
+|`protonvpn --version`              | Display version.                                      |
+|`protonvpn --help`                 | Show help message.                                    |
+
