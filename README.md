@@ -1,20 +1,22 @@
 # ProtonVPN Network Manager Core
 
-### The repo includes a CLI to test it's functionality manually.
+### Dependencies:
 
-### Automated testing is done with pytest, to run type `python -m pytest` and all tests will be run
+| **Distro**                              | **Command**                                                                                                     |
+|:----------------------------------------|:----------------------------------------------------------------------------------------------------------------|
+|Ubuntu/Linux Mint/Debian and derivatives | `sudo apt install -y python3 network-manager network-manager-openvpn pkg-config openvpn python3-pip python3-xdg python3-keyring python3-jinja2 python3-dialog python3-pytest libcairo2-dev libgirepository1.0-dev gir1.2-nm-1.0 dbus-x11 libsecret-tools gnome-keyring` |
 
-### Dependencies (excluding the CLI):
- - #### [python-keyring](https://github.com/jaraco/keyring) (also):
-   - gnome-keyring
-   - SecretService
-   - Kwallet
- - #### [python-proton-client](https://github.com/ProtonMail/proton-python-client) 
- - #### pytest
- - #### [jinja2](https://jinja.palletsprojects.com/en/2.11.x/)
- - #### [python-xdg](https://github.com/srstevenson/xdg)
- - #### dbus-ptyhon/python-dbus
- - #### [Python Gi/GObject](https://pygobject.readthedocs.io/en/latest/getting_started.html#ubuntu-logo-ubuntu-debian-logo-debian)
-   - Network Manager (also):
-     - NM-openvpn plugin
-   - GLib
+| **Python3**                            | **Command**                             |
+|:---------------------------------------|:----------------------------------------|
+| Additional Python3 dependencies        | `pip3 install proton-client keyring xdg`|
+
+### Requires:
+- keyring >= 2.16
+
+### Tested on:
+ - Ubuntu:
+   - 16.04: does not work (tls-pinning will fail due to keyring)
+   - 18.04: works but daemon reconnector does not behave properly because pkaction==0.105 (daemon reconnector works only with pkaction==0.106)
+ - Manjaro >= 20: works
+ - Debian 9: does not work (tls-pinning will fail due to keyring)
+ - Debian 10: not tested
