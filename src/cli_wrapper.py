@@ -35,6 +35,11 @@ class CLIWrapper():
 
         session = self.check_existing_session(exit_type)
 
+        try:
+            self.connection_manager.remove_connection()
+        except exceptions.ProtonVPNBaseException:
+            pass
+
         for cls_attr in inspect.getmembers(args):
             if cls_attr[0] in cli_commands and cls_attr[1]:
                 command = list(cls_attr)
