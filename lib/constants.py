@@ -27,6 +27,9 @@ CACHED_OPENVPN_CERTIFICATE = os.path.join(
     PROTON_XDG_CACHE_HOME, "ProtonVPN.ovpn"
 )
 LOGFILE = os.path.join(PROTON_XDG_CACHE_HOME_LOGS, "protonvpn.log")
+CONNECTION_STATE_FILEPATH = os.path.join(
+    PROTON_XDG_CACHE_HOME, "connection_metadata.json"
+)
 DEFAULT_KEYRING_SERVICE = "ProtonVPN"
 DEFAULT_KEYRING_USERNAME = "AuthData"
 ENV_CI_NAME = "protonvpn_ci"
