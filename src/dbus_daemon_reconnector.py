@@ -30,11 +30,13 @@ official policies, either expressed or implied, of DOMEN KOZAR.
 """
 
 import getpass
+import os
 
 import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
 
+from lib.constants import CONNECTION_STATE_FILEPATH
 from lib.logger import logger
 
 
@@ -131,6 +133,8 @@ class ProtonVPNReconnector(object):
             logger.info("User prior disconnecting: {}".format(
                 getpass.getuser())
             )
+            if os.path.isfile(CONNECTION_STATE_FILEPATH):
+                os.remove(CONNECTION_STATE_FILEPATH)
             try:
                 vpn_iface.Delete()
             except dbus.exceptions.DBusException as e:
