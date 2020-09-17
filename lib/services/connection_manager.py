@@ -107,17 +107,6 @@ class ConnectionManager():
         self.add_server_certificate_check(vpn_settings, domain)
         self.apply_virtual_device_type(vpn_settings, filename)
 
-        try:
-            self.remove_connection()
-        except exceptions.ConnectionNotFound:
-            logger.info(
-                "Attempted to remove connection. "
-                + "No connection was found prior to adding a new one."
-            )
-            pass
-        except Exception as e:
-            capture_exception(e)
-
         client.add_connection_async(
             connection,
             True,
