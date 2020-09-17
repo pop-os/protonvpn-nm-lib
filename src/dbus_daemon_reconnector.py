@@ -30,7 +30,9 @@ official policies, either expressed or implied, of DOMEN KOZAR.
 """
 
 import getpass
+import json
 import os
+import time
 
 import dbus
 from dbus.mainloop.glib import DBusGMainLoop
@@ -119,6 +121,14 @@ class ProtonVPNReconnector(object):
         )
         if state == 5:
             self.failed_attempts = 0
+            if os.path.isfile(CONNECTION_STATE_FILEPATH):
+                with open(CONNECTION_STATE_FILEPATH) as f:
+                    metadata = json.load(f)
+                metadata["connected_time"] = str(int(time.time()))
+
+                with open(CONNECTION_STATE_FILEPATH, "w") as f:
+                    json.dump(metadata, f)
+
             logger.info(
                 "ProtonVPN with virtual device '{}' is running.".format(
                     self.virtual_device_name
