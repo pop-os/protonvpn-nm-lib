@@ -1,13 +1,16 @@
+import json
 import os
 
 from jinja2 import Environment, FileSystemLoader
 from proton.api import Session
 
 from lib import exceptions
-from lib.constants import (CACHED_OPENVPN_CERTIFICATE, OPENVPN_TEMPLATE,
+from lib.constants import (CACHED_OPENVPN_CERTIFICATE,
+                           CONNECTION_STATE_FILEPATH, OPENVPN_TEMPLATE,
                            PROTON_XDG_CACHE_HOME, TEMPLATES)
 from lib.enums import ProtocolEnum, ProtocolPortEnum
 from lib.logger import logger
+
 from . import capture_exception
 
 
@@ -75,7 +78,9 @@ class CertificateManager:
             )
             raise ValueError("No servers were provided")
 
-        print(servername)
+        with open(CONNECTION_STATE_FILEPATH, "w") as f:
+            json.dump({"connected_server": servername}, f)
+
         logger.info("Servername: \"{}\"".format(servername))
 
         try:

@@ -1,5 +1,7 @@
+import json
 import os
 import subprocess
+import time
 from getpass import getuser
 
 import gi
@@ -7,7 +9,8 @@ gi.require_version("NM", "1.0")
 from gi.repository import NM, GLib
 
 from lib import exceptions
-from lib.constants import ENV_CI_NAME, VIRTUAL_DEVICE_NAME
+from lib.constants import (CONNECTION_STATE_FILEPATH, ENV_CI_NAME,
+                           VIRTUAL_DEVICE_NAME)
 from lib.logger import logger
 from lib.services.plugin_manager import PluginManager
 
@@ -341,6 +344,7 @@ class ConnectionManager():
             if not os.environ.get(ENV_CI_NAME):
                 delete_cached_cert(filename)
         elif not callback_type == "stop":
+            self.manage_connection_metadata(callback_type)
             try:
                 daemon_status = self.check_daemon_reconnector_status()
             except Exception as e:
@@ -351,6 +355,23 @@ class ConnectionManager():
                 if not os.environ.get(ENV_CI_NAME):
                     self.daemon_manager(callback_type, daemon_status)
         main_loop.quit()
+
+    def manage_connection_metadata(self, callback_type):
+        if (callback_type == "start"
+                and os.path.isfile(CONNECTION_STATE_FILEPATH)):
+
+            with open(CONNECTION_STATE_FILEPATH) as f:
+                metadata = json.load(f)
+
+            metadata["connected_time"] = str(int(time.time()))
+
+            with open(CONNECTION_STATE_FILEPATH, "w") as f:
+                json.dump(metadata, f)
+        elif (
+            callback_type == "remove"
+            and os.path.isfile(CONNECTION_STATE_FILEPATH)
+        ):
+            os.remove(CONNECTION_STATE_FILEPATH)
 
     def daemon_manager(self, callback_type, daemon_status):
         """Start/stop daemon reconnector.
