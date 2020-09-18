@@ -10,11 +10,15 @@ from lib.constants import (CACHED_OPENVPN_CERTIFICATE,
                            PROTON_XDG_CACHE_HOME, TEMPLATES)
 from lib.enums import ProtocolEnum, ProtocolPortEnum
 from lib.logger import logger
+from lib.services.connection_state_manager import ConnectionStateManager
 
 from . import capture_exception
 
 
-class CertificateManager:
+class CertificateManager(ConnectionStateManager):
+    def __init__(self):
+        super().__init__()
+
     def generate_vpn_cert(
         self, protocol, session,
         servername, ip_list, cached_cert=CACHED_OPENVPN_CERTIFICATE
@@ -78,8 +82,7 @@ class CertificateManager:
             )
             raise ValueError("No servers were provided")
 
-        with open(CONNECTION_STATE_FILEPATH, "w") as f:
-            json.dump({"connected_server": servername}, f)
+        self.save_servername(servername)
 
         logger.info("Servername: \"{}\"".format(servername))
 
