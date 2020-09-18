@@ -329,11 +329,12 @@ class ConnectionManager():
             )
             raise (callback_type_dict[callback_type]["exception"])(e)
 
-        if callback_type == "add":
-            if not os.environ.get(ENV_CI_NAME):
-                delete_cached_cert(filename)
-        elif not callback_type == "stop":
+        if callback_type == "add" and not os.environ.get(ENV_CI_NAME):
+            delete_cached_cert(filename)
+
+        if callback_type != "stop":
             self.manage_connection_metadata(callback_type)
+
             try:
                 daemon_status = self.check_daemon_reconnector_status()
             except Exception as e:
@@ -343,6 +344,7 @@ class ConnectionManager():
                 logger.info("Daemon status: {}".format(daemon_status))
                 if not os.environ.get(ENV_CI_NAME):
                     self.daemon_manager(callback_type, daemon_status)
+
         main_loop.quit()
 
     def manage_connection_metadata(self, callback_type):
