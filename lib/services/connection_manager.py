@@ -1,7 +1,5 @@
-import json
 import os
 import subprocess
-import time
 from getpass import getuser
 
 import gi
@@ -9,8 +7,7 @@ gi.require_version("NM", "1.0")
 from gi.repository import NM, GLib
 
 from lib import exceptions
-from lib.constants import (CONNECTION_STATE_FILEPATH, ENV_CI_NAME,
-                           VIRTUAL_DEVICE_NAME)
+from lib.constants import ENV_CI_NAME, VIRTUAL_DEVICE_NAME
 from lib.logger import logger
 from lib.services.plugin_manager import PluginManager
 from lib.services.connection_state_manager import ConnectionStateManager
@@ -337,7 +334,10 @@ class ConnectionManager(ConnectionStateManager):
                 self.save_connected_time()
 
             if callback_type == "remove":
-                self.remove_connection()
+                try:
+                    self.remove_connection_metadata()
+                except FileNotFoundError:
+                    pass
 
             try:
                 daemon_status = self.check_daemon_reconnector_status()
