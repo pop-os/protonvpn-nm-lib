@@ -1,12 +1,10 @@
-import json
 import os
 
 from jinja2 import Environment, FileSystemLoader
 from proton.api import Session
 
 from lib import exceptions
-from lib.constants import (CACHED_OPENVPN_CERTIFICATE,
-                           CONNECTION_STATE_FILEPATH, OPENVPN_TEMPLATE,
+from lib.constants import (CACHED_OPENVPN_CERTIFICATE, OPENVPN_TEMPLATE,
                            PROTON_XDG_CACHE_HOME, TEMPLATES)
 from lib.enums import ProtocolEnum, ProtocolPortEnum
 from lib.logger import logger
