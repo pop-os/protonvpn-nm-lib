@@ -92,7 +92,7 @@ class CLIWrapper():
 
         protonvpn_username = input("\nEnter your ProtonVPN username: ")
         protonvpn_password = getpass.getpass("Enter your ProtonVPN password: ")
-        self.user_login(exit_type, protonvpn_username, protonvpn_password)
+        self.login_user(exit_type, protonvpn_username, protonvpn_password)
 
     def logout(self):
         exit_type = 1
@@ -114,6 +114,10 @@ class CLIWrapper():
             print("Logout successful!")
         finally:
             sys.exit(exit_type)
+
+    def status(self):
+        print("Print status")
+        sys.exit()
 
     def add_vpn_connection(
         self, certificate_filename, openvpn_username,
@@ -242,7 +246,7 @@ class CLIWrapper():
 
         return session_exists
 
-    def user_login(self, exit_type, protonvpn_username, protonvpn_password):
+    def login_user(self, exit_type, protonvpn_username, protonvpn_password):
         try:
             self.user_manager.login(protonvpn_username, protonvpn_password)
         except (TypeError, ValueError) as e:
