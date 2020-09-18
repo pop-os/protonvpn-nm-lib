@@ -1,5 +1,6 @@
 
 import json
+import os
 import time
 
 from lib.constants import CONNECTION_STATE_FILEPATH
@@ -33,3 +34,7 @@ class ConnectionStateManager():
         """
         with open(self.FILEPATH) as f:
             return json.load(f)
+
+    def remove_connection_metadata(self):
+        """Remove connection state metadata."""
+        os.remove(self.FILEPATH)
