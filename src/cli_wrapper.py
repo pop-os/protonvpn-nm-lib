@@ -1,9 +1,12 @@
+import datetime
 import getpass
 import inspect
 import sys
+import time
+from textwrap import dedent
 
 from lib import exceptions
-from lib.enums import ProtocolEnum
+from lib.enums import ConnectionMetadataEnum, ProtocolEnum
 from lib.logger import logger
 from lib.services import capture_exception
 from lib.services.certificate_manager import CertificateManager
@@ -11,7 +14,7 @@ from lib.services.connection_manager import ConnectionManager
 from lib.services.server_manager import ServerManager
 from lib.services.user_manager import UserManager
 
-from .cli_dialog import dialog # noqa
+from .cli_dialog import dialog  # noqa
 
 
 class CLIWrapper():
@@ -116,8 +119,32 @@ class CLIWrapper():
             sys.exit(exit_type)
 
     def status(self):
-        print("Print status")
+        conn_status = self.connection_manager.display_connection_status()
+        if not conn_status:
+            print("[!] No active ProtonVPN connection.")
+            sys.exit()
+
+        status_to_print = dedent("""\n
+        Server: {}
+        Connection time: {}\
+        """).format(
+            conn_status[ConnectionMetadataEnum.SERVER],
+            self.convert_time(conn_status),
+        )
+
+        print(status_to_print)
         sys.exit()
+
+    def convert_time(self, conn_status):
+        connection_time = (
+            time.time()
+            - int(conn_status[ConnectionMetadataEnum.CONNECTED_TIME])
+        )
+        return str(
+            datetime.timedelta(
+                seconds=connection_time
+            )
+        ).split(".")[0]
 
     def add_vpn_connection(
         self, certificate_filename, openvpn_username,

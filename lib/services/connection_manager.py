@@ -267,6 +267,14 @@ class ConnectionManager(ConnectionStateManager):
 
         main_loop.run()
 
+    def display_connection_status(self):
+        connection_exists = self.get_proton_connection("active_connections")
+
+        if not connection_exists[0]:
+            return False
+
+        return self.get_connection_metadata()
+
     def dynamic_callback(self, client, result, data):
         """Dynamic callback method.
 
