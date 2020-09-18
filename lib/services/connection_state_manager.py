@@ -1,7 +1,8 @@
 
-from lib.constants import CONNECTION_STATE_FILEPATH
 import json
 import time
+
+from lib.constants import CONNECTION_STATE_FILEPATH
 
 
 class ConnectionStateManager():

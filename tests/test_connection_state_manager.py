@@ -1,7 +1,8 @@
+import json
 import os
 
 import pytest
-import json
+
 from lib.services.connection_state_manager import ConnectionStateManager
 
 PWD = os.path.dirname(os.path.abspath(__file__))
