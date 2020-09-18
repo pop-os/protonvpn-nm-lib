@@ -23,3 +23,8 @@ class FeatureEnum(object):
     P2P = 4
     STREAMING = 8
     IPv6 = 16
+
+
+class ConnectionMetadataEnum(object):
+    SERVER = "connected_server"
+    CONNECTED_TIME = "connected_time"

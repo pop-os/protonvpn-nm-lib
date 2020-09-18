@@ -104,5 +104,13 @@ class NetworkManagerPrototypeCLI():
         """Logout ProtonVPN."""
         self.cli_wrapper.logout()
 
+    def s(self):
+        """Shortcut to display connection status"""
+        self.status()
+
+    def status(self):
+        """Display connection status."""
+        self.cli_wrapper.status()
+
 
 NetworkManagerPrototypeCLI()

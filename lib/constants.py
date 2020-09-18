@@ -65,6 +65,7 @@ Usage:
     protonvpn-exp (c | connect) [--tor] [-p <protocol>]
     protonvpn-exp (c | connect) [-r | --random] [-p <protocol>]
     protonvpn-exp (d | disconnect)
+    protonvpn-exp (s | status)
     protonvpn-exp (-h | --help)
     protonvpn-exp (-v | --version)
 Options:
@@ -81,8 +82,8 @@ Commands:
     login               Login ProtonVPN.
     logout              Logout ProtonVPN.
     c, connect          Connect to a ProtonVPN server.
-    r, reconnect        Reconnect to the last server.
     d, disconnect       Disconnect the current session.
+    s, status           Show connection status.
 Arguments:
     <servername>        Servername (CH#4, CH-US-1, HK5-Tor).
 """
