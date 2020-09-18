@@ -13,11 +13,11 @@ from lib.constants import (CONNECTION_STATE_FILEPATH, ENV_CI_NAME,
                            VIRTUAL_DEVICE_NAME)
 from lib.logger import logger
 from lib.services.plugin_manager import PluginManager
-
+from lib.services.connection_state_manager import ConnectionStateManager
 from . import capture_exception
 
 
-class ConnectionManager():
+class ConnectionManager(ConnectionStateManager):
     def __init__(
         self,
         virtual_device_name=VIRTUAL_DEVICE_NAME
@@ -333,7 +333,11 @@ class ConnectionManager():
             delete_cached_cert(filename)
 
         if callback_type != "stop":
-            self.manage_connection_metadata(callback_type)
+            if callback_type == "start":
+                self.save_connected_time()
+
+            if callback_type == "remove":
+                self.remove_connection()
 
             try:
                 daemon_status = self.check_daemon_reconnector_status()
@@ -346,23 +350,6 @@ class ConnectionManager():
                     self.daemon_manager(callback_type, daemon_status)
 
         main_loop.quit()
-
-    def manage_connection_metadata(self, callback_type):
-        if (callback_type == "start"
-                and os.path.isfile(CONNECTION_STATE_FILEPATH)):
-
-            with open(CONNECTION_STATE_FILEPATH) as f:
-                metadata = json.load(f)
-
-            metadata["connected_time"] = str(int(time.time()))
-
-            with open(CONNECTION_STATE_FILEPATH, "w") as f:
-                json.dump(metadata, f)
-        elif (
-            callback_type == "remove"
-            and os.path.isfile(CONNECTION_STATE_FILEPATH)
-        ):
-            os.remove(CONNECTION_STATE_FILEPATH)
 
     def daemon_manager(self, callback_type, daemon_status):
         """Start/stop daemon reconnector.
