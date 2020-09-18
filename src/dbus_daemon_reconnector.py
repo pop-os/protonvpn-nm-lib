@@ -30,19 +30,15 @@ official policies, either expressed or implied, of DOMEN KOZAR.
 """
 
 import getpass
-import json
-import os
-import time
-
 import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
 
-from lib.constants import CONNECTION_STATE_FILEPATH
 from lib.logger import logger
+from lib.services.connection_state_manager import ConnectionStateManager
 
 
-class ProtonVPNReconnector(object):
+class ProtonVPNReconnector(ConnectionStateManager):
     """Reconnects to VPN if disconnected not by user
     or when connecting to a new network.
 
@@ -121,13 +117,7 @@ class ProtonVPNReconnector(object):
         )
         if state == 5:
             self.failed_attempts = 0
-            if os.path.isfile(CONNECTION_STATE_FILEPATH):
-                with open(CONNECTION_STATE_FILEPATH) as f:
-                    metadata = json.load(f)
-                metadata["connected_time"] = str(int(time.time()))
-
-                with open(CONNECTION_STATE_FILEPATH, "w") as f:
-                    json.dump(metadata, f)
+            self.save_connected_time()
 
             logger.info(
                 "ProtonVPN with virtual device '{}' is running.".format(
@@ -135,16 +125,19 @@ class ProtonVPNReconnector(object):
                 )
             )
         elif state == 7 and reason == 2:
-            self.failed_attempts = 0
             logger.info("ProtonVPN connection was manually disconnected.")
+            self.failed_attempts = 0
+
             vpn_iface, settings = self.get_vpn_interface(
                 self.virtual_device_name, True
             )
+
             logger.info("User prior disconnecting: {}".format(
                 getpass.getuser())
             )
-            if os.path.isfile(CONNECTION_STATE_FILEPATH):
-                os.remove(CONNECTION_STATE_FILEPATH)
+
+            self.remove_connection_metadata()
+
             try:
                 vpn_iface.Delete()
             except dbus.exceptions.DBusException as e:
