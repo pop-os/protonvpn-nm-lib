@@ -11,7 +11,7 @@ from lib.services.connection_manager import ConnectionManager
 from lib.services.server_manager import ServerManager
 from lib.services.user_manager import UserManager
 
-from .cli_dialog import dialog
+from .cli_dialog import dialog # noqa
 
 
 class CLIWrapper():
@@ -61,6 +61,59 @@ class CLIWrapper():
         )
         self.connection_manager.start_connection()
         sys.exit(exit_type)
+
+    def disconnect(self):
+        exit_type = 1
+        try:
+            self.connection_manager.remove_connection()
+        except exceptions.ConnectionNotFound as e:
+            print("[!] Unable to disconnect: {}".format(e))
+        except (
+            exceptions.RemoveConnectionFinishError,
+            exceptions.StopConnectionFinishError
+        ) as e:
+            print("[!] Unable to disconnect: {}".format(e))
+        except Exception as e:
+            capture_exception(e)
+            logger.exception(
+                "[!] Unknown error: {}".format(e)
+            )
+            print("[!] Unknown error occured: {}".format(e))
+        else:
+            exit_type = 1
+        finally:
+            sys.exit(exit_type)
+
+    def login(self):
+        exit_type = 1
+        if self.check_existing_session(exit_type, is_connecting=False):
+            print("\nYou are already logged in!")
+            sys.exit()
+
+        protonvpn_username = input("\nEnter your ProtonVPN username: ")
+        protonvpn_password = getpass.getpass("Enter your ProtonVPN password: ")
+        self.user_login(exit_type, protonvpn_username, protonvpn_password)
+
+    def logout(self):
+        exit_type = 1
+        try:
+            self.user_manager.delete_user_session()
+        except exceptions.StoredSessionNotFound:
+            print("[!] Unable to logout. No session was found.")
+        except exceptions.AccessKeyringError:
+            print("[!] Unable to logout. Could not access keyring.")
+        except Exception as e:
+            capture_exception(e)
+            logger.exception(
+                "[!] Unknown error: {}".format(e)
+            )
+            print("[!] Unknown error occured: {}.".format(e))
+        else:
+            exit_type = 0
+            logger.info("Successful logout.")
+            print("Logout successful!")
+        finally:
+            sys.exit(exit_type)
 
     def add_vpn_connection(
         self, certificate_filename, openvpn_username,
@@ -146,59 +199,6 @@ class CLIWrapper():
             delattr(args, "protocol")
 
         return protocol
-
-    def disconnect(self):
-        exit_type = 1
-        try:
-            self.connection_manager.remove_connection()
-        except exceptions.ConnectionNotFound as e:
-            print("[!] Unable to disconnect: {}".format(e))
-        except (
-            exceptions.RemoveConnectionFinishError,
-            exceptions.StopConnectionFinishError
-        ) as e:
-            print("[!] Unable to disconnect: {}".format(e))
-        except Exception as e:
-            capture_exception(e)
-            logger.exception(
-                "[!] Unknown error: {}".format(e)
-            )
-            print("[!] Unknown error occured: {}".format(e))
-        else:
-            exit_type = 1
-        finally:
-            sys.exit(exit_type)
-
-    def login(self):
-        exit_type = 1
-        if self.check_existing_session(exit_type, is_connecting=False):
-            print("\nYou are already logged in!")
-            sys.exit()
-
-        protonvpn_username = input("\nEnter your ProtonVPN username: ")
-        protonvpn_password = getpass.getpass("Enter your ProtonVPN password: ")
-        self.user_login(exit_type, protonvpn_username, protonvpn_password)
-
-    def logout(self):
-        exit_type = 1
-        try:
-            self.user_manager.delete_user_session()
-        except exceptions.StoredSessionNotFound:
-            print("[!] Unable to logout. No session was found.")
-        except exceptions.AccessKeyringError:
-            print("[!] Unable to logout. Could not access keyring.")
-        except Exception as e:
-            capture_exception(e)
-            logger.exception(
-                "[!] Unknown error: {}".format(e)
-            )
-            print("[!] Unknown error occured: {}.".format(e))
-        else:
-            exit_type = 0
-            logger.info("Successful logout.")
-            print("Logout successful!")
-        finally:
-            sys.exit(exit_type)
 
     def check_existing_session(self, exit_type, is_connecting=True):
         session_exists = False
