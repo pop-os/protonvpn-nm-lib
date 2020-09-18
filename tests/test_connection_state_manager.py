@@ -21,7 +21,10 @@ class TestConnectionStateManager:
 
     @classmethod
     def teardown_class(cls):
-        os.remove(conn_state_filepath)
+        try:
+            os.remove(conn_state_filepath)
+        except FileNotFoundError:
+            pass
 
     def test_get_correct_filepath(self):
         with open(conn_state_filepath) as f:
@@ -35,7 +38,7 @@ class TestConnectionStateManager:
             ("./some/incorrect/path.json", FileNotFoundError),
             ("", FileNotFoundError),
             (False, json.decoder.JSONDecodeError),
-            (50, json.decoder.JSONDecodeError),
+            (50, OSError),
             ([], TypeError),
             ({}, TypeError)
         ]
@@ -52,3 +55,12 @@ class TestConnectionStateManager:
     def test_correct_save_connected_time(self):
         self.csm.FILEPATH = conn_state_filepath
         self.csm.save_connected_time()
+
+    def test_remove_correct_connection_metadata(self):
+        self.csm.FILEPATH = conn_state_filepath
+        self.csm.remove_connection_metadata()
+
+    def test_remove_incorrect_connection_metadata(self):
+        self.csm.FILEPATH = "missing/path/file.json"
+        with pytest.raises(FileNotFoundError):
+            self.csm.remove_connection_metadata()
