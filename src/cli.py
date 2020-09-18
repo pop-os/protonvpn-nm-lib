@@ -3,22 +3,27 @@ import sys
 
 from lib.enums import ProtocolEnum
 from lib.logger import logger
-
+from lib.constants import APP_VERSION, USAGE
 from .cli_wrapper import CLIWrapper
 
 
 class NetworkManagerPrototypeCLI():
     def __init__(self):
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(add_help=False)
         parser.add_argument("command", nargs="?")
+        parser.add_argument(
+            "-v", "--version", required=False, action="store_true"
+        )
+        parser.add_argument(
+            "-h", "--help", required=False, action="store_true"
+        )
         args = parser.parse_args(sys.argv[1:2])
 
-        if not args.command or not hasattr(self, args.command):
-            print(
-                "python filename.py "
-                + "[connect [<servername>|-f|-r|--p2p|--sc|--tor|--cc "
-                + "<iso_country_code>] [-p] | disconnect | login | logout]"
-            )
+        if args.version:
+            print("\nProtonVPN CLI v.{}".format(APP_VERSION))
+            parser.exit(1)
+        elif not args.command or not hasattr(self, args.command) or args.help:
+            print(USAGE)
             parser.exit(1)
 
         logger.info("CLI command: {}".format(args))
