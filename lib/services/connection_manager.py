@@ -10,11 +10,11 @@ from lib import exceptions
 from lib.constants import ENV_CI_NAME, VIRTUAL_DEVICE_NAME
 from lib.logger import logger
 from lib.services.plugin_manager import PluginManager
-
+from lib.services.connection_state_manager import ConnectionStateManager
 from . import capture_exception
 
 
-class ConnectionManager():
+class ConnectionManager(ConnectionStateManager):
     def __init__(
         self,
         virtual_device_name=VIRTUAL_DEVICE_NAME
@@ -103,17 +103,6 @@ class ConnectionManager():
         self.add_vpn_credentials(vpn_settings, username, password)
         self.add_server_certificate_check(vpn_settings, domain)
         self.apply_virtual_device_type(vpn_settings, filename)
-
-        try:
-            self.remove_connection()
-        except exceptions.ConnectionNotFound:
-            logger.info(
-                "Attempted to remove connection. "
-                + "No connection was found prior to adding a new one."
-            )
-            pass
-        except Exception as e:
-            capture_exception(e)
 
         client.add_connection_async(
             connection,
@@ -337,10 +326,19 @@ class ConnectionManager():
             )
             raise (callback_type_dict[callback_type]["exception"])(e)
 
-        if callback_type == "add":
-            if not os.environ.get(ENV_CI_NAME):
-                delete_cached_cert(filename)
-        elif not callback_type == "stop":
+        if callback_type == "add" and not os.environ.get(ENV_CI_NAME):
+            delete_cached_cert(filename)
+
+        if callback_type != "stop":
+            if callback_type == "start":
+                self.save_connected_time()
+
+            if callback_type == "remove":
+                try:
+                    self.remove_connection_metadata()
+                except FileNotFoundError:
+                    pass
+
             try:
                 daemon_status = self.check_daemon_reconnector_status()
             except Exception as e:
@@ -350,6 +348,7 @@ class ConnectionManager():
                 logger.info("Daemon status: {}".format(daemon_status))
                 if not os.environ.get(ENV_CI_NAME):
                     self.daemon_manager(callback_type, daemon_status)
+
         main_loop.quit()
 
     def daemon_manager(self, callback_type, daemon_status):
