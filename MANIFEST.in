@@ -1,0 +1,2 @@
+include *.cfg
+recursive-include lib *.cfg
