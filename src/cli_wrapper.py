@@ -6,6 +6,7 @@ import time
 from textwrap import dedent
 
 from lib import exceptions
+from lib.constants import SUPPORTED_FEATURES
 from lib.enums import ConnectionMetadataEnum, ProtocolEnum
 from lib.logger import logger
 from lib.services import capture_exception
@@ -23,6 +24,7 @@ class CLIWrapper():
     server_manager = ServerManager(CertificateManager())
 
     def connect(self, args):
+        """Proxymethdo to connect to ProtonVPN."""
         cli_commands = dict(
             servername=self.server_manager.direct,
             fastest=self.server_manager.fastest,
@@ -36,7 +38,7 @@ class CLIWrapper():
         exit_type = 1
         protocol = self.determine_protocol(args)
 
-        session = self.check_existing_session(exit_type)
+        session = self.get_existing_session(exit_type)
 
         try:
             self.connection_manager.remove_connection()
@@ -66,6 +68,7 @@ class CLIWrapper():
         sys.exit(exit_type)
 
     def disconnect(self):
+        """Proxymethod to disconnect from ProtonVPN."""
         exit_type = 1
         try:
             self.connection_manager.remove_connection()
@@ -88,8 +91,9 @@ class CLIWrapper():
             sys.exit(exit_type)
 
     def login(self):
+        """Proxymethod to login user with ProtonVPN credentials."""
         exit_type = 1
-        if self.check_existing_session(exit_type, is_connecting=False):
+        if self.get_existing_session(exit_type, is_connecting=False):
             print("\nYou are already logged in!")
             sys.exit()
 
@@ -98,6 +102,7 @@ class CLIWrapper():
         self.login_user(exit_type, protonvpn_username, protonvpn_password)
 
     def logout(self):
+        """Proxymethod to logout user."""
         exit_type = 1
         try:
             self.user_manager.delete_user_session()
@@ -119,26 +124,83 @@ class CLIWrapper():
             sys.exit(exit_type)
 
     def status(self):
+        """Proxymethod to diplay connection status."""
         conn_status = self.connection_manager.display_connection_status()
         if not conn_status:
             print("[!] No active ProtonVPN connection.")
             sys.exit()
 
-        status_to_print = dedent("""\n
-        Server: {}
-        Connection time: {}\
+        country, load, features = self.extract_server_info(
+            conn_status[ConnectionMetadataEnum.SERVER]
+        )
+
+        status_to_print = dedent("""
+        Country: {country}
+        Server: {server}
+        Load: {load}%
+        Protocol: {proto}
+        Feature(s): {features}
+        Connection time: {time}\
         """).format(
-            conn_status[ConnectionMetadataEnum.SERVER],
-            self.convert_time(conn_status),
+            country=country,
+            server=conn_status[ConnectionMetadataEnum.SERVER],
+            proto=conn_status[ConnectionMetadataEnum.PROTOCOL].upper(),
+            time=self.convert_time(
+                conn_status[ConnectionMetadataEnum.CONNECTED_TIME]
+            ),
+            load=load,
+            features=", ".join(features)
         )
 
         print(status_to_print)
         sys.exit()
 
-    def convert_time(self, conn_status):
+    def extract_server_info(self, servername):
+        """Extract server information to be displayed.
+
+        Args:
+            servername (string): servername [PT#1]
+
+        Returns:
+            tuple: (country, load, features_list)
+        """
+        self.server_manager.cache_servers(
+            session=self.get_existing_session()
+        )
+
+        servers = self.server_manager.extract_server_list()
+        country_code = self.server_manager.extract_server_value(
+            servername, "ExitCountry", servers
+        )
+        country = self.server_manager.extract_country_name(country_code)
+        load = self.server_manager.extract_server_value(
+            servername, "Load", servers
+        )
+        features = [
+            self.server_manager.extract_server_value(
+                servername, "Features", servers
+            )
+        ]
+
+        features_list = []
+        for feature in features:
+            if feature in SUPPORTED_FEATURES:
+                features_list.append(SUPPORTED_FEATURES[feature])
+
+        return country, load, features_list
+
+    def convert_time(self, connected_time):
+        """Convert time from epoch to 24h.
+
+        Args:
+            connected time (string): time in seconds since epoch
+
+        Returns:
+            string: time in 24h format, since last connection was made
+        """
         connection_time = (
             time.time()
-            - int(conn_status[ConnectionMetadataEnum.CONNECTED_TIME])
+            - int(connected_time)
         )
         return str(
             datetime.timedelta(
@@ -150,6 +212,7 @@ class CLIWrapper():
         self, certificate_filename, openvpn_username,
         openvpn_password, domain, exit_type
     ):
+        """Proxymethod to add ProtonVPN connection."""
         try:
             self.connection_manager.add_connection(
                 certificate_filename, openvpn_username,
@@ -169,6 +232,7 @@ class CLIWrapper():
             exit_type = 0
 
     def get_ovpn_credentials(self, session, exit_type):
+        """Proxymethod to get user OVPN credentials."""
         openvpn_username, openvpn_password = None, None
         try:
             openvpn_username, openvpn_password = self.user_manager.fetch_vpn_credentials( # noqa
@@ -200,6 +264,7 @@ class CLIWrapper():
         self, cli_commands, session,
         protocol, command
     ):
+        """Proxymethod to get certficate filename and server domain."""
         certificate_filename, domain = None, None
         try:
             certificate_filename, domain = cli_commands[command[0]](
@@ -221,6 +286,7 @@ class CLIWrapper():
         return certificate_filename, domain
 
     def determine_protocol(self, args):
+        """Determine protocol based on CLI input arguments."""
         protocol = ProtocolEnum.TCP
         try:
             protocol = args.protocol.lower().strip()
@@ -231,7 +297,8 @@ class CLIWrapper():
 
         return protocol
 
-    def check_existing_session(self, exit_type, is_connecting=True):
+    def get_existing_session(self, exit_type=1, is_connecting=True):
+        """Proxymethod to get user session."""
         session_exists = False
 
         try:

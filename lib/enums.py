@@ -28,3 +28,4 @@ class FeatureEnum(object):
 class ConnectionMetadataEnum(object):
     SERVER = "connected_server"
     CONNECTED_TIME = "connected_time"
+    PROTOCOL = "connected_protocol"

@@ -81,6 +81,7 @@ class CertificateManager(ConnectionStateManager):
             raise ValueError("No servers were provided")
 
         self.save_servername(servername)
+        self.save_protocol(protocol)
 
         logger.info("Servername: \"{}\"".format(servername))
 
