@@ -42,7 +42,7 @@ class CLIWrapper():
 
         try:
             self.connection_manager.remove_connection()
-        except exceptions.ProtonVPNBaseException:
+        except exceptions.ConnectionNotFound:
             pass
 
         for cls_attr in inspect.getmembers(args):
@@ -135,6 +135,8 @@ class CLIWrapper():
         )
 
         status_to_print = dedent("""
+        ProtonVPN Connection Status
+        ---------------------------
         Country: {country}
         Server: {server}
         Load: {load}%

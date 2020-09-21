@@ -85,6 +85,7 @@ class CertificateManager(ConnectionStateManager):
         self.save_protocol(protocol)
 
         logger.info("Servername: \"{}\"".format(servername))
+        logger.info("Protocol: \"{}\"".format(protocol))
 
         try:
             return protocol_dict[protocol](

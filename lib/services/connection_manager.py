@@ -239,7 +239,7 @@ class ConnectionManager(ConnectionStateManager):
         conn = self.get_proton_connection("all_connections", client)
 
         if len(conn) < 2 and conn[0] is False:
-            logger.error(
+            logger.info(
                 "[!] ConnectionNotFound: Connection not found, "
                 + "raising exception"
             )
