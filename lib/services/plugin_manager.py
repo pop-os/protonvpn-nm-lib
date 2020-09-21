@@ -61,8 +61,8 @@ class PluginManager():
         vpn_protocol = False
 
         if not isinstance(filename, str):
-            err_msg = "Incorrect object type, "
-            + "str is expected but got {} instead".format(type(filename))
+            err_msg = "Incorrect object type, "\
+                "str is expected but got {} instead".format(type(filename))
 
             logger.error("[!] TypeError: {}".format(err_msg))
             raise TypeError(err_msg)

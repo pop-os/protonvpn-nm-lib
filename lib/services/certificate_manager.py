@@ -1,5 +1,6 @@
 import os
 
+import jinja2
 from jinja2 import Environment, FileSystemLoader
 from proton.api import Session
 
@@ -42,16 +43,16 @@ class CertificateManager(ConnectionStateManager):
         }
 
         if not isinstance(protocol, str):
-            err_msg = "Incorrect object type, "
-            + "str is expected but got {} instead".format(type(protocol))
+            err_msg = "Incorrect object type, "\
+                "str is expected but got {} instead".format(type(protocol))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
             raise TypeError(err_msg)
 
         if not isinstance(session, Session):
-            err_msg = "Incorrect object type, "
-            + "{} is expected ".format(type(Session))
+            err_msg = "Incorrect object type, "\
+                "{} is expected ".format(type(Session))
             + "but got {} instead".format(type(protocol))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
@@ -59,16 +60,16 @@ class CertificateManager(ConnectionStateManager):
             raise TypeError(err_msg)
 
         if not isinstance(servername, str):
-            err_msg = "Incorrect object type, "
-            + "str is expected but got {} instead".format(type(servername))
+            err_msg = "Incorrect object type, "\
+                "str is expected but got {} instead".format(type(servername))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
             raise TypeError(err_msg)
 
         if not isinstance(ip_list, list):
-            err_msg = "Incorrect object type, "
-            + "list is expected but got {} instead".format(type(ip_list))
+            err_msg = "Incorrect object type, "\
+                "list is expected but got {} instead".format(type(ip_list))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
@@ -93,7 +94,11 @@ class CertificateManager(ConnectionStateManager):
         except KeyError as e:
             logger.exception("[!] IllegalVPNProtocol: {}".format(e))
             raise exceptions.IllegalVPNProtocol(e)
+        except jinja2.exceptions.TemplateNotFound as e:
+            logger.exception("[!] jinja2.TemplateNotFound: {}".format(e))
+            raise jinja2.exceptions.TemplateNotFound(e)
         except Exception as e:
+            logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
 
     def generate_openvpn_cert(
