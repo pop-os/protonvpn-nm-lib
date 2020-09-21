@@ -135,6 +135,8 @@ class CLIWrapper():
         )
 
         status_to_print = dedent("""
+        ProtonVPN Connection Status
+        ---------------------------
         Country: {country}
         Server: {server}
         Load: {load}%
