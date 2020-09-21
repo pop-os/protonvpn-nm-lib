@@ -49,6 +49,8 @@ Create `protonvpn_reconnect.service` inside `/etc/systemd/system/` with the foll
     [Install]
     WantedBy=multi-user.target
 
+**Note: depending on your system, `systemd-networkd-wait-online.service` might not be needed:** https://wiki.archlinux.org/index.php/NetworkManager#Enable_NetworkManager_Wait_Online 
+
 ### Configure PolKit
 
 To check version, type `pkaction --version`
@@ -108,16 +110,16 @@ Known issues:
 
 | **Command**                       | **Description**                                       |
 |:----------------------------------|:------------------------------------------------------|
-|`protonvpn login`                  | Login with ProtonVPN credentials.                     |
-|`protonvpn logout`                 | Logout from ProtonVPN.                                |
-|`protonvpn connect, c`             | Display dialog window in terminal.                    |
-|`protonvpn c [servername]`         | Connect to a specified server.                        |
-|`protonvpn c -r`                   | Connect to a random server.                           |
-|`protonvpn c -f`                   | Connect to the fastest server.                        |
-|`protonvpn c --p2p`                | Connect to the fastest P2P server.                    |
-|`protonvpn c --cc [countrycode]`   | Connect to the fastest server in a specified country. |
-|`protonvpn c --sc`                 | Connect to the fastest Secure Core server.            |
-|`protonvpn disconnect, d`          | Disconnect the current session.                       |
-|`protonvpn --version`              | Display version.                                      |
-|`protonvpn --help`                 | Show help message.                                    |
+|`protonvpn-exp login`                  | Login with ProtonVPN credentials.                     |
+|`protonvpn-exp logout`                 | Logout from ProtonVPN.                                |
+|`protonvpn-exp connect, c`             | Display dialog window in terminal.                    |
+|`protonvpn-exp c [servername]`         | Connect to a specified server.                        |
+|`protonvpn-exp c -r`                   | Connect to a random server.                           |
+|`protonvpn-exp c -f`                   | Connect to the fastest server.                        |
+|`protonvpn-exp c --p2p`                | Connect to the fastest P2P server.                    |
+|`protonvpn-exp c --cc [countrycode]`   | Connect to the fastest server in a specified country. |
+|`protonvpn-exp c --sc`                 | Connect to the fastest Secure Core server.            |
+|`protonvpn-exp disconnect, d`          | Disconnect the current session.                       |
+|`protonvpn-exp --version`              | Display version.                                      |
+|`protonvpn-exp --help`                 | Show help message.                                    |
 
