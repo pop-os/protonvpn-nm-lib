@@ -124,12 +124,14 @@ class CLIWrapper():
             print("[!] No active ProtonVPN connection.")
             sys.exit()
 
-        status_to_print = dedent("""\n
-        Server: {}
-        Connection time: {}\
+        status_to_print = dedent("""
+        Server: {server}
+        Protocol: {proto}
+        Connection time: {time}\
         """).format(
-            conn_status[ConnectionMetadataEnum.SERVER],
-            self.convert_time(conn_status),
+            server=conn_status[ConnectionMetadataEnum.SERVER],
+            proto=conn_status[ConnectionMetadataEnum.PROTOCOL].upper(),
+            time=self.convert_time(conn_status),
         )
 
         print(status_to_print)
