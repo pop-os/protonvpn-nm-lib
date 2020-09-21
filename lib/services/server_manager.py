@@ -519,7 +519,7 @@ class ServerManager():
         Returns:
             list: serverlist extracted from raw json
         """
-        logger.info("Filtering servers by tier")
+        logger.info("Filtering servers")
         user_tier = self.fetch_user_tier(session)
 
         filtered_servers = []
