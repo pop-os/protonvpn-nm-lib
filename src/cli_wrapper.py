@@ -24,6 +24,7 @@ class CLIWrapper():
     server_manager = ServerManager(CertificateManager())
 
     def connect(self, args):
+        """Proxymethdo to connect to ProtonVPN."""
         cli_commands = dict(
             servername=self.server_manager.direct,
             fastest=self.server_manager.fastest,
@@ -67,6 +68,7 @@ class CLIWrapper():
         sys.exit(exit_type)
 
     def disconnect(self):
+        """Proxymethod to disconnect from ProtonVPN."""
         exit_type = 1
         try:
             self.connection_manager.remove_connection()
@@ -89,6 +91,7 @@ class CLIWrapper():
             sys.exit(exit_type)
 
     def login(self):
+        """Proxymethod to login user with ProtonVPN credentials."""
         exit_type = 1
         if self.get_existing_session(exit_type, is_connecting=False):
             print("\nYou are already logged in!")
@@ -99,6 +102,7 @@ class CLIWrapper():
         self.login_user(exit_type, protonvpn_username, protonvpn_password)
 
     def logout(self):
+        """Proxymethod to logout user."""
         exit_type = 1
         try:
             self.user_manager.delete_user_session()
@@ -120,6 +124,7 @@ class CLIWrapper():
             sys.exit(exit_type)
 
     def status(self):
+        """Proxymethod to diplay connection status."""
         conn_status = self.connection_manager.display_connection_status()
         if not conn_status:
             print("[!] No active ProtonVPN connection.")
@@ -207,6 +212,7 @@ class CLIWrapper():
         self, certificate_filename, openvpn_username,
         openvpn_password, domain, exit_type
     ):
+        """Proxymethod to add ProtonVPN connection."""
         try:
             self.connection_manager.add_connection(
                 certificate_filename, openvpn_username,
@@ -226,6 +232,7 @@ class CLIWrapper():
             exit_type = 0
 
     def get_ovpn_credentials(self, session, exit_type):
+        """Proxymethod to get user OVPN credentials."""
         openvpn_username, openvpn_password = None, None
         try:
             openvpn_username, openvpn_password = self.user_manager.fetch_vpn_credentials( # noqa
@@ -257,6 +264,7 @@ class CLIWrapper():
         self, cli_commands, session,
         protocol, command
     ):
+        """Proxymethod to get certficate filename and server domain."""
         certificate_filename, domain = None, None
         try:
             certificate_filename, domain = cli_commands[command[0]](
@@ -278,6 +286,7 @@ class CLIWrapper():
         return certificate_filename, domain
 
     def determine_protocol(self, args):
+        """Determine protocol based on CLI input arguments."""
         protocol = ProtocolEnum.TCP
         try:
             protocol = args.protocol.lower().strip()
@@ -289,6 +298,7 @@ class CLIWrapper():
         return protocol
 
     def get_existing_session(self, exit_type=1, is_connecting=True):
+        """Proxymethod to get user session."""
         session_exists = False
 
         try:
