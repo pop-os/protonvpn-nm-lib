@@ -36,7 +36,7 @@ class CLIWrapper():
         exit_type = 1
         protocol = self.determine_protocol(args)
 
-        session = self.check_existing_session(exit_type)
+        session = self.get_existing_session(exit_type)
 
         try:
             self.connection_manager.remove_connection()
@@ -89,7 +89,7 @@ class CLIWrapper():
 
     def login(self):
         exit_type = 1
-        if self.check_existing_session(exit_type, is_connecting=False):
+        if self.get_existing_session(exit_type, is_connecting=False):
             print("\nYou are already logged in!")
             sys.exit()
 
@@ -233,7 +233,7 @@ class CLIWrapper():
 
         return protocol
 
-    def check_existing_session(self, exit_type, is_connecting=True):
+    def get_existing_session(self, exit_type, is_connecting=True):
         session_exists = False
 
         try:
