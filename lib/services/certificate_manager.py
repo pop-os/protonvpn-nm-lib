@@ -1,5 +1,6 @@
 import os
 
+import jinja2
 from jinja2 import Environment, FileSystemLoader
 from proton.api import Session
 
@@ -93,7 +94,11 @@ class CertificateManager(ConnectionStateManager):
         except KeyError as e:
             logger.exception("[!] IllegalVPNProtocol: {}".format(e))
             raise exceptions.IllegalVPNProtocol(e)
+        except jinja2.exceptions.TemplateNotFound as e:
+            logger.exception("[!] jinja2.TemplateNotFound: {}".format(e))
+            raise jinja2.exceptions.TemplateNotFound(e)
         except Exception as e:
+            logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
 
     def generate_openvpn_cert(
