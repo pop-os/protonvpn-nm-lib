@@ -6,6 +6,7 @@ import time
 from textwrap import dedent
 
 from lib import exceptions
+from lib.constants import SUPPORTED_FEATURES
 from lib.enums import ConnectionMetadataEnum, ProtocolEnum
 from lib.logger import logger
 from lib.services import capture_exception
@@ -124,23 +125,77 @@ class CLIWrapper():
             print("[!] No active ProtonVPN connection.")
             sys.exit()
 
+        country, load, features = self.extract_server_info(
+            conn_status[ConnectionMetadataEnum.SERVER]
+        )
+
         status_to_print = dedent("""
+        Country: {country}
         Server: {server}
+        Load: {load}%
         Protocol: {proto}
+        Feature(s): {features}
         Connection time: {time}\
         """).format(
+            country=country,
             server=conn_status[ConnectionMetadataEnum.SERVER],
             proto=conn_status[ConnectionMetadataEnum.PROTOCOL].upper(),
-            time=self.convert_time(conn_status),
+            time=self.convert_time(
+                conn_status[ConnectionMetadataEnum.CONNECTED_TIME]
+            ),
+            load=load,
+            features=", ".join(features)
         )
 
         print(status_to_print)
         sys.exit()
 
-    def convert_time(self, conn_status):
+    def extract_server_info(self, servername):
+        """Extract server information to be displayed.
+
+        Args:
+            servername (string): servername [PT#1]
+
+        Returns:
+            tuple: (country, load, features_list)
+        """
+        self.server_manager.cache_servers(
+            session=self.get_existing_session()
+        )
+
+        servers = self.server_manager.extract_server_list()
+        country_code = self.server_manager.extract_server_value(
+            servername, "ExitCountry", servers
+        )
+        country = self.server_manager.extract_country_name(country_code)
+        load = self.server_manager.extract_server_value(
+            servername, "Load", servers
+        )
+        features = [
+            self.server_manager.extract_server_value(
+                servername, "Features", servers
+            )
+        ]
+
+        features_list = []
+        for feature in features:
+            if feature in SUPPORTED_FEATURES:
+                features_list.append(SUPPORTED_FEATURES[feature])
+
+        return country, load, features_list
+
+    def convert_time(self, connected_time):
+        """Convert time from epoch to 24h.
+
+        Args:
+            connected time (string): time in seconds since epoch
+
+        Returns:
+            string: time in 24h format, since last connection was made
+        """
         connection_time = (
             time.time()
-            - int(conn_status[ConnectionMetadataEnum.CONNECTED_TIME])
+            - int(connected_time)
         )
         return str(
             datetime.timedelta(
@@ -233,7 +288,7 @@ class CLIWrapper():
 
         return protocol
 
-    def get_existing_session(self, exit_type, is_connecting=True):
+    def get_existing_session(self, exit_type=1, is_connecting=True):
         session_exists = False
 
         try:
