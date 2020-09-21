@@ -65,7 +65,19 @@ class CLIWrapper():
             domain, exit_type
         )
         self.connection_manager.start_connection()
-        sys.exit(exit_type)
+
+        try:
+            activ_conn = self.connection_manager.get_proton_connection(
+                "active_connections"
+            )
+        except ValueError:
+            print("[!] Unable to activate ProtonVPN connection.")
+        else:
+            if activ_conn[0] and activ_conn[1]:
+                exit_type = 0
+                print("\nActivated ProtonVPN connection.")
+        finally:
+            sys.exit(exit_type)
 
     def disconnect(self):
         """Proxymethod to disconnect from ProtonVPN."""
@@ -87,6 +99,7 @@ class CLIWrapper():
             print("[!] Unknown error occured: {}".format(e))
         else:
             exit_type = 1
+            print("\nDeactivated ProtonVPN connection.")
         finally:
             sys.exit(exit_type)
 
