@@ -49,6 +49,8 @@ Create `protonvpn_reconnect.service` inside `/etc/systemd/system/` with the foll
     [Install]
     WantedBy=multi-user.target
 
+**Note: depending on your system, `systemd-networkd-wait-online.service` might not be needed:** https://wiki.archlinux.org/index.php/NetworkManager#Enable_NetworkManager_Wait_Online 
+
 ### Configure PolKit
 
 To check version, type `pkaction --version`
