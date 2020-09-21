@@ -35,8 +35,8 @@ class ConnectionManager(ConnectionStateManager):
         """
         logger.info("Adding VPN connection")
         if not isinstance(filename, str):
-            err_msg = "Incorrect object type, "
-            + "str is expected but got {} instead".format(type(filename))
+            err_msg = "Incorrect object type, "\
+                "str is expected but got {} instead".format(type(filename))
 
             logger.error(
                 "[!] TypeError: {}".format(err_msg)
@@ -52,8 +52,8 @@ class ConnectionManager(ConnectionStateManager):
             raise ValueError(err_msg)
 
         if not isinstance(username, str):
-            err_msg = "Incorrect object type, "
-            + "str is expected but got {} instead".format(type(username))
+            err_msg = "Incorrect object type, "\
+                "str is expected but got {} instead".format(type(username))
 
             logger.error(
                 "[!] TypeError: {}".format(err_msg)
@@ -61,8 +61,8 @@ class ConnectionManager(ConnectionStateManager):
             raise TypeError(err_msg)
 
         elif not isinstance(password, str):
-            err_msg = "Incorrect object type, "
-            + "str is expected but got {} instead".format(type(password))
+            err_msg = "Incorrect object type, "\
+                "str is expected but got {} instead".format(type(password))
             logger.error(
                 "[!] TypeError: {}".format(err_msg)
             )
@@ -477,9 +477,9 @@ class ConnectionManager(ConnectionStateManager):
             except (ValueError, KeyError, TypeError) as e:
                 logger.exception("[!] IllegalVirtualDevice: {}".format(e))
                 raise exceptions.IllegalVirtualDevice(
-                    "Only {} are permitted, though \"{}\" "
-                    .format(' and '.join(virtual_dev_type_list), dev_type)
-                    + "was provided"
+                    "Only {} are permitted, though \"{}\" ".format(
+                        ' and '.join(virtual_dev_type_list), dev_type
+                    ) + " was provided"
                 )
             except Exception as e:
                 capture_exception(e)

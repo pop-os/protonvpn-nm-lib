@@ -42,16 +42,16 @@ class CertificateManager(ConnectionStateManager):
         }
 
         if not isinstance(protocol, str):
-            err_msg = "Incorrect object type, "
-            + "str is expected but got {} instead".format(type(protocol))
+            err_msg = "Incorrect object type, "\
+                "str is expected but got {} instead".format(type(protocol))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
             raise TypeError(err_msg)
 
         if not isinstance(session, Session):
-            err_msg = "Incorrect object type, "
-            + "{} is expected ".format(type(Session))
+            err_msg = "Incorrect object type, "\
+                "{} is expected ".format(type(Session))
             + "but got {} instead".format(type(protocol))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
@@ -59,16 +59,16 @@ class CertificateManager(ConnectionStateManager):
             raise TypeError(err_msg)
 
         if not isinstance(servername, str):
-            err_msg = "Incorrect object type, "
-            + "str is expected but got {} instead".format(type(servername))
+            err_msg = "Incorrect object type, "\
+                "str is expected but got {} instead".format(type(servername))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
             raise TypeError(err_msg)
 
         if not isinstance(ip_list, list):
-            err_msg = "Incorrect object type, "
-            + "list is expected but got {} instead".format(type(ip_list))
+            err_msg = "Incorrect object type, "\
+                "list is expected but got {} instead".format(type(ip_list))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
             )

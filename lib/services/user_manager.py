@@ -76,15 +76,15 @@ class UserManager(UserSessionManager):
             password (string): ProtonVPN password
         """
         if not isinstance(username, str):
-            err_msg = "Incorrect object type, "
-            + "str is expected but got {} instead.".format(type(username))
+            err_msg = "Incorrect object type, "\
+                "str is expected but got {} instead.".format(type(username))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
             raise TypeError(err_msg)
         elif not isinstance(password, str):
-            err_msg = "Incorrect object type, "
-            + "str is expected but got {} instead.".format(type(password))
+            err_msg = "Incorrect object type, "\
+                "str is expected but got {} instead.".format(type(password))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
             )

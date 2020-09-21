@@ -74,15 +74,15 @@ class ServerManager():
         """
         self.validate_session_protocol(session, protocol)
         if not isinstance(args, tuple):
-            err_msg = "Incorrect object type, "
-            + "tuple is expected but got {} instead".format(type(args))
+            err_msg = "Incorrect object type, "\
+                "tuple is expected but got {} instead".format(type(args))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
             raise TypeError(err_msg)
         elif not isinstance(args[0], list):
-            err_msg = "Incorrect object type, "
-            + "list is expected but got {} instead".format(type(args[0]))
+            err_msg = "Incorrect object type, "\
+                "list is expected but got {} instead".format(type(args[0]))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
@@ -155,8 +155,8 @@ class ServerManager():
         """
         self.validate_session_protocol(session, protocol)
         if not isinstance(args, tuple):
-            err_msg = "Incorrect object type, "
-            + "tuple is expected but got {} ".format(type(args))
+            err_msg = "Incorrect object type, "\
+                "tuple is expected but got {} ".format(type(args))
             + "instead"
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
@@ -240,8 +240,8 @@ class ServerManager():
         """
         self.validate_session_protocol(session, protocol)
         if not isinstance(args, tuple):
-            err_msg = "Incorrect object type, "
-            + "tuple is expected but got {} ".format(type(args))
+            err_msg = "Incorrect object type, "\
+                "tuple is expected but got {} ".format(type(args))
             + "instead"
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
@@ -254,8 +254,8 @@ class ServerManager():
             )
             raise ValueError(err_msg)
         elif not isinstance(args[0], list):
-            err_msg = "Incorrect object type, "
-            + "list is expected but got {} ".format(type(args))
+            err_msg = "Incorrect object type, "\
+                "list is expected but got {} ".format(type(args))
             + "instead"
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
@@ -380,8 +380,8 @@ class ServerManager():
         """
         logger.info("Validating session and protocol")
         if not isinstance(session, Session):
-            err_msg = "Incorrect object type, "
-            + "{} is expected ".format(type(Session))
+            err_msg = "Incorrect object type, "\
+                "{} is expected ".format(type(Session))
             + "but got {} instead".format(type(session))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(
@@ -391,8 +391,8 @@ class ServerManager():
             raise TypeError(err_msg)
 
         if not isinstance(protocol, str):
-            err_msg = "Incorrect object type, "
-            + "str is expected but got {} instead".format(type(protocol))
+            err_msg = "Incorrect object type, "\
+                "str is expected but got {} instead".format(type(protocol))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(
                     err_msg
@@ -421,10 +421,10 @@ class ServerManager():
         """
         logger.info("Caching servers")
         if not isinstance(cached_serverlist, str):
-            err_msg = "Incorrect object type, "
-            + "str is expected but got {} instead".format(
-                type(cached_serverlist)
-            )
+            err_msg = "Incorrect object type, "\
+                "str is expected but got {} instead".format(
+                    type(cached_serverlist)
+                )
             logger.error(
                 "[!] TypeError: {}. Raising exception".format(err_msg)
             )
@@ -582,10 +582,10 @@ class ServerManager():
         logger.info("Getting fastest server")
 
         if not isinstance(server_pool, list):
-            err_msg = "Incorrect object type, "
-            + "list is expected but got {} instead".format(
-                type(server_pool)
-            )
+            err_msg = "Incorrect object type, "\
+                "list is expected but got {} instead".format(
+                    type(server_pool)
+                )
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
@@ -658,8 +658,8 @@ class ServerManager():
         """
         logger.info("Validating servername")
         if not isinstance(servername, str):
-            err_msg = "Incorrect object type, "
-            + "str is expected but got {} instead".format(type(servername))
+            err_msg = "Incorrect object type, "\
+                "str is expected but got {} instead".format(type(servername))
             logger.error(
                 "[!] TypeError: {}. Raising Exception.".format(err_msg)
             )
