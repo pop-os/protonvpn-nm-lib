@@ -48,7 +48,7 @@ class PluginManager():
             # If the connection was modified in any way, then return True
             # https://lazka.github.io/pgi-docs/NM-1.0/classes/Connection.html#NM.Connection.normalize
             if connection.normalize():
-                print("Connection was normalized")
+                logger.info("Connection was normalized")
             return connection
 
     def extract_openvpn_protocol(self, filename):

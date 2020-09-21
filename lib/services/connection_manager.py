@@ -324,7 +324,6 @@ class ConnectionManager(ConnectionStateManager):
                 callback_type_dict[callback_type]["msg"]
             )
             logger.info(msg)
-            print(msg)
         except Exception as e:
             logger.exception(
                 "[!] {}: {}".format(
