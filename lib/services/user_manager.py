@@ -65,8 +65,7 @@ class UserManager(UserSessionManager):
 
     def append_suffix(self, api_resp):
         suffixes = [
-            ClientSuffixEnum.PLATFORM,
-            ClientSuffixEnum.NETSHIELD_ADS_TRACKING
+            ClientSuffixEnum.PLATFORM
         ]
 
         username = api_resp["VPN"]["Name"] + "+" + "+".join(
