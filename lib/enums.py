@@ -29,3 +29,11 @@ class ConnectionMetadataEnum(object):
     SERVER = "connected_server"
     CONNECTED_TIME = "connected_time"
     PROTOCOL = "connected_protocol"
+
+
+class ClientSuffixEnum(object):
+    PLATFORM = "pl"
+    NETSHIELD = "f1"
+    NETSHIELD_ADS_TRACKING = "f2"
+    NETSHIELD_NA = "f3"
+    RANDOMAZIED_NAT = "nr"
