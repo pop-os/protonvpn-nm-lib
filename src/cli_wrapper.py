@@ -40,10 +40,13 @@ class CLIWrapper():
 
         session = self.get_existing_session(exit_type)
 
+        print("Checking for existing connections...")
         try:
             self.connection_manager.remove_connection()
         except exceptions.ConnectionNotFound:
-            pass
+            print("No existing ProtonVPN connection was found.")
+        else:
+            print("Existing ProtonVPN connection removed.")
 
         for cls_attr in inspect.getmembers(args):
             if cls_attr[0] in cli_commands and cls_attr[1]:
@@ -64,6 +67,15 @@ class CLIWrapper():
             certificate_filename, openvpn_username, openvpn_password,
             domain, exit_type
         )
+
+        conn_status = self.connection_manager.display_connection_status(
+            "all_connections"
+        )
+        print("Connecting to ProtonVPN on {} with {}...".format(
+            conn_status[ConnectionMetadataEnum.SERVER],
+            conn_status[ConnectionMetadataEnum.PROTOCOL].upper(),
+        ))
+
         self.connection_manager.start_connection()
 
         try:
@@ -71,16 +83,18 @@ class CLIWrapper():
                 "active_connections"
             )
         except ValueError:
-            print("[!] Unable to activate ProtonVPN connection.")
+            print("[!] Unable to connect to ProtonVPN connection.")
         else:
             if activ_conn[0] and activ_conn[1]:
                 exit_type = 0
-                print("\nActivated ProtonVPN connection.")
+                print("\nSuccessfully connected to ProtonVPN.")
         finally:
             sys.exit(exit_type)
 
     def disconnect(self):
         """Proxymethod to disconnect from ProtonVPN."""
+        print("Disconnecting from ProtonVPN...")
+
         exit_type = 1
         try:
             self.connection_manager.remove_connection()
@@ -99,7 +113,7 @@ class CLIWrapper():
             print("[!] Unknown error occured: {}".format(e))
         else:
             exit_type = 1
-            print("\nDeactivated ProtonVPN connection.")
+            print("\nSuccessfully disconnected from ProtonVPN.")
         finally:
             sys.exit(exit_type)
 
@@ -116,6 +130,7 @@ class CLIWrapper():
 
     def logout(self):
         """Proxymethod to logout user."""
+        print("Logging out...")
         exit_type = 1
         try:
             self.user_manager.delete_user_session()
@@ -228,14 +243,16 @@ class CLIWrapper():
         openvpn_password, domain, exit_type
     ):
         """Proxymethod to add ProtonVPN connection."""
+        print("Adding ProtonVPN connection...")
         try:
             self.connection_manager.add_connection(
                 certificate_filename, openvpn_username,
                 openvpn_password, CertificateManager.delete_cached_certificate,
                 domain
             )
-        except exceptions.ImportConnectionError:
-            print("An error occured upon importing connection.")
+        except exceptions.ImportConnectionError as e:
+            logger.exception("[!] ImportConnectionError: {}".format(e))
+            print("[!] An error occured upon importing connection: ", e)
         except Exception as e:
             capture_exception(e)
             logger.exception(
@@ -245,6 +262,10 @@ class CLIWrapper():
             sys.exit(exit_type)
         else:
             exit_type = 0
+
+        print(
+            "ProtonVPN connection was successfully added to Network Manager."
+        )
 
     def get_ovpn_credentials(self, session, exit_type):
         """Proxymethod to get user OVPN credentials."""
@@ -356,6 +377,8 @@ class CLIWrapper():
         return session_exists
 
     def login_user(self, exit_type, protonvpn_username, protonvpn_password):
+
+        print("Attempting to login...")
         try:
             self.user_manager.login(protonvpn_username, protonvpn_password)
         except (TypeError, ValueError) as e:
