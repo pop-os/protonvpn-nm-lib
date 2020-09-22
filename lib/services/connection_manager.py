@@ -267,8 +267,8 @@ class ConnectionManager(ConnectionStateManager):
 
         main_loop.run()
 
-    def display_connection_status(self):
-        connection_exists = self.get_proton_connection("active_connections")
+    def display_connection_status(self, from_connections="active_connections"):
+        connection_exists = self.get_proton_connection(from_connections)
 
         if not connection_exists[0]:
             return False
