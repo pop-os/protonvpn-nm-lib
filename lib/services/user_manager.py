@@ -6,7 +6,7 @@ from lib.constants import (APP_VERSION, DEFAULT_KEYRING_SERVICE,
 from lib.logger import logger
 
 from .user_session_manager import UserSessionManager
-
+from lib.enums import ClientSuffixEnum
 
 class UserManager(UserSessionManager):
     def __init__(
@@ -60,7 +60,19 @@ class UserManager(UserSessionManager):
         if not session:
             session = self.load_session()
         api_resp = session.api_request('/vpn')
-        return (api_resp["VPN"]["Name"], api_resp["VPN"]["Password"])
+
+        return self.append_suffix(api_resp)
+
+    def append_suffix(self, api_resp):
+        suffixes = [
+            ClientSuffixEnum.PLATFORM
+        ]
+
+        username = api_resp["VPN"]["Name"] + "+" + "+".join(
+            suffix for suffix in suffixes
+        )
+        password = api_resp["VPN"]["Password"]
+        return username, password
 
     def load_session(self):
         """Load ProtonVPN user session."""

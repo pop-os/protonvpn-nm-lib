@@ -5,6 +5,7 @@ from proton.api import Session
 
 from lib import exceptions
 from lib.services.user_manager import UserManager
+from lib.enums import ClientSuffixEnum
 
 
 class TestUnitUserManager():
@@ -107,7 +108,9 @@ class TestUnitUserManager():
         user = os.environ["openvpntest_user"]
         pwd = os.environ["openvpntest_pwd"]
         (resp_user, resp_pwd) = self.um.fetch_vpn_credentials()
-        assert (resp_user, resp_pwd) == (user, pwd)
+        assert (resp_user, resp_pwd) == (
+            user + "+" + ClientSuffixEnum.PLATFORM, pwd
+        )
 
     def test_fetch_incorrect_service_vpn_cred(
         self, test_keyring_username
