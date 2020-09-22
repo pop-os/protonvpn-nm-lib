@@ -7,6 +7,7 @@ from lib import exceptions
 from lib.services.user_manager import UserManager
 from lib.enums import ClientSuffixEnum
 
+
 class TestUnitUserManager():
     um = UserManager()
 
