@@ -4,7 +4,7 @@ import sys
 from lib.enums import ProtocolEnum
 from lib.logger import logger
 from lib.constants import APP_VERSION, USAGE
-from .cli_wrapper import CLIWrapper
+from lib.cli.cli_wrapper import CLIWrapper
 
 
 class NetworkManagerPrototypeCLI():
@@ -111,6 +111,3 @@ class NetworkManagerPrototypeCLI():
     def status(self):
         """Display connection status."""
         self.cli_wrapper.status()
-
-
-NetworkManagerPrototypeCLI()
