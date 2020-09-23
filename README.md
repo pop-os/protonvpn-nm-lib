@@ -4,22 +4,15 @@
 
 | **Distro**                              | **Command**                                                                                                     |
 |:----------------------------------------|:----------------------------------------------------------------------------------------------------------------|
-|Ubuntu/Linux Mint/Debian and derivatives | `sudo apt install -y python3 network-manager network-manager-openvpn pkg-config openvpn python3-pip python3-xdg python3-keyring python3-jinja2 python3-dialog python3-pytest libcairo2-dev libgirepository1.0-dev gir1.2-nm-1.0 dbus-x11 libsecret-tools gnome-keyring` |
+|Ubuntu/Linux Mint/Debian and derivatives | `sudo apt install -y python3 network-manager network-manager-openvpn pkg-config openvpn python3-pip python3-xdg python3-keyring python3-jinja2 python3-dialog gir1.2-nm-1.0 dbus-x11 libsecret-tools gnome-keyring sentry-sdk~=0.10.2` |
+|Fedora/CentOS/RHEL                       | `sudo dnf install python3 NetworkManager NetworkManager-openvpn pkgconf-pkg-config openvpn python3-pip python3-pyxdg python3-keyring python3-jinja2 python3-dialog python3-gobject gtk3 dbus-x11 gnome-keyring python3-psutil`
 
 | **Python3**                            | **Command**                             |
 |:---------------------------------------|:----------------------------------------|
-| Additional Python3 dependencies        | `pip3 install proton-client keyring`|
+| Additional Python3 dependencies        | `pip3 install proton-client`|
 
 ### Requires:
-- keyring >= 2.16
-
-### Tested on:
- - Ubuntu:
-   - 16.04: does not work (tls-pinning will fail due to keyring)
-   - 18.04: works but daemon reconnector does not behave properly because pkaction==0.105 (daemon reconnector works only with pkaction==0.106)
- - Manjaro >= 20: works
- - Debian 9: does not work (tls-pinning will fail due to keyring)
- - Debian 10: not tested
+- sentry >=0.10.2,<0.11.0
 
 ## Before install, part 1:
 
@@ -32,7 +25,7 @@
 
 ### Confgure daemon(.service)
 
-Create `protonvpn_reconnect.service` inside `/etc/systemd/system/` with the following content (still experimental):
+ 1. Create `protonvpn_reconnect.service` inside `/etc/systemd/system/` with the following content (still experimental):
 
 
     [Unit]
@@ -48,6 +41,8 @@ Create `protonvpn_reconnect.service` inside `/etc/systemd/system/` with the foll
 
     [Install]
     WantedBy=multi-user.target
+
+ 2. `systemctl daemon-reload`
 
 **Note: depending on your system, `systemd-networkd-wait-online.service` might not be needed:** https://wiki.archlinux.org/index.php/NetworkManager#Enable_NetworkManager_Wait_Online 
 

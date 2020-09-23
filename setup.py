@@ -23,7 +23,8 @@ setup(
     long_description=long_description,
     install_requires=[
         'proton-client', 'pyxdg', 'keyring',
-        'pythondialog', 'PyGObject', 'Jinja2'
+        'pythondialog', 'PyGObject', 'Jinja2',
+        'sentry-sdk~=0.10.2'
     ],
     include_package_data=True,
     license="MIT",
