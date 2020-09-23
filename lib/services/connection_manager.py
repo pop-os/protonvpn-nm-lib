@@ -346,15 +346,15 @@ class ConnectionManager(ConnectionStateManager):
                 except FileNotFoundError:
                     pass
 
-            try:
-                daemon_status = self.check_daemon_reconnector_status()
-            except Exception as e:
-                logger.exception("[!] Exception: {}".format(e))
-                print(e)
-            else:
-                logger.info("Daemon status: {}".format(daemon_status))
-                if not os.environ.get(ENV_CI_NAME):
-                    self.daemon_manager(callback_type, daemon_status)
+            # try:
+            #     daemon_status = self.check_daemon_reconnector_status()
+            # except Exception as e:
+            #     logger.exception("[!] Exception: {}".format(e))
+            #     print(e)
+            # else:
+            #     logger.info("Daemon status: {}".format(daemon_status))
+            #     if not os.environ.get(ENV_CI_NAME):
+            #         self.daemon_manager(callback_type, daemon_status)
 
         main_loop.quit()
 
