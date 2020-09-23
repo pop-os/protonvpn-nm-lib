@@ -23,7 +23,7 @@
 
 ## Before install, part 2:
 
-### Confgure daemon(.service)
+### Confgure daemon(.service) **- daemon unavailable, skip to Configure PolKit instead**
 
  1. Create `protonvpn_reconnect.service` inside `/etc/systemd/system/` with the following content (still experimental):
 
@@ -53,20 +53,21 @@ To check version, type `pkaction --version`
 #### Versions >= 0.106
 The policy should reside inside `/etc/polkit-1/rules.d/` (as per https://wiki.archlinux.org/index.php/Polkit#Authorization_rules)
 
-The first file (`57-manage-protonvpn-daemon.rules`) should contain following information:
+The first file (`50-manage-NetworkManager.rules`) should contain following information:
 
     polkit.addRule(function(action, subject) {
-          if (action.id == "org.freedesktop.systemd1.manage-units" &&
-              action.lookup("unit") == "protonvpn_reconnect.service" &&
+          if ((action.id == "org.freedesktop.NetworkManager.settings.modify.own" || action.id == "org.freedesktop.NetworkManager.network-control") &&
               subject.isInGroup("protonvpn")) {
                 return polkit.Result.YES;
           }
     });
 
-The second file (`50-manage-NetworkManager.rules`) should contain following information:
+**Daemon unavailable, skip this step**
+The second file (`57-manage-protonvpn-daemon.rules`) should contain following information:
 
     polkit.addRule(function(action, subject) {
-          if ((action.id == "org.freedesktop.NetworkManager.settings.modify.own" || action.id == "org.freedesktop.NetworkManager.network-control") &&
+          if (action.id == "org.freedesktop.systemd1.manage-units" &&
+              action.lookup("unit") == "protonvpn_reconnect.service" &&
               subject.isInGroup("protonvpn")) {
                 return polkit.Result.YES;
           }
