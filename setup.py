@@ -22,7 +22,7 @@ setup(
     author_email='contact@protonmail.com',
     long_description=long_description,
     install_requires=[
-        'proton-client', 'xdg', 'keyring',
+        'proton-client', 'pyxdg', 'keyring',
         'pythondialog', 'PyGObject', 'Jinja2'
     ],
     include_package_data=True,

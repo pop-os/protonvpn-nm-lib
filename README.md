@@ -8,7 +8,7 @@
 
 | **Python3**                            | **Command**                             |
 |:---------------------------------------|:----------------------------------------|
-| Additional Python3 dependencies        | `pip3 install proton-client keyring xdg`|
+| Additional Python3 dependencies        | `pip3 install proton-client keyring`|
 
 ### Requires:
 - keyring >= 2.16
