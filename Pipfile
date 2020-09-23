@@ -8,7 +8,7 @@ pytest = "*"
 pytest-cov = "*"
 
 [packages]
-xdg = "*"
+pyxdg = "*"
 pythondialog = "*"
 jinja2 = "*"
 proton-client = "*"

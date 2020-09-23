@@ -4,8 +4,12 @@
 # Save logs and other user data in XDG_DATA_HOME
 
 import os
-from xdg import XDG_CACHE_HOME
-# XDG_CONFIG_HOME, XDG_DATA_HOME
+
+from xdg import BaseDirectory
+XDG_CACHE_HOME = BaseDirectory.xdg_cache_home
+# XDG_CONFIG_HOME = BaseDirectory.xdg_config_home
+# XDG_DATA_HOME = BaseDirectory.xdg_data_home
+
 from .enums import (
     ProtocolImplementationEnum,
     ProtocolEnum,
