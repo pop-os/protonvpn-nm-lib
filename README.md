@@ -4,12 +4,12 @@
 
 | **Distro**                              | **Command**                                                                                                     |
 |:----------------------------------------|:----------------------------------------------------------------------------------------------------------------|
-|Ubuntu/Linux Mint/Debian and derivatives | `sudo apt install -y python3 network-manager network-manager-openvpn pkg-config openvpn python3-pip python3-xdg python3-keyring python3-jinja2 python3-dialog gir1.2-nm-1.0 dbus-x11 libsecret-tools gnome-keyring sentry-sdk~=0.10.2` |
+|Ubuntu/Linux Mint/Debian and derivatives | `sudo apt install -y python3 network-manager network-manager-openvpn pkg-config openvpn python3-pip python3-xdg python3-keyring python3-jinja2 python3-dialog gir1.2-nm-1.0 dbus-x11 libsecret-tools gnome-keyring` |
 |Fedora/CentOS/RHEL                       | `sudo dnf install python3 NetworkManager NetworkManager-openvpn pkgconf-pkg-config openvpn python3-pip python3-pyxdg python3-keyring python3-jinja2 python3-dialog python3-gobject gtk3 dbus-x11 gnome-keyring python3-psutil`
 
 | **Python3**                            | **Command**                             |
 |:---------------------------------------|:----------------------------------------|
-| Additional Python3 dependencies        | `pip3 install proton-client`|
+| Additional Python3 dependencies        | `pip3 install proton-client sentry-sdk~=0.10.2`|
 
 ### Requires:
 - sentry >=0.10.2,<0.11.0
