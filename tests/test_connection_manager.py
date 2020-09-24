@@ -12,9 +12,10 @@ from lib.services.connection_manager import ConnectionManager
 from lib.services.user_manager import UserManager
 
 
-PWD = os.path.dirname(os.path.abspath(__file__))
-CERT_FOLDER = os.path.join(PWD, "certificates/connection_manager")
-PLUGIN_CERT_FOLDER = os.path.join(PWD, "certificates/plugin_manager")
+# PWD = os.path.dirname(os.path.abspath(__file__))
+# CERT_FOLDER = os.path.join(PWD, "certificates/connection_manager")
+# PLUGIN_CERT_FOLDER = os.path.join(PWD, "certificates/plugin_manager")
+from common import PLUGIN_CERT_FOLDER, CERT_FOLDER
 os.environ[ENV_CI_NAME] = "true"
 
 

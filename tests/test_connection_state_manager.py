@@ -2,10 +2,10 @@ import json
 import os
 
 import pytest
-
 from lib.services.connection_state_manager import ConnectionStateManager
 
-PWD = os.path.dirname(os.path.abspath(__file__))
+from common import PWD
+
 conn_state_filepath = os.path.join(PWD, "test_conn_state_manager.json")
 
 
@@ -38,7 +38,6 @@ class TestConnectionStateManager:
             ("./some/incorrect/path.json", FileNotFoundError),
             ("", FileNotFoundError),
             (False, json.decoder.JSONDecodeError),
-            (50, OSError),
             ([], TypeError),
             ({}, TypeError)
         ]
