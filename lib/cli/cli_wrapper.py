@@ -5,6 +5,9 @@ import sys
 import time
 from textwrap import dedent
 
+import dbus
+from dbus.mainloop.glib import DBusGMainLoop
+from gi.repository import GLib
 from lib import exceptions
 from lib.constants import SUPPORTED_FEATURES
 from lib.enums import ConnectionMetadataEnum, ProtocolEnum
@@ -12,6 +15,7 @@ from lib.logger import logger
 from lib.services import capture_exception
 from lib.services.certificate_manager import CertificateManager
 from lib.services.connection_manager import ConnectionManager
+from lib.services.dbus_get_wrapper import DbusGetWrapper
 from lib.services.server_manager import ServerManager
 from lib.services.user_manager import UserManager
 
@@ -71,19 +75,11 @@ class CLIWrapper():
         ))
 
         self.connection_manager.start_connection()
-
-        try:
-            activ_conn = self.connection_manager.get_proton_connection(
-                "active_connections"
-            )
-        except ValueError:
-            print("[!] Unable to connect to ProtonVPN connection.")
-        else:
-            if activ_conn[0] and activ_conn[1]:
-                exit_type = 0
-                print("\nSuccessfully connected to ProtonVPN.")
-        finally:
-            sys.exit(exit_type)
+        DBusGMainLoop(set_as_default=True)
+        loop = GLib.MainLoop()
+        MonitorVPNState("proton0", loop)
+        loop.run()
+        sys.exit(exit_type)
 
     def disconnect(self):
         """Proxymethod to disconnect from ProtonVPN."""
@@ -107,7 +103,7 @@ class CLIWrapper():
             print("[!] Unknown error occured: {}".format(e))
         else:
             exit_type = 1
-            print("\nSuccessfully disconnected from ProtonVPN.")
+            print("\nSuccessfully disconnected from ProtonVPN!")
         finally:
             sys.exit(exit_type)
 
@@ -128,6 +124,7 @@ class CLIWrapper():
         exit_type = 1
 
         self.remove_existing_connection()
+        print()
 
         try:
             self.user_manager.delete_user_session()
@@ -406,4 +403,77 @@ class CLIWrapper():
         except exceptions.ConnectionNotFound:
             pass
         else:
-            print("Existing ProtonVPN connection removed.")
+            print("Disconnected from ProtonVPN connection.")
+
+
+class MonitorVPNState(DbusGetWrapper):
+    def __init__(self, virtual_device_name, loop):
+        self.max_attempts = 5
+        self.delay = 5000
+        self.failed_attempts = 0
+        self.loop = loop
+        self.virtual_device_name = virtual_device_name
+        self.bus = dbus.SystemBus()
+        self.test()
+
+    def test(self):
+        vpn_interface = self.get_vpn_interface(True)
+
+        if not isinstance(vpn_interface, tuple):
+            print("[!] No VPN was found")
+            sys.exit()
+
+        is_protonvpn, state, conn = self.is_protonvpn_being_prepared()
+        if is_protonvpn and state == 1:
+            self.vpn_signal_handler(conn)
+
+    def on_vpn_state_changed(self, state, reason):
+        logger.info("State: {} - Reason: {}".format(state, reason))
+        if state == 5:
+            logger.info("Successfully connected to ProtonVPN!")
+            print("\nSuccessfully connected to ProtonVPN!")
+            self.loop.quit()
+        elif state in [6, 7]:
+
+            msg = "[!] ProtonVPN connection failed due to "
+            if state == 6:
+                if reason == 6:
+                    msg += "VPN connection time out."
+                if reason == 9:
+                    msg += "incorrect openvpn credentials."
+
+            if state == 7:
+                msg = "[!] ProtonVPN connection has been disconnected. "\
+                    "Reason: {}".format(reason)
+
+            logger.error(msg)
+            print(msg)
+            self.loop.quit()
+
+    def vpn_signal_handler(self, conn):
+        """Add signal handler to ProtonVPN connection.
+
+        Args:
+            vpn_conn_path (string): path to ProtonVPN connection
+        """
+        proxy = self.bus.get_object(
+            "org.freedesktop.NetworkManager", conn
+        )
+        iface = dbus.Interface(
+            proxy, "org.freedesktop.NetworkManager.VPN.Connection"
+        )
+
+        try:
+            active_conn_props = self.get_active_conn_props(conn)
+            logger.info("Adding listener to active {} connection at {}".format(
+                active_conn_props["Id"],
+                conn)
+            )
+        except dbus.exceptions.DBusException:
+            logger.info(
+                "{} is not an active connection.".format(conn)
+            )
+        else:
+            iface.connect_to_signal(
+                "VpnStateChanged", self.on_vpn_state_changed
+            )
