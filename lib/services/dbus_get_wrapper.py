@@ -78,7 +78,7 @@ class DbusGetWrapper():
         )
         return dbus.Interface(proxy, "org.freedesktop.NetworkManager")
 
-    def get_vpn_interface(self, virtual_device_name, return_properties=False):
+    def get_vpn_interface(self, return_properties=False):
         """Get VPN connection interface based on virtual device name.
 
         Args:
@@ -88,7 +88,7 @@ class DbusGetWrapper():
         """
         logger.info(
             "Get connection interface from '{}' virtual device.".format(
-                virtual_device_name
+                self.virtual_device_name
             )
         )
         connections = self.get_all_conns()
@@ -106,11 +106,11 @@ class DbusGetWrapper():
             if (
                 all_settings["connection"]["type"] == "vpn"
             ) and (
-                all_settings["vpn"]["data"]["dev"] == virtual_device_name
+                all_settings["vpn"]["data"]["dev"] == self.virtual_device_name
             ):
                 logger.info(
                     "Found virtual device "
-                    + "'{}'.".format(virtual_device_name)
+                    + "'{}'.".format(self.virtual_device_name)
                 )
                 if return_properties:
                     return (iface, all_settings)
@@ -118,7 +118,7 @@ class DbusGetWrapper():
 
         logger.error(
             "[!] Could not find interface belonging to '{}'.".format(
-                virtual_device_name
+                self.virtual_device_name
             )
         )
         return None

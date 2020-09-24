@@ -129,9 +129,7 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
             logger.info("ProtonVPN connection was manually disconnected.")
             self.failed_attempts = 0
 
-            vpn_iface, settings = self.get_vpn_interface(
-                self.virtual_device_name, True
-            )
+            vpn_iface, settings = self.get_vpn_interface(True)
 
             logger.info("User prior disconnecting: {}".format(
                 getpass.getuser())
@@ -198,7 +196,7 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
             )
             + "ms between retries____"
         )
-        vpn_interface = self.get_vpn_interface(self.virtual_device_name)
+        vpn_interface = self.get_vpn_interface()
         active_con = self.get_active_connection()
 
         if active_con is None or vpn_interface is None:
