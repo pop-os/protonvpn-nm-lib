@@ -61,7 +61,7 @@ SERVERS = [
 MOCK_AUTHDATA = {
     "api_url": "https://api.protonvpn.ch/tests/ping",
     "appversion": "4",
-    "User-agent": "CI Test User Agent",
+    "User-Agent": "CI Test User Agent",
     "cookies": {
         "Session-Id": "session_id",
         "Version": "default"
