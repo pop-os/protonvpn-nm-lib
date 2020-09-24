@@ -12,4 +12,5 @@ config.read(APP_CONFIG)
 sentry_sdk.init(
     dsn=config["sentry"]["dsn"],
     release=APP_VERSION,
+    ignore_errors=["KeyboardInterrupt"]
 )
