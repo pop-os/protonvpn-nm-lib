@@ -7,6 +7,7 @@ from lib.logger import logger
 
 from .user_session_manager import UserSessionManager
 from lib.enums import ClientSuffixEnum
+import distro
 
 class UserManager(UserSessionManager):
     def __init__(
@@ -31,9 +32,11 @@ class UserManager(UserSessionManager):
             password (string): ProtonVPN password
         """
         self.validate_username_password(username, password)
+
         session = proton.Session(
             api_url="https://api.protonvpn.ch",
-            appversion="LinuxVPN_" + APP_VERSION
+            appversion="LinuxVPN_" + APP_VERSION,
+            user_agent=self.get_distro_info()
         )
 
         try:
@@ -50,6 +53,10 @@ class UserManager(UserSessionManager):
                 self.keyring_service,
                 self.keyring_username
             )
+
+    def get_distro_info(self):
+        distribution, version, code_nome = distro.linux_distribution()
+        return "ProtonVPN (Linux; {}/{})".format(distribution, version)
 
     def logout(self):
         """Logout ProtonVPN user."""

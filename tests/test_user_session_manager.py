@@ -1,34 +1,9 @@
 import pytest
-from proton.api import Session
-
 from lib import exceptions
 from lib.services.user_session_manager import UserSessionManager
+from proton.api import Session
 
-MOCK_AUTHDATA = {
-    "api_url": "https://api.protonvpn.ch/tests/ping",
-    "appversion": "4",
-    "cookies": {
-        "Session-Id": "session_id",
-        "Version": "default"
-    },
-    "session_data": {
-        "UID": "some_UID",
-        "AccessToken": "some_AccessToken",
-        "RefreshToken": "some_RefreshToken",
-        "Scope": [
-            "full",
-            "self",
-            "payments",
-            "keys",
-            "parent",
-            "paid",
-            "nondelinquent",
-            "mail",
-            "vpn",
-            "calendar"
-        ]
-    }
-}
+from common import MOCK_AUTHDATA
 
 TEST_KEYRING = dict(
     sname=["test1", "test2", "test3"],

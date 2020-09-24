@@ -9,8 +9,7 @@ from lib import exceptions
 from lib.services.plugin_manager import PluginManager
 
 
-PWD = os.path.dirname(os.path.abspath(__file__))
-CERT_FOLDER = os.path.join(PWD, "certificates/plugin_manager")
+from common import PLUGIN_CERT_FOLDER
 
 
 class TestUnitPluginManager:
@@ -42,20 +41,20 @@ class TestUnitPluginManager:
 
     def test_extract_correct_protocol(self):
         proto = self.pm.extract_openvpn_protocol(
-            os.path.join(CERT_FOLDER, "TestProtonVPN.ovpn")
+            os.path.join(PLUGIN_CERT_FOLDER, "TestProtonVPN.ovpn")
         )
         assert proto == "tcp"
 
     def test_extract_missing_protocol(self):
         vpn_proto = self.pm.extract_openvpn_protocol(
-            os.path.join(CERT_FOLDER, "ProtonVPN_no_proto.ovpn")
+            os.path.join(PLUGIN_CERT_FOLDER, "ProtonVPN_no_proto.ovpn")
         )
         assert vpn_proto is False
 
     def test_extract_incorrect_path(self):
         with pytest.raises(FileNotFoundError):
             self.pm.extract_openvpn_protocol(
-                os.path.join(CERT_FOLDER, "random_file.ovpn")
+                os.path.join(PLUGIN_CERT_FOLDER, "random_file.ovpn")
             )
 
     def test_extract_empty_path(self):
@@ -69,7 +68,7 @@ class TestIntegrationPluginManager:
     def test_correct_import(self):
         assert isinstance(
             self.pm.import_connection_from_file(
-                os.path.join(CERT_FOLDER, "TestProtonVPN.ovpn")
+                os.path.join(PLUGIN_CERT_FOLDER, "TestProtonVPN.ovpn")
             ),
             NM.SimpleConnection
         )
@@ -77,35 +76,35 @@ class TestIntegrationPluginManager:
     def test_broken_import(self):
         with pytest.raises(exceptions.ImportConnectionError):
             self.pm.import_connection_from_file(
-                os.path.join(CERT_FOLDER, "ProtonVPN_broken_cert.ovpn")
+                os.path.join(PLUGIN_CERT_FOLDER, "ProtonVPN_broken_cert.ovpn")
             )
 
     def test_missing_remote_import(self):
         with pytest.raises(exceptions.ImportConnectionError):
             self.pm.import_connection_from_file(
-                os.path.join(CERT_FOLDER, "ProtonVPN_no_remote.ovpn")
+                os.path.join(PLUGIN_CERT_FOLDER, "ProtonVPN_no_remote.ovpn")
             )
 
     def test_missing_import(self):
         with pytest.raises(FileNotFoundError):
             self.pm.import_connection_from_file(
-                os.path.join(CERT_FOLDER, "")
+                os.path.join(PLUGIN_CERT_FOLDER, "")
             )
 
     def test_filename_is_random(self):
         with pytest.raises(FileNotFoundError):
             self.pm.import_connection_from_file(
-                os.path.join(CERT_FOLDER, "someradnom_STRING")
+                os.path.join(PLUGIN_CERT_FOLDER, "someradnom_STRING")
             )
 
     def test_filename_is_int(self):
         with pytest.raises(TypeError):
             self.pm.import_connection_from_file(
-                os.path.join(CERT_FOLDER, 25)
+                os.path.join(PLUGIN_CERT_FOLDER, 25)
             )
 
     def test_import_from_subfolder(self):
         with pytest.raises(FileNotFoundError):
             self.pm.import_connection_from_file(
-                os.path.join(CERT_FOLDER, "./random_folder/TestProtonVPN.ovpn")
+                os.path.join(PLUGIN_CERT_FOLDER, "./random_folder/TestProtonVPN.ovpn")
             )
