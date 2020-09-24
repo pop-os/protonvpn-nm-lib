@@ -40,13 +40,7 @@ class CLIWrapper():
 
         session = self.get_existing_session(exit_type)
 
-        print("Checking for existing connections...")
-        try:
-            self.connection_manager.remove_connection()
-        except exceptions.ConnectionNotFound:
-            print("No existing ProtonVPN connection was found.")
-        else:
-            print("Existing ProtonVPN connection removed.")
+        self.remove_existing_connection()
 
         for cls_attr in inspect.getmembers(args):
             if cls_attr[0] in cli_commands and cls_attr[1]:
@@ -132,6 +126,9 @@ class CLIWrapper():
         """Proxymethod to logout user."""
         print("Logging out...")
         exit_type = 1
+
+        self.remove_existing_connection()
+
         try:
             self.user_manager.delete_user_session()
         except exceptions.StoredSessionNotFound:
@@ -351,7 +348,7 @@ class CLIWrapper():
             exceptions.JSONAuthDataNoneError
         ):
             if is_connecting:
-                print("[!] There is no stored session. Please, login first.")
+                print("\n[!] There is no stored session. Please, login first.")
                 sys.exit(exit_type)
         except exceptions.AccessKeyringError:
             print(
@@ -386,7 +383,7 @@ class CLIWrapper():
         except exceptions.IncorrectCredentialsError:
             print(
                 "[!] Unable to authenticate. "
-                + "The provided credentials are incorrect"
+                + "The provided credentials are incorrect."
             )
         except exceptions.APIAuthenticationError:
             print("[!] Unable to authenticate. Unexpected API response.")
@@ -402,3 +399,11 @@ class CLIWrapper():
             print("\nLogin successful!")
         finally:
             sys.exit(exit_type)
+
+    def remove_existing_connection(self):
+        try:
+            self.connection_manager.remove_connection()
+        except exceptions.ConnectionNotFound:
+            pass
+        else:
+            print("Existing ProtonVPN connection removed.")
