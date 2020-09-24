@@ -23,6 +23,7 @@ RUN apt-get install -y \
     python3-jinja2 \
     python3-dialog \
     python3-pytest \
+    python3-distro-info \
     libcairo2-dev \
     libgirepository1.0-dev \
     gir1.2-nm-1.0
