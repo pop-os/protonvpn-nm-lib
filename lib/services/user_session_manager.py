@@ -20,8 +20,7 @@ class UserSessionManager:
 
     def __init__(self):
         self.set_optimum_keyring_backend()
-        current_DE = os.getenv("XDG_CURRENT_DESKTOP", "")
-        current_DE = "None" if len(str(current_DE)) == 0 else current_DE
+        current_DE = str(os.getenv("XDG_CURRENT_DESKTOP"))
         logger.info("Current DE: \"{}\"".format(current_DE))
 
     def load_stored_user_session(
