@@ -1,9 +1,10 @@
+import configparser
+import os
+
 import sentry_sdk
+from lib.constants import APP_CONFIG, APP_VERSION, LOGGER_NAME
 from sentry_sdk import capture_exception  # noqa
 from sentry_sdk.integrations.logging import ignore_logger
-import os
-from lib.constants import APP_VERSION, LOGGER_NAME, APP_CONFIG
-import configparser
 
 ignore_logger(LOGGER_NAME)
 config = configparser.ConfigParser()
