@@ -4,8 +4,8 @@
 
 | **Distro**                              | **Command**                                                                                                     |
 |:----------------------------------------|:----------------------------------------------------------------------------------------------------------------|
-|Fedora/CentOS/RHEL                       | `sudo dnf install -y networkmanager networkmanager-openvpn openvpn python3-pip python3-pyxdg python3-keyring python3-jinja2 python3-dialog python3-distro-info python3-psutil python3-gobject libsecret-devel dbus-x11 gnome-keyring` |
-|Ubuntu/Linux Mint/Debian and derivatives | `sudo apt install -y network-manager network-manager-openvpn openvpn python3-pip python3-xdg python3-keyring python3-jinja2 python3-dialog python3-distro-info gir1.2-nm-1.0 libsecret-tools dbus-x11 gnome-keyring` |
+|Fedora/CentOS/RHEL                       | `sudo dnf install -y networkmanager networkmanager-openvpn openvpn python3-pip python3-pyxdg python3-keyring python3-jinja2 python3-dialog python3-distro python3-psutil python3-gobject libsecret-devel dbus-x11 gnome-keyring` |
+|Ubuntu/Linux Mint/Debian and derivatives | `sudo apt install -y network-manager network-manager-openvpn openvpn python3-pip python3-xdg python3-keyring python3-jinja2 python3-dialog python3-distro gir1.2-nm-1.0 libsecret-tools dbus-x11 gnome-keyring` |
 |OpenSUSE/SLES                            | To-do
 |Arch Linux/Manjaro                       | `sudo pacman -S networkmanager networkmanager-openvpn openvpn python-pip python-pyxdg python-keyring python-gobject python-jinja-2 python-pythondialog python-distro libsecret dbus-x11 gnome-keyring` |
 
