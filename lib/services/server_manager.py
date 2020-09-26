@@ -270,6 +270,7 @@ class ServerManager():
 
         literal_feature = args[0][0].strip().lower()
         allowed_features = {
+            "normal": FeatureEnum.NORMAL,
             "sc": FeatureEnum.SECURE_CORE,
             "tor": FeatureEnum.TOR,
             "p2p": FeatureEnum.P2P,
