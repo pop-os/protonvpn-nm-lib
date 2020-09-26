@@ -38,7 +38,7 @@ class ServerManager():
         filtered_servers = self.filter_servers(
             session, servers, exclude_features=excluded_features
         )
-        servername, domain, is_secure_core = self.get_fastest_server(
+        servername, domain, server_feature = self.get_fastest_server(
             filtered_servers
         )
 
@@ -54,8 +54,10 @@ class ServerManager():
         except Exception as e:
             capture_exception(e)
 
-        if is_secure_core:
-            domain = self.get_matching_domain(servers, exit_IP)
+        try:
+            domain = self.get_matching_domain(servers, exit_IP, server_feature)
+        except KeyError:
+            pass
 
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
@@ -119,7 +121,7 @@ class ServerManager():
             )
             raise ValueError(err_msg)
 
-        servername, domain, is_secure_core = self.get_fastest_server(
+        servername, domain, server_feature = self.get_fastest_server(
             filtered_servers
         )
 
@@ -135,8 +137,10 @@ class ServerManager():
         except Exception as e:
             capture_exception(e)
 
-        if is_secure_core:
-            domain = self.get_matching_domain(servers, exit_IP)
+        try:
+            domain = self.get_matching_domain(servers, exit_IP, server_feature)
+        except KeyError:
+            pass
 
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
@@ -216,12 +220,14 @@ class ServerManager():
         except Exception as e:
             capture_exception(e)
 
-        servername, domain, is_secure_core = self.get_random_server(
+        servername, domain, server_feature = self.get_random_server(
             filtered_servers
         )
 
-        if is_secure_core:
-            domain = self.get_matching_domain(servers, exit_IP)
+        try:
+            domain = self.get_matching_domain(servers, exit_IP, server_feature)
+        except KeyError:
+            pass
 
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
@@ -264,6 +270,7 @@ class ServerManager():
 
         literal_feature = args[0][0].strip().lower()
         allowed_features = {
+            "normal": FeatureEnum.NORMAL,
             "sc": FeatureEnum.SECURE_CORE,
             "tor": FeatureEnum.TOR,
             "p2p": FeatureEnum.P2P,
@@ -303,7 +310,7 @@ class ServerManager():
             )
             raise exceptions.EmptyServerListError(err_msg)
 
-        servername, domain, is_secure_core = self.get_fastest_server(
+        servername, domain, server_feature = self.get_fastest_server(
             filtered_servers
         )
 
@@ -319,8 +326,10 @@ class ServerManager():
         except Exception as e:
             capture_exception(e)
 
-        if is_secure_core:
-            domain = self.get_matching_domain(servers, exit_IP)
+        try:
+            domain = self.get_matching_domain(servers, exit_IP, server_feature)
+        except KeyError:
+            pass
 
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
@@ -341,7 +350,7 @@ class ServerManager():
         servers = self.extract_server_list()
         filtered_servers = self.filter_servers(session, servers)
 
-        servername, domain, is_secure_core = self.get_random_server(
+        servername, domain, server_feature = self.get_random_server(
             filtered_servers
         )
 
@@ -357,19 +366,26 @@ class ServerManager():
         except Exception as e:
             capture_exception(e)
 
-        if is_secure_core:
-            domain = self.get_matching_domain(servers, exit_IP)
+        try:
+            domain = self.get_matching_domain(servers, exit_IP, server_feature)
+        except KeyError:
+            pass
 
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
             servername, entry_IP
         ), domain
 
-    def get_matching_domain(self, server_pool, exit_IP):
-        for server in server_pool:
-            for physical_server in server["Servers"]:
-                if exit_IP in physical_server["EntryIP"]:
-                    return physical_server["Domain"]
+    def get_matching_domain(self, server_pool, exit_IP, server_feature):
+        _list = [FeatureEnum.NORMAL, FeatureEnum.SECURE_CORE]
+
+        if server_feature in _list:
+            for server in server_pool:
+                for physical_server in server["Servers"]:
+                    if exit_IP in physical_server["EntryIP"]:
+                        return physical_server["Domain"]
+        else:
+            raise KeyError("No such server")
 
     def validate_session_protocol(self, session, protocol):
         """Validates session and protocol
@@ -613,9 +629,10 @@ class ServerManager():
         random_server = random.choice(server_pool)
         fastest_server_name = random_server["Name"]
         fastest_server_domain = random_server["Domain"]
-        is_secure_core = True if random_server["Features"] == 1 else False
+        # is_secure_core = True if random_server["Features"] == 1 else False
+        server_feature = random_server["Features"]
 
-        return (fastest_server_name, fastest_server_domain, is_secure_core)
+        return (fastest_server_name, fastest_server_domain, server_feature)
 
     def extract_server_value(
         self, servername,
