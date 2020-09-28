@@ -52,6 +52,7 @@ class ServerManager():
                 "\"{}\" is not a valid server".format(servername)
             )
         except Exception as e:
+            logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
 
         try:
@@ -100,6 +101,7 @@ class ServerManager():
                 + "instead"
             )
         except Exception as e:
+            logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
 
         self.cache_servers(session)
@@ -135,6 +137,7 @@ class ServerManager():
                 "\"{}\" is not a valid server".format(servername)
             )
         except Exception as e:
+            logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
 
         try:
@@ -218,6 +221,7 @@ class ServerManager():
                 "\"{}\" is not an existing server".format(servername)
             )
         except Exception as e:
+            logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
 
         servername, domain, server_feature = self.get_random_server(
@@ -284,6 +288,7 @@ class ServerManager():
             logger.exception("[!] ValueError: {}".format(e))
             raise ValueError("Feature is non-existent")
         except Exception as e:
+            logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
 
         self.cache_servers(session)
@@ -324,6 +329,7 @@ class ServerManager():
                 "\"{}\" is not a valid server".format(servername)
             )
         except Exception as e:
+            logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
 
         try:
@@ -364,6 +370,7 @@ class ServerManager():
                 "\"{}\" is not a valid server".format(servername)
             )
         except Exception as e:
+            logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
 
         try:
@@ -470,6 +477,7 @@ class ServerManager():
         except FileNotFoundError:
             last_modified_time = datetime.datetime.now()
         except Exception as e:
+            logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
 
         now_time = datetime.datetime.now()
@@ -508,6 +516,7 @@ class ServerManager():
             logger.info("[!] IndexError: {}".format(e))
             raise IndexError(e)
         except Exception as e:
+            logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
 
         ip_list = [

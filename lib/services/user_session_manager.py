@@ -164,6 +164,7 @@ class UserSessionManager:
             logger.exception("[!] StoredSessionNotFound: {}".format(e))
             raise exceptions.StoredSessionNotFound(e)
         except Exception as e:
+            logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
 
     def json_session_transform(self, auth_data, action=["save", "load"]):
@@ -213,6 +214,7 @@ class UserSessionManager:
             except IndexError:
                 backend_priority = None
             except Exception as e:
+                logger.exception("[!] Unknown exception: {}".format(e))
                 capture_exception(e)
             else:
                 backend_priority = search_in_str(
@@ -225,6 +227,7 @@ class UserSessionManager:
                 except ValueError:
                     continue
                 except Exception as e:
+                    logger.exception("[!] Unknown exception: {}".format(e))
                     capture_exception(e)
                 else:
                     backend_priority = backend_priority.group(1)
