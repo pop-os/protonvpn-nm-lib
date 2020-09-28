@@ -9,10 +9,6 @@
 |OpenSUSE/SLES                            | To-do
 |Arch Linux/Manjaro                       | `sudo pacman -S networkmanager networkmanager-openvpn openvpn python-pip python-pyxdg python-keyring python-gobject python-jinja-2 python-pythondialog python-distro libsecret dbus-x11 gnome-keyring` |
 
-| **Python3**                            | **Command**                             |
-|:---------------------------------------|:----------------------------------------|
-| Additional Python3 dependencies        | `pip3 install proton-client sentry-sdk~=0.10.2` |
-
 ### Virtual Environment Dependencies:
 If you would like to run the the CLI from within a virtual environment (for either development purposes or other), then you can easily do that with the help of <a href="https://pipenv.readthedocs.io/en/latest/">pipenv</a>. Make sure to install pipenv and additional packages before.
 
@@ -30,8 +26,6 @@ Steps to manually install inside virtual environment:
   3. `pipenv shell` (enter virtual environment).
   4. `pip install -e .` (to install).
 
-### Requires:
-- sentry >=0.10.2,<0.11.0
 
 ## Before install, part 1:
 
