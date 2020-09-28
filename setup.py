@@ -14,7 +14,7 @@ setup(
     packages=find_packages(),
     entry_points={
         "console_scripts": [
-            "protonvpn-exp = lib.cli:NetworkManagerPrototypeCLI"
+            "protonvpn-exp = lib.cli.cli:NetworkManagerPrototypeCLI"
         ]
     },
     description='Proton Technologies Core/CLI',
