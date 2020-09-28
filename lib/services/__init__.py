@@ -1,12 +1,11 @@
 import configparser
 import os
-from lib.logger import logger
 from lib.constants import APP_CONFIG, APP_VERSION, LOGGER_NAME
 
 
 def set_exception_catcher():
     def local_capture_exception(e):
-        logger.exception("[!] Unhandled exception: {}".format(e))
+        pass
 
     try:
         import sentry_sdk
@@ -33,5 +32,6 @@ def configure_sentry(ignore_logger, sentry_sdk):
         release="protonvpn-nm-core@" + APP_VERSION,
         environment=env
     )
+
 
 capture_exception = set_exception_catcher()

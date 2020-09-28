@@ -9,6 +9,7 @@ from .user_session_manager import UserSessionManager
 from lib.enums import ClientSuffixEnum
 import distro
 
+
 class UserManager(UserSessionManager):
     def __init__(
         self,

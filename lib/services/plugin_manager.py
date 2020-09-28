@@ -89,6 +89,7 @@ class PluginManager():
                 logger.error("[!] ImportConnectionError: {}".format(e))
                 raise exceptions.ImportConnectionError(e)
             except Exception as e:
+                logger.exception("[!] Unknown exception: {}".format(e))
                 capture_exception(e)
 
         return vpn_protocol

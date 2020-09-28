@@ -81,12 +81,12 @@ class ConnectionManager(ConnectionStateManager):
         except FileNotFoundError:
             pass
         except Exception as e:
+            logger.exception(
+                "[!] NotImplementedError: {}".format(e)
+            )
             capture_exception(e)
             err_msg = "Expects object method, {} was passed".format(
                 delete_cached_cert
-            )
-            logger.exception(
-                "[!] NotImplementedError: {}".format(e)
             )
             raise NotImplementedError(err_msg)
 
@@ -140,11 +140,11 @@ class ConnectionManager(ConnectionStateManager):
             vpn_settings.add_data_item("username", openvpn_username)
             vpn_settings.add_secret("password", openvpn_password)
         except Exception as e:
-            capture_exception(e)
             logger.exception(
                 "[!] AddConnectionCredentialsError: {}. ".format(e)
                 + "Raising exception."
             )
+            capture_exception(e)
             raise exceptions.AddConnectionCredentialsError(e)
 
     def add_server_certificate_check(self, vpn_settings, domain):
@@ -155,11 +155,11 @@ class ConnectionManager(ConnectionStateManager):
                 "verify-x509-name", appened_domain
             )
         except Exception as e:
-            capture_exception(e)
             logger.exception(
                 "[!] AddServerCertificateCheckError: {}. ".format(e)
                 + "Raising exception."
             )
+            capture_exception(e)
             raise exceptions.AddServerCertificateCheckError(e)
 
     def start_connection(self):
@@ -470,6 +470,7 @@ class ConnectionManager(ConnectionStateManager):
                     "No virtual device type was specified in .ovpn file"
                 )
             except Exception as e:
+                logger.exception("[!] Unknown exception: {}".format(e))
                 capture_exception(e)
             try:
                 index = virtual_dev_type_list.index(dev_type)
@@ -481,6 +482,7 @@ class ConnectionManager(ConnectionStateManager):
                     ) + " was provided"
                 )
             except Exception as e:
+                logger.exception("[!] Unknown exception: {}".format(e))
                 capture_exception(e)
             else:
                 return virtual_dev_type_list[index]
