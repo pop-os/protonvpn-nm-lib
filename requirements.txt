@@ -1,2 +1,2 @@
 # Call with pip install -r requirements.txt
-proton-client>=0.0.4
+proton-client
