@@ -116,11 +116,15 @@ class ServerManager():
         )
 
         if len(filtered_servers) == 0:
-            err_msg = "Invalid country code \"{}\"".format(country_code)
-            logger.error(
-                "[!] ValueError: {}. Raising exception.".format(err_msg)
+            err_msg = "No available servers could be found for \"{}\".".format(
+                country_code
             )
-            raise ValueError(err_msg)
+            logger.error(
+                "[!] EmptyServerListError: {}. Raising exception.".format(
+                    err_msg
+                )
+            )
+            raise exceptions.EmptyServerListError(err_msg)
 
         servername, domain, server_feature = self.get_fastest_server(
             filtered_servers
@@ -203,12 +207,15 @@ class ServerManager():
         )
 
         if len(filtered_servers) == 0:
-            err_msg = "{} is either invalid, ".format(servername)
-            + "under maintenance or inaccessible with your plan"
-            logger.error(
-                "[!] ValueError: {}. Raising exception.".format(err_msg)
+            err_msg = "No available servers could be found for \"{}\".".format(
+                servername
             )
-            raise ValueError(err_msg)
+            logger.error(
+                "[!] EmptyServerListError: {}. Raising exception.".format(
+                    err_msg
+                )
+            )
+            raise exceptions.EmptyServerListError(err_msg)
 
         try:
             entry_IP, exit_IP = self.generate_ip_list(
