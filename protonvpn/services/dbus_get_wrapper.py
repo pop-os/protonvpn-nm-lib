@@ -104,18 +104,26 @@ class DbusGetWrapper():
             #   ipv6 dbus.Dictionary
             #   proxy dbus.Dictionary
             # ]
-            if (
-                all_settings["connection"]["type"] == "vpn"
-            ) and (
-                all_settings["vpn"]["data"]["dev"] == self.virtual_device_name
-            ):
-                logger.info(
-                    "Found virtual device "
-                    + "'{}'.".format(self.virtual_device_name)
-                )
-                if return_properties:
-                    return (iface, all_settings)
-                return iface
+            if all_settings["connection"]["type"] == "vpn":
+                try:
+                    if (
+                        all_settings["vpn"]["data"]["dev"]
+                        == self.virtual_device_name
+                    ):
+                        logger.info(
+                            "Found virtual device "
+                            + "'{}'.".format(self.virtual_device_name)
+                        )
+
+                        if return_properties:
+                            return (iface, all_settings)
+                        return iface
+                except KeyError as e:
+                    logger.debug(
+                        "Connection settings: {}".format(all_settings)
+                    )
+                    logger.exception("[!] Unknown error: {}".format(e))
+                    return None
 
         logger.error(
             "[!] Could not find interface belonging to '{}'.".format(
