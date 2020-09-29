@@ -1,16 +1,16 @@
 import json
 import os
 
-from lib import exceptions
-from lib.constants import CACHED_OPENVPN_CERTIFICATE, ENV_CI_NAME
-from lib.enums import ClientSuffixEnum
-from lib.services.certificate_manager import CertificateManager
-from lib.services.connection_manager import ConnectionManager
-from lib.services.connection_state_manager import ConnectionStateManager
-from lib.services.plugin_manager import PluginManager
-from lib.services.server_manager import ServerManager
-from lib.services.user_manager import UserManager
-from lib.services.user_session_manager import UserSessionManager
+from protonvpn import exceptions
+from protonvpn.constants import CACHED_OPENVPN_CERTIFICATE, ENV_CI_NAME
+from protonvpn.enums import ClientSuffixEnum
+from protonvpn.services.certificate_manager import CertificateManager
+from protonvpn.services.connection_manager import ConnectionManager
+from protonvpn.services.connection_state_manager import ConnectionStateManager
+from protonvpn.services.plugin_manager import PluginManager
+from protonvpn.services.server_manager import ServerManager
+from protonvpn.services.user_manager import UserManager
+from protonvpn.services.user_session_manager import UserSessionManager
 
 MOCK_AUTHDATA = {
     "api_url": "https://api.protonvpn.ch/tests/ping",
