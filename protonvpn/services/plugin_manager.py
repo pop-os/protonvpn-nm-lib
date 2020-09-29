@@ -72,9 +72,8 @@ class PluginManager():
             raise ValueError(err_msg)
 
         if not os.path.isfile(filename):
-            err_msg = "The provided file \"{}\"".format(
-                filename
-            ) + "could not be found"
+            err_msg = "The provided file \"{}\""\
+                "could not be found".format(filename)
             logger.error("[!] FileNotFoundError: {}".format(err_msg))
             raise FileNotFoundError(err_msg)
 

@@ -166,8 +166,8 @@ class ServerManager():
         self.validate_session_protocol(session, protocol)
         if not isinstance(args, tuple):
             err_msg = "Incorrect object type, "\
-                "tuple is expected but got {} ".format(type(args))
-            + "instead"
+                "tuple is expected but got {} "\
+                "instead".format(type(args))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
@@ -257,8 +257,8 @@ class ServerManager():
         self.validate_session_protocol(session, protocol)
         if not isinstance(args, tuple):
             err_msg = "Incorrect object type, "\
-                "tuple is expected but got {} ".format(type(args))
-            + "instead"
+                "tuple is expected but got {} "\
+                "instead".format(type(args))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
@@ -271,8 +271,8 @@ class ServerManager():
             raise ValueError(err_msg)
         elif not isinstance(args[0], list):
             err_msg = "Incorrect object type, "\
-                "list is expected but got {} ".format(type(args))
-            + "instead"
+                "list is expected but got {} "\
+                "instead".format(type(args))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
@@ -410,8 +410,8 @@ class ServerManager():
         logger.info("Validating session and protocol")
         if not isinstance(session, Session):
             err_msg = "Incorrect object type, "\
-                "{} is expected ".format(type(Session))
-            + "but got {} instead".format(type(session))
+                "{} is expected "\
+                "but got {} instead".format(type(Session), type(session))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(
                     err_msg
