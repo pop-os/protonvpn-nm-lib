@@ -445,9 +445,15 @@ class MonitorVPNState(DbusGetWrapper):
 
     def on_vpn_state_changed(self, state, reason):
         logger.info("State: {} - Reason: {}".format(state, reason))
-        if state == 5:
-            logger.info("Successfully connected to ProtonVPN!")
-            print("\nSuccessfully connected to ProtonVPN!")
+
+        if state == 4:
+            msg = "Attemping to fetch IP..."
+            logger.info(msg)
+            print("{}".format(msg))
+        elif state == 5:
+            msg = "Successfully connected to ProtonVPN!"
+            logger.info(msg)
+            print("\n{}".format(msg))
             self.loop.quit()
         elif state in [6, 7]:
 
