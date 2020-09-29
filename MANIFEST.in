@@ -1,5 +1,5 @@
 include *.cfg
-recursive-include lib *.cfg
-recursive-include lib *.j2
+recursive-include protonvpn *.cfg
+recursive-include protonvpn *.j2
 include LICENSE
 exclude tests/

@@ -1,6 +1,6 @@
 import configparser
 import os
-from lib.constants import APP_CONFIG, APP_VERSION, LOGGER_NAME
+from ..constants import APP_CONFIG, APP_VERSION, LOGGER_NAME
 
 
 def set_exception_catcher():

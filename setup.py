@@ -2,7 +2,7 @@
 
 from setuptools import find_packages, setup
 
-from lib.constants import APP_VERSION
+from protonvpn.constants import APP_VERSION
 
 long_description = '''
 Contains the ProtonVPN NetworkManager Core + CLI
@@ -14,7 +14,7 @@ setup(
     packages=find_packages(),
     entry_points={
         "console_scripts": [
-            "protonvpn-exp = lib.cli.cli:NetworkManagerPrototypeCLI"
+            "protonvpn-exp = protonvpn.cli.cli:NetworkManagerPrototypeCLI"
         ]
     },
     description='Proton Technologies Core/CLI',
