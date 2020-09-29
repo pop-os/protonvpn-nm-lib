@@ -17,15 +17,17 @@ def get_logger():
     LOGFILE = os.path.join(PROTON_XDG_CACHE_HOME_LOGS, "protonvpn.log")
 
     logger = logging.getLogger(LOGGER_NAME)
-    logger.setLevel(logging.INFO)
 
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(FORMATTER)
 
+    logging_level = logging.INFO
     # Only log to console when using PROTONVPN_DEBUG=1
-    if os.environ.get("PROTONVPN_DEBUG", 0) == "1":
+    if str(os.environ.get("PROTONVPN_DEBUG", False)).lower() == "true":
+        logging_level = logging.DEBUG
         logger.addHandler(console_handler)
 
+    logger.setLevel(logging_level)
     # Starts a new file at 3MB size limit
     file_handler = RotatingFileHandler(
         LOGFILE, maxBytes=3145728, backupCount=3
