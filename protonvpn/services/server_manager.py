@@ -116,11 +116,15 @@ class ServerManager():
         )
 
         if len(filtered_servers) == 0:
-            err_msg = "Invalid country code \"{}\"".format(country_code)
-            logger.error(
-                "[!] ValueError: {}. Raising exception.".format(err_msg)
+            err_msg = "No available servers could be found for \"{}\".".format(
+                country_code
             )
-            raise ValueError(err_msg)
+            logger.error(
+                "[!] EmptyServerListError: {}. Raising exception.".format(
+                    err_msg
+                )
+            )
+            raise exceptions.EmptyServerListError(err_msg)
 
         servername, domain, server_feature = self.get_fastest_server(
             filtered_servers
@@ -162,8 +166,8 @@ class ServerManager():
         self.validate_session_protocol(session, protocol)
         if not isinstance(args, tuple):
             err_msg = "Incorrect object type, "\
-                "tuple is expected but got {} ".format(type(args))
-            + "instead"
+                "tuple is expected but got {} "\
+                "instead".format(type(args))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
@@ -203,12 +207,15 @@ class ServerManager():
         )
 
         if len(filtered_servers) == 0:
-            err_msg = "{} is either invalid, ".format(servername)
-            + "under maintenance or inaccessible with your plan"
-            logger.error(
-                "[!] ValueError: {}. Raising exception.".format(err_msg)
+            err_msg = "No available servers could be found for \"{}\".".format(
+                servername
             )
-            raise ValueError(err_msg)
+            logger.error(
+                "[!] EmptyServerListError: {}. Raising exception.".format(
+                    err_msg
+                )
+            )
+            raise exceptions.EmptyServerListError(err_msg)
 
         try:
             entry_IP, exit_IP = self.generate_ip_list(
@@ -250,8 +257,8 @@ class ServerManager():
         self.validate_session_protocol(session, protocol)
         if not isinstance(args, tuple):
             err_msg = "Incorrect object type, "\
-                "tuple is expected but got {} ".format(type(args))
-            + "instead"
+                "tuple is expected but got {} "\
+                "instead".format(type(args))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
@@ -264,8 +271,8 @@ class ServerManager():
             raise ValueError(err_msg)
         elif not isinstance(args[0], list):
             err_msg = "Incorrect object type, "\
-                "list is expected but got {} ".format(type(args))
-            + "instead"
+                "list is expected but got {} "\
+                "instead".format(type(args))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
@@ -403,8 +410,8 @@ class ServerManager():
         logger.info("Validating session and protocol")
         if not isinstance(session, Session):
             err_msg = "Incorrect object type, "\
-                "{} is expected ".format(type(Session))
-            + "but got {} instead".format(type(session))
+                "{} is expected "\
+                "but got {} instead".format(type(Session), type(session))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(
                     err_msg

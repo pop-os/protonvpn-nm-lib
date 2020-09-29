@@ -440,12 +440,12 @@ class ConnectionManager(ConnectionStateManager):
         decoded_stderr = call_daemon.stderr.decode().strip("\n")
 
         if not call_daemon.returncode == 0:
-            msg = "[!] An error occurred while {}ing ProtonVPN ".format(
-                command
-            ) + "reconnector service: {} {}".format(
-                decoded_stdout,
-                decoded_stderr
-            )
+            msg = "[!] An error occurred while {}ing ProtonVPN "\
+                "reconnector service: {} {}".format(
+                    command,
+                    decoded_stdout,
+                    decoded_stderr
+                )
             logger.error(msg)
             print(msg)
 

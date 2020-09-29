@@ -53,8 +53,8 @@ class CertificateManager(ConnectionStateManager):
 
         if not isinstance(session, Session):
             err_msg = "Incorrect object type, "\
-                "{} is expected ".format(type(Session))
-            + "but got {} instead".format(type(protocol))
+                "{} is expected "\
+                "but got {} instead".format(type(Session), type(protocol))
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
             )

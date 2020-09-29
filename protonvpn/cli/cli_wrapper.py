@@ -295,25 +295,41 @@ class CLIWrapper():
         protocol, command
     ):
         """Proxymethod to get certficate filename and server domain."""
-        certificate_filename, domain = None, None
         try:
-            certificate_filename, domain = cli_commands[command[0]](
-                session, protocol, command
-            )
+            invoke_dialog = command[0]
         except TypeError:
             servername, protocol = dialog(
                 self.server_manager,
                 session,
             )
 
-            certificate_filename, domain = self.server_manager.direct(
+            return self.server_manager.direct(
                 session, protocol, servername
             )
+
+        try:
+            return cli_commands[command[0]](
+                session, protocol, command
+            )
+        except KeyError as e:
+            print("KeyError: {}".format(e))
+            sys.exit(1)
+        except TypeError as e:
+            print("TypeError: {}".format(e))
+            sys.exit(1)
+        except ValueError as e:
+            print("ValueError: {}".format(e))
+            sys.exit(1)
+        except exceptions.EmptyServerListError as e:
+            print(
+                "[!] {} This could mean that the ".format(e)
+                + "server(s) are under maintenance or "
+                + "inaccessible with your plan."
+            )
+            sys.exit(1)
         except exceptions.IllegalServername as e:
             print("[!] {}".format(e))
             sys.exit(1)
-
-        return certificate_filename, domain
 
     def determine_protocol(self, args):
         """Determine protocol based on CLI input arguments."""
@@ -429,9 +445,15 @@ class MonitorVPNState(DbusGetWrapper):
 
     def on_vpn_state_changed(self, state, reason):
         logger.info("State: {} - Reason: {}".format(state, reason))
-        if state == 5:
-            logger.info("Successfully connected to ProtonVPN!")
-            print("\nSuccessfully connected to ProtonVPN!")
+
+        if state == 4:
+            msg = "Attemping to fetch IP..."
+            logger.info(msg)
+            print("{}".format(msg))
+        elif state == 5:
+            msg = "Successfully connected to ProtonVPN!"
+            logger.info(msg)
+            print("\n{}".format(msg))
             self.loop.quit()
         elif state in [6, 7]:
 

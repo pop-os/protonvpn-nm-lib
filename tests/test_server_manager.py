@@ -239,7 +239,10 @@ class TestIntegrationServerManager:
             (REAL_SESSION, "tcp", "", IndexError),
             (REAL_SESSION, "tcp", None, TypeError),
             (REAL_SESSION, "tcp", [], IndexError),
-            (REAL_SESSION, "tcp", [["test", "ex"]], ValueError)
+            (
+                REAL_SESSION, "tcp",
+                [["test", "ex"]], exceptions.EmptyServerListError
+            )
         ]
     )
     def test_incorrect_generate_connect_country(
