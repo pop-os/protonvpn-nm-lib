@@ -1,10 +1,10 @@
 import argparse
 import sys
 
-from lib.enums import ProtocolEnum
-from lib.logger import logger
-from lib.constants import APP_VERSION, USAGE
-from lib.cli.cli_wrapper import CLIWrapper
+from ..enums import ProtocolEnum
+from ..logger import logger
+from ..constants import APP_VERSION, USAGE
+from .cli_wrapper import CLIWrapper
 
 
 class NetworkManagerPrototypeCLI():

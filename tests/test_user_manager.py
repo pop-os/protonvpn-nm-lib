@@ -3,9 +3,7 @@ import os
 import pytest
 from proton.api import Session
 
-from lib import exceptions
-from lib.services.user_manager import UserManager
-from lib.enums import ClientSuffixEnum
+from common import ClientSuffixEnum, UserManager, exceptions
 
 
 class TestUnitUserManager():

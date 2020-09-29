@@ -3,15 +3,16 @@ import subprocess
 from getpass import getuser
 
 import gi
+
 gi.require_version("NM", "1.0")
 from gi.repository import NM, GLib
 
-from lib import exceptions
-from lib.constants import ENV_CI_NAME, VIRTUAL_DEVICE_NAME
-from lib.logger import logger
-from lib.services.plugin_manager import PluginManager
-from lib.services.connection_state_manager import ConnectionStateManager
+from .. import exceptions
+from ..constants import ENV_CI_NAME, VIRTUAL_DEVICE_NAME
+from ..logger import logger
+from ..services.connection_state_manager import ConnectionStateManager
 from . import capture_exception
+from .plugin_manager import PluginManager
 
 
 class ConnectionManager(ConnectionStateManager):

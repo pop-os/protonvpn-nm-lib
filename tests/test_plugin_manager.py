@@ -2,14 +2,11 @@ import os
 
 import gi
 import pytest
+
 gi.require_version("NM", "1.0")
 from gi.repository import NM
 
-from lib import exceptions
-from lib.services.plugin_manager import PluginManager
-
-
-from common import PLUGIN_CERT_FOLDER
+from common import PLUGIN_CERT_FOLDER, PluginManager, exceptions
 
 
 class TestUnitPluginManager:
@@ -106,5 +103,7 @@ class TestIntegrationPluginManager:
     def test_import_from_subfolder(self):
         with pytest.raises(FileNotFoundError):
             self.pm.import_connection_from_file(
-                os.path.join(PLUGIN_CERT_FOLDER, "./random_folder/TestProtonVPN.ovpn")
+                os.path.join(
+                    PLUGIN_CERT_FOLDER, "./random_folder/TestProtonVPN.ovpn"
+                )
             )

@@ -4,12 +4,12 @@ import shutil
 
 import proton
 import pytest
-from lib import exceptions
-from lib.constants import CACHED_OPENVPN_CERTIFICATE
-from lib.services.certificate_manager import CertificateManager
-from lib.services.server_manager import ServerManager
 
-from common import MOCK_DATA_JSON, SERVERS, TEST_CACHED_SERVERFILE
+from common import (
+    CACHED_OPENVPN_CERTIFICATE, MOCK_DATA_JSON, SERVERS,
+    TEST_CACHED_SERVERFILE, CertificateManager, ServerManager,
+    exceptions
+)
 
 session = proton.Session.load(json.loads(MOCK_DATA_JSON))
 user = os.environ["vpntest_user"]
@@ -217,7 +217,7 @@ class TestIntegrationServerManager:
             self.server_man.fastest(session, proto)
 
     def test_correct_generate_connect_country(self):
-        args = [["cc", "PT"]]
+        args = [["cc", "ES"]]
         servername, domain = self.server_man.country_f(
             REAL_SESSION, "tcp", *args
         )
@@ -249,7 +249,7 @@ class TestIntegrationServerManager:
             self.server_man.country_f(session, proto, *args)
 
     def test_correct_generate_connect_direct(self):
-        args = [["servername", "PT#5"]]
+        args = [["servername", "ES#5"]]
         servername, domain = self.server_man.direct(REAL_SESSION, "tcp", *args)
         resp = False
         if servername and domain:
@@ -257,7 +257,7 @@ class TestIntegrationServerManager:
         assert os.path.isfile(resp) is True
 
     def test_correct_generate_connect_direct_dialog(self):
-        args = ["PT#6"]
+        args = ["ES#6"]
         servername, domain = self.server_man.direct(REAL_SESSION, "tcp", *args)
         resp = False
         if servername and domain:

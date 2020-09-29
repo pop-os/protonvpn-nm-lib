@@ -1,13 +1,13 @@
+import distro
 import proton
 
-from lib import exceptions
-from lib.constants import (APP_VERSION, DEFAULT_KEYRING_SERVICE,
-                           DEFAULT_KEYRING_USERNAME)
-from lib.logger import logger
-
+from ..constants import (
+    APP_VERSION, DEFAULT_KEYRING_SERVICE, DEFAULT_KEYRING_USERNAME
+)
+from ..enums import ClientSuffixEnum
+from ..logger import logger
+from .. import exceptions
 from .user_session_manager import UserSessionManager
-from lib.enums import ClientSuffixEnum
-import distro
 
 
 class UserManager(UserSessionManager):

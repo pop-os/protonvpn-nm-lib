@@ -2,9 +2,8 @@ import json
 import os
 
 import pytest
-from lib.services.connection_state_manager import ConnectionStateManager
 
-from common import PWD
+from common import PWD, ConnectionStateManager
 
 conn_state_filepath = os.path.join(PWD, "test_conn_state_manager.json")
 

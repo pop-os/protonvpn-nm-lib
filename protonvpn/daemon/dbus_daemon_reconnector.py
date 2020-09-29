@@ -34,9 +34,9 @@ import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
 
-from lib.logger import logger
-from lib.services.connection_state_manager import ConnectionStateManager
-from lib.services.dbus_get_wrapper import DbusGetWrapper
+from ..logger import logger
+from ..services.connection_state_manager import ConnectionStateManager
+from ..services.dbus_get_wrapper import DbusGetWrapper
 
 
 class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):

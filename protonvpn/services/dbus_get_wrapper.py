@@ -1,5 +1,6 @@
-from lib.logger import logger
 import dbus
+
+from ..logger import logger
 
 
 class DbusGetWrapper():

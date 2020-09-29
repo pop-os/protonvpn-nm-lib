@@ -4,14 +4,15 @@ import jinja2
 from jinja2 import Environment, FileSystemLoader
 from proton.api import Session
 
-from lib import exceptions
-from lib.constants import (CACHED_OPENVPN_CERTIFICATE, OPENVPN_TEMPLATE,
-                           PROTON_XDG_CACHE_HOME, TEMPLATES)
-from lib.enums import ProtocolEnum, ProtocolPortEnum
-from lib.logger import logger
-from lib.services.connection_state_manager import ConnectionStateManager
-
+from .. import exceptions
+from ..constants import (
+    CACHED_OPENVPN_CERTIFICATE, OPENVPN_TEMPLATE,
+    PROTON_XDG_CACHE_HOME, TEMPLATES
+)
+from ..enums import ProtocolEnum, ProtocolPortEnum
+from ..logger import logger
 from . import capture_exception
+from .connection_state_manager import ConnectionStateManager
 
 
 class CertificateManager(ConnectionStateManager):
