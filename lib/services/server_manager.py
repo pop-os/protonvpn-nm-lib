@@ -6,11 +6,10 @@ import re
 
 from proton.api import Session
 
-from lib import exceptions
-from lib.constants import CACHED_SERVERLIST, PROTON_XDG_CACHE_HOME
-from lib.logger import logger
-from lib.enums import FeatureEnum
-
+from .. import exceptions
+from ..constants import CACHED_SERVERLIST, PROTON_XDG_CACHE_HOME
+from ..enums import FeatureEnum
+from ..logger import logger
 from . import capture_exception
 
 
@@ -671,7 +670,7 @@ class ServerManager():
             string:
                 country name if found, else returns country code
         """
-        from lib.country_codes import country_codes
+        from ..country_codes import country_codes
         return country_codes.get(code, code)
 
     def is_servername_valid(self, servername):

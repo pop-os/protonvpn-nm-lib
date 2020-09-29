@@ -1,8 +1,8 @@
-import os
 import logging
+import os
 from logging.handlers import RotatingFileHandler
 
-from lib.constants import PROTON_XDG_CACHE_HOME_LOGS, LOGGER_NAME
+from .constants import LOGGER_NAME, PROTON_XDG_CACHE_HOME_LOGS
 
 
 def get_logger():

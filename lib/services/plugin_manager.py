@@ -2,13 +2,13 @@ import os
 import re
 
 import gi
+
 gi.require_version("NM", "1.0")
 from gi.repository import NM
 
-from lib import exceptions
-from lib.constants import SUPPORTED_PROTOCOLS
-from lib.logger import logger
-
+from ..constants import SUPPORTED_PROTOCOLS
+from ..logger import logger
+from .. import exceptions
 from . import capture_exception
 
 

@@ -4,8 +4,8 @@ import sys
 
 from dialog import Dialog
 
-from lib.constants import ProtocolEnum, SUPPORTED_FEATURES
-from lib.logger import logger
+from ..constants import ProtocolEnum, SUPPORTED_FEATURES
+from ..logger import logger
 
 
 def dialog(server_manager, session):

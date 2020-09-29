@@ -5,10 +5,9 @@ import re
 import keyring
 import proton
 
-from lib import exceptions
-from lib.constants import DEFAULT_KEYRING_SERVICE, DEFAULT_KEYRING_USERNAME
-from lib.logger import logger
-
+from .. import exceptions
+from ..constants import DEFAULT_KEYRING_SERVICE, DEFAULT_KEYRING_USERNAME
+from ..logger import logger
 from . import capture_exception
 
 

@@ -3,8 +3,8 @@ import json
 import os
 import time
 
-from lib.constants import CONNECTION_STATE_FILEPATH
-from lib.enums import ConnectionMetadataEnum
+from ..constants import CONNECTION_STATE_FILEPATH
+from ..enums import ConnectionMetadataEnum
 
 
 class ConnectionStateManager():

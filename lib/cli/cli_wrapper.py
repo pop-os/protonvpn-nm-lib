@@ -8,16 +8,16 @@ from textwrap import dedent
 import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
-from lib import exceptions
-from lib.constants import SUPPORTED_FEATURES
-from lib.enums import ConnectionMetadataEnum, ProtocolEnum
-from lib.logger import logger
-from lib.services import capture_exception
-from lib.services.certificate_manager import CertificateManager
-from lib.services.connection_manager import ConnectionManager
-from lib.services.dbus_get_wrapper import DbusGetWrapper
-from lib.services.server_manager import ServerManager
-from lib.services.user_manager import UserManager
+from .. import exceptions
+from ..constants import SUPPORTED_FEATURES
+from ..enums import ConnectionMetadataEnum, ProtocolEnum
+from ..logger import logger
+from ..services import capture_exception
+from ..services.certificate_manager import CertificateManager
+from ..services.connection_manager import ConnectionManager
+from ..services.dbus_get_wrapper import DbusGetWrapper
+from ..services.server_manager import ServerManager
+from ..services.user_manager import UserManager
 
 from .cli_dialog import dialog  # noqa
 
