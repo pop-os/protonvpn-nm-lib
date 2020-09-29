@@ -2,20 +2,16 @@ import os
 
 import gi
 import pytest
+
 gi.require_version("NM", "1.0")
 from gi.repository import NM
 
-from lib import exceptions
-from lib.constants import ENV_CI_NAME
-from lib.services.certificate_manager import CertificateManager
-from lib.services.connection_manager import ConnectionManager
-from lib.services.user_manager import UserManager
+from common import (
+    CERT_FOLDER, ENV_CI_NAME, PLUGIN_CERT_FOLDER,
+    CertificateManager, ConnectionManager, UserManager,
+    exceptions
+)
 
-
-# PWD = os.path.dirname(os.path.abspath(__file__))
-# CERT_FOLDER = os.path.join(PWD, "certificates/connection_manager")
-# PLUGIN_CERT_FOLDER = os.path.join(PWD, "certificates/plugin_manager")
-from common import PLUGIN_CERT_FOLDER, CERT_FOLDER
 os.environ[ENV_CI_NAME] = "true"
 
 

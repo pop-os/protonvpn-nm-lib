@@ -4,10 +4,11 @@ import shutil
 
 import proton
 import pytest
-from lib import exceptions
-from lib.services.certificate_manager import CertificateManager
 
-from common import MOCK_DATA_JSON, SERVERS, TEST_CERTS
+from common import (
+    MOCK_DATA_JSON, SERVERS, TEST_CERTS,
+    CertificateManager, exceptions
+)
 
 session = proton.Session.load(json.loads(MOCK_DATA_JSON))
 

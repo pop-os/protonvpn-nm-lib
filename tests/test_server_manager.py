@@ -4,12 +4,12 @@ import shutil
 
 import proton
 import pytest
-from lib import exceptions
-from lib.constants import CACHED_OPENVPN_CERTIFICATE
-from lib.services.certificate_manager import CertificateManager
-from lib.services.server_manager import ServerManager
 
-from common import MOCK_DATA_JSON, SERVERS, TEST_CACHED_SERVERFILE
+from common import (
+    CACHED_OPENVPN_CERTIFICATE, MOCK_DATA_JSON, SERVERS,
+    TEST_CACHED_SERVERFILE, CertificateManager, ServerManager,
+    exceptions
+)
 
 session = proton.Session.load(json.loads(MOCK_DATA_JSON))
 user = os.environ["vpntest_user"]

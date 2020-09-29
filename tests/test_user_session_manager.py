@@ -1,9 +1,7 @@
 import pytest
-from lib import exceptions
-from lib.services.user_session_manager import UserSessionManager
 from proton.api import Session
 
-from common import MOCK_AUTHDATA
+from common import MOCK_AUTHDATA, UserSessionManager, exceptions
 
 TEST_KEYRING = dict(
     sname=["test1", "test2", "test3"],
