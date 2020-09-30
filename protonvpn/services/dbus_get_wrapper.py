@@ -105,25 +105,29 @@ class DbusGetWrapper():
             #   proxy dbus.Dictionary
             # ]
             if all_settings["connection"]["type"] == "vpn":
+                vpn_virtual_device = False
                 try:
-                    if (
-                        all_settings["vpn"]["data"]["dev"]
-                        == self.virtual_device_name
-                    ):
-                        logger.info(
-                            "Found virtual device "
-                            + "'{}'.".format(self.virtual_device_name)
-                        )
-
-                        if return_properties:
-                            return (iface, all_settings)
-                        return iface
-                except KeyError as e:
+                    vpn_virtual_device = all_settings["vpn"]["data"]["dev"]
+                except KeyError:
                     logger.debug(
-                        "Connection settings: {}".format(all_settings)
+                        "VPN \"{}\" has is from ProtonVPN", format(
+                            connection["id"]
+                        )
                     )
-                    logger.exception("[!] Unknown error: {}".format(e))
-                    return None
+                    continue
+                except Exception as e:
+                    logger.exception("[!] Unhandled exceptions: {}".format(e))
+                    continue
+
+                if vpn_virtual_device == self.virtual_device_name:
+                    logger.info(
+                        "Found virtual device "
+                        + "'{}'.".format(self.virtual_device_name)
+                    )
+
+                    if return_properties:
+                        return (iface, all_settings)
+                    return iface
 
         logger.error(
             "[!] Could not find interface belonging to '{}'.".format(
