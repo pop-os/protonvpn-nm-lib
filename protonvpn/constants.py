@@ -16,7 +16,7 @@ from .enums import (
     FeatureEnum
 )
 
-APP_VERSION = '0.0.3'
+APP_VERSION = '0.0.4'
 
 PWD = os.path.dirname(os.path.abspath(__file__))
 
