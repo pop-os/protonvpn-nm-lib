@@ -110,13 +110,16 @@ class DbusGetWrapper():
                     vpn_virtual_device = all_settings["vpn"]["data"]["dev"]
                 except KeyError:
                     logger.debug(
-                        "VPN \"{}\" has is from ProtonVPN", format(
-                            connection["id"]
+                        "VPN \"{}\" is missing \"dev\" parameter", format(
+                            all_settings["connection"]["id"]
                         )
                     )
                     continue
                 except Exception as e:
-                    logger.exception("[!] Unhandled exceptions: {}".format(e))
+                    logger.exception(
+                        "[!] Unhandled exceptions: {}\n".format(e)
+                        + "Connection information: {}".format(all_settings)
+                    )
                     continue
 
                 if vpn_virtual_device == self.virtual_device_name:
