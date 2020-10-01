@@ -7,13 +7,15 @@ import os
 
 from xdg import BaseDirectory
 XDG_CACHE_HOME = BaseDirectory.xdg_cache_home
-# XDG_CONFIG_HOME = BaseDirectory.xdg_config_home
+XDG_CONFIG_HOME = BaseDirectory.xdg_config_home
 # XDG_DATA_HOME = BaseDirectory.xdg_data_home
 
 from .enums import (
     ProtocolImplementationEnum,
     ProtocolEnum,
-    FeatureEnum
+    FeatureEnum,
+    UserSettingsEnum,
+    UserSettingsStatusEnum
 )
 
 APP_VERSION = '0.0.4'
@@ -23,6 +25,7 @@ PWD = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES = os.path.join(PWD, "templates")
 OPENVPN_TEMPLATE = "openvpn_template.j2"
 PROTON_XDG_CACHE_HOME = os.path.join(XDG_CACHE_HOME, "protonvpn")
+PROTON_XDG_CONFIG_HOME = os.path.join(XDG_CONFIG_HOME, "protonvpn")
 PROTON_XDG_CACHE_HOME_LOGS = os.path.join(PROTON_XDG_CACHE_HOME, "logs")
 CACHED_SERVERLIST = os.path.join(
     PROTON_XDG_CACHE_HOME, "cached_serverlist.json"
@@ -34,7 +37,11 @@ LOGFILE = os.path.join(PROTON_XDG_CACHE_HOME_LOGS, "protonvpn.log")
 CONNECTION_STATE_FILEPATH = os.path.join(
     PROTON_XDG_CACHE_HOME, "connection_metadata.json"
 )
-
+USER_CONFIGURATIONS_FILEPATH = os.path.join(
+    PROTON_XDG_CONFIG_HOME, "user_configurations.json"
+)
+DEFAULT_KEYRING_SERVICE = "ProtonVPN"
+DEFAULT_KEYRING_USERNAME = "AuthData"
 ENV_CI_NAME = "protonvpn_ci"
 
 SUPPORTED_PROTOCOLS = {
@@ -42,6 +49,13 @@ SUPPORTED_PROTOCOLS = {
     # ProtocolImplementationEnum.STRONGSWAN: [ProtocolEnum.IKEV2],
     # ProtocolImplementationEnum.WIREGUARD: [ProtocolEnum.WIREGUARD],
 }
+
+FLAT_SUPPORTED_PROTOCOLS = [
+    proto for proto_list
+    in [v for k, v in SUPPORTED_PROTOCOLS.items()]
+    for proto in proto_list
+]
+
 SUPPORTED_FEATURES = {
     FeatureEnum.NORMAL: "Normal",
     FeatureEnum.SECURE_CORE: "Secure-Core",
@@ -51,9 +65,33 @@ SUPPORTED_FEATURES = {
     FeatureEnum.IPv6: "IPv6"
 }
 
+CONFIG_STATUSES = [
+    UserSettingsStatusEnum.DISABLED,
+    UserSettingsStatusEnum.ENABLED,
+    UserSettingsStatusEnum.CUSTOM,
+]
+
 VIRTUAL_DEVICE_NAME = "proton0"
 LOGGER_NAME = "protonvpn"
 APP_CONFIG = os.path.join(PWD, "app.cfg")
+
+USER_CONFIG_TEMPLATE = {
+    UserSettingsEnum.CONNECTION: {
+        "default_protocol": ProtocolEnum.TCP,
+        "killswitch": UserSettingsStatusEnum.DISABLED,
+        "dns": {
+            "status": UserSettingsStatusEnum.DISABLED,
+            "custom_dns": []
+        },
+        "split_tunneling": {
+            "status": UserSettingsStatusEnum.DISABLED,
+            "ip_list": []
+        }
+    },
+    UserSettingsEnum.GENERAL: {},
+    UserSettingsEnum.ADVANCED: {},
+    UserSettingsEnum.TRAY: {},
+}
 
 USAGE = """
 ProtonVPN CLI

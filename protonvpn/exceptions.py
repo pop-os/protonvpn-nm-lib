@@ -142,3 +142,7 @@ class StoredUserDataNotFound(KeyringDataNotFound):
 
 class StoredProtonUsernameNotFound(KeyringDataNotFound):
     """Stored user data was not found"""
+
+
+class SelectedOptionError(ProtonVPNBaseException):
+    """Selected option error"""

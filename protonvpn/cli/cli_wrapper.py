@@ -9,7 +9,7 @@ import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
 from .. import exceptions
-from ..constants import SUPPORTED_FEATURES, VIRTUAL_DEVICE_NAME
+from ..constants import SUPPORTED_FEATURES, FLAT_SUPPORTED_PROTOCOLS, VIRTUAL_DEVICE_NAME
 from ..enums import ConnectionMetadataEnum, ProtocolEnum
 from ..logger import logger
 from ..services import capture_exception
@@ -18,14 +18,17 @@ from ..services.connection_manager import ConnectionManager
 from ..services.dbus_get_wrapper import DbusGetWrapper
 from ..services.server_manager import ServerManager
 from ..services.user_manager import UserManager
+from ..services.user_configuration_manager import UserConfigurationManager
 
 from .cli_dialog import dialog  # noqa
 
 
 class CLIWrapper():
+    time_sleep_value = 1
     connection_manager = ConnectionManager()
     user_manager = UserManager()
     server_manager = ServerManager(CertificateManager(), user_manager)
+    user_conf_manager = UserConfigurationManager()
 
     def connect(self, args):
         """Proxymethdo to connect to ProtonVPN."""
@@ -191,6 +194,102 @@ class CLIWrapper():
 
         print(status_to_print)
         sys.exit()
+
+    def configure(self):
+        method_dict = {
+            "p": self.ask_default_protocol,
+            "d": self.user_conf_manager.update_dns,
+            "k": self.user_conf_manager.update_killswitch,
+            "s": self.user_conf_manager.update_split_tunneling,
+            "r": self.user_conf_manager.reset_default_configs,
+        }
+
+        while True:
+            print(
+                "What do you want to change?\n"
+                "\n"
+                "[P]rotocol (default)\n"
+                "[D]NS Management\n"
+                "[K]ill Switch Management\n"
+                "[S]plit Tunneling\n"
+                "[R]eset Default Configurations\n"
+                "[E]xit\n"
+            )
+
+            user_choice = input(
+                "Please enter your choice: "
+            ).strip()
+
+            if user_choice == "e":
+                sys.exit()
+
+            try:
+                _call_method = method_dict[user_choice]
+            except KeyError:
+                print(
+                    "[!] Invalid choice. "
+                    "Please enter the number of a valid choice.\n"
+                )
+                time.sleep(self.time_sleep_value)
+                continue
+
+            try:
+                _call_method()
+            except exceptions.SelectedOptionError as e:
+                print("\n[!] {}\n".format(e))
+                continue
+
+    def ask_default_protocol(self):
+        proto_short = {
+            "t": ProtocolEnum.TCP,
+            "u": ProtocolEnum.UDP,
+            "i": ProtocolEnum.IKEV2,
+            "w": ProtocolEnum.WIREGUARD,
+        }
+
+        while True:
+            print(
+                "Please select default protocol?\n"
+                "\n"
+                "[t]cp\n"
+                "[u]dp\n"
+                "[i]kev2\n"
+                "[w]reguard\n"
+                "e) Exit\n"
+            )
+
+            user_choice = input(
+                "Default protocol: "
+            ).strip()
+
+            try:
+                if len(user_choice) == 1:
+                    user_choice = proto_short[user_choice]
+            except KeyError:
+                raise exceptions.SelectedOptionError(
+                    "Selected option \"{}\" is incorrect. ".format(user_choice)
+                    + "Please select from one of the possible protocols "
+                    + "[ [t]cp | [u]dp | [i]kev2 | [w]reguard ]"
+                )
+                time.sleep(self.time_sleep_value)
+                continue
+
+            try:
+                index = FLAT_SUPPORTED_PROTOCOLS.index(user_choice)
+            except ValueError:
+                raise exceptions.SelectedOptionError(
+                    "Selected option \"{}\" is either incorrect or ".format(
+                        user_choice
+                    ) + "protocol is (yet) not supported"
+                )
+                time.sleep(self.time_sleep_value)
+                continue
+
+            self.user_conf_manager.update_default_protocol(
+                FLAT_SUPPORTED_PROTOCOLS[index]
+            )
+
+            sys.exit()
 
     def extract_server_info(self, servername):
         """Extract server information to be displayed.

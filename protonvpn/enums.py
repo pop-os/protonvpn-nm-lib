@@ -44,3 +44,16 @@ class KeyringEnum(object):
     DEFAULT_KEYRING_SESSIONDATA = "SessionData"
     DEFAULT_KEYRING_USERDATA = "UserData"
     DEFAULT_KEYRING_PROTON_USER = "ProtonUser"
+
+
+class UserSettingsEnum(object):
+    GENERAL = "general"
+    CONNECTION = "connection"
+    TRAY = "tray"
+    ADVANCED = "advanced"
+
+
+class UserSettingsStatusEnum(object):
+    DISABLED = 0
+    ENABLED = 1
+    CUSTOM = 2

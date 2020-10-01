@@ -111,3 +111,9 @@ class NetworkManagerPrototypeCLI():
     def status(self):
         """Display connection status."""
         self.cli_wrapper.status()
+
+    def cfg(self):
+        self.configure()
+
+    def configure(self):
+        self.cli_wrapper.configure()
