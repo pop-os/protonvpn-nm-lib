@@ -208,7 +208,7 @@ class CLIWrapper():
         method_dict = {
             "p": self.ask_default_protocol,
             "d": self.ask_dns_status,
-            "k": self.user_conf_manager.update_killswitch,
+            "k": self.ask_killswitch,
             "s": self.user_conf_manager.update_split_tunneling,
             "r": self.user_conf_manager.reset_default_configs,
         }
@@ -243,10 +243,13 @@ class CLIWrapper():
                 continue
 
             try:
-                _call_method()
+                resp = _call_method()
             except exceptions.SelectedOptionError as e:
                 print("\n[!] {}\n".format(e))
                 continue
+            else:
+                print(resp)
+                sys.exit()
 
     def ask_default_protocol(self):
         proto_short = {
@@ -294,10 +297,10 @@ class CLIWrapper():
             try:
                 index = FLAT_SUPPORTED_PROTOCOLS.index(user_choice)
             except ValueError:
-                raise exceptions.SelectedOptionError(
-                    "Selected option \"{}\" is either incorrect or ".format(
+                print(
+                    "[!] Selected option \"{}\" is either incorrect ".format(
                         user_choice
-                    ) + "protocol is (yet) not supported"
+                    ) + "or protocol is (yet) not supported"
                 )
                 time.sleep(self.time_sleep_value)
                 continue
@@ -306,7 +309,7 @@ class CLIWrapper():
                 FLAT_SUPPORTED_PROTOCOLS[index]
             )
 
-            sys.exit()
+            return "\nSuccessfully updated default protocol!\n"
 
     def ask_dns_status(self):
         user_choice_options_dict = {
@@ -347,7 +350,7 @@ class CLIWrapper():
             )
 
             user_choice = input(
-                "Default protocol: "
+                "Selected option: "
             ).strip()
 
             user_choice = user_choice.lower()
@@ -381,6 +384,47 @@ class CLIWrapper():
                 custom_dns_list = ask_custom_dns()
 
             self.user_conf_manager.update_dns(user_int_choice, custom_dns_list)
+
+            return "\nSuccessfully updated DNS settings!\n"
+
+    def ask_killswitch(self):
+        user_choice_options_dict = {
+            "a": UserSettingsStatusEnum.ENABLED,
+            "d": UserSettingsStatusEnum.DISABLED,
+            "c": UserSettingsStatusEnum.CUSTOM
+        }
+        while True:
+            print(
+                "Please select what you want to do:\n"
+                "\n"
+                "[a]llow killswitch management\n"
+                "[d]isallow killswitch management\n"
+                "[r]eturn\n"
+                "[e]xit\n"
+            )
+
+            user_choice = input(
+                "Selected option: "
+            ).strip()
+
+            if user_choice == "r":
+                return
+            if user_choice == "e":
+                sys.exit()
+
+            try:
+                user_int_choice = user_choice_options_dict[user_choice]
+            except KeyError:
+                print(
+                    "[!] Invalid choice. "
+                    "Please enter the number of a valid choice.\n"
+                )
+                time.sleep(self.time_sleep_value)
+                continue
+
+            self.user_conf_manager.update_killswitch(user_int_choice)
+
+            return "\nSuccessfully updated KillSwitch settings!\n"
 
     def extract_server_info(self, servername):
         """Extract server information to be displayed.

@@ -47,7 +47,8 @@ class UserConfigurationManager():
             raise KeyError("Illegal options")
 
         user_configs = self.get_user_configurations()
-        user_configs[UserSettingsEnum.CONNECTION]["killswitch"]
+        user_configs[UserSettingsEnum.CONNECTION]["killswitch"] = status
+        self.set_user_configurations(user_configs)
 
     def update_split_tunneling(self, status, ip_list=None):
         if status not in CONFIG_STATUSES:
