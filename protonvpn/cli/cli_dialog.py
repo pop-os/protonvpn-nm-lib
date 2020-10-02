@@ -84,7 +84,7 @@ def display_servers(countries, server_manager, servers, country):
     Returns:
         string: servername (PT#8, SE#5, DK#10, etc)
     """
-    server_tiers = {0: "F", 1: "B", 2: "P"}
+    server_tiers = {0: "F", 1: "B", 2: "P", 3: "PM"}
     choices = []
 
     # lambda sorts servers by Load instead of name
