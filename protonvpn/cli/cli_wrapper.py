@@ -8,18 +8,27 @@ from textwrap import dedent
 import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
+
 from .. import exceptions
-from ..constants import SUPPORTED_FEATURES, FLAT_SUPPORTED_PROTOCOLS, VIRTUAL_DEVICE_NAME
-from ..enums import ConnectionMetadataEnum, ProtocolEnum
+from ..constants import (
+    FLAT_SUPPORTED_PROTOCOLS,
+    SUPPORTED_FEATURES,
+    VIRTUAL_DEVICE_NAME
+)
+from ..enums import (
+    ConnectionMetadataEnum,
+    ProtocolEnum,
+    UserSettingsEnum,
+    UserSettingsStatusEnum
+)
 from ..logger import logger
 from ..services import capture_exception
 from ..services.certificate_manager import CertificateManager
 from ..services.connection_manager import ConnectionManager
 from ..services.dbus_get_wrapper import DbusGetWrapper
 from ..services.server_manager import ServerManager
-from ..services.user_manager import UserManager
 from ..services.user_configuration_manager import UserConfigurationManager
-
+from ..services.user_manager import UserManager
 from .cli_dialog import dialog  # noqa
 
 
@@ -198,7 +207,7 @@ class CLIWrapper():
     def configure(self):
         method_dict = {
             "p": self.ask_default_protocol,
-            "d": self.user_conf_manager.update_dns,
+            "d": self.ask_dns_status,
             "k": self.user_conf_manager.update_killswitch,
             "s": self.user_conf_manager.update_split_tunneling,
             "r": self.user_conf_manager.reset_default_configs,
@@ -249,13 +258,13 @@ class CLIWrapper():
 
         while True:
             print(
-                "Please select default protocol?\n"
+                "Please select default protocol:\n"
                 "\n"
                 "[t]cp\n"
                 "[u]dp\n"
                 "[i]kev2\n"
                 "[w]reguard\n"
-                "[b]ack to menu\n"
+                "[r]eturn\n"
                 "[e]xit\n"
             )
 
@@ -265,7 +274,7 @@ class CLIWrapper():
 
             user_choice = user_choice.lower()
 
-            if user_choice == "b":
+            if user_choice == "r":
                 return
             if user_choice == "e":
                 sys.exit()
@@ -298,6 +307,80 @@ class CLIWrapper():
             )
 
             sys.exit()
+
+    def ask_dns_status(self):
+        user_choice_options_dict = {
+            "a": UserSettingsStatusEnum.ENABLED,
+            "d": UserSettingsStatusEnum.DISABLED,
+            "c": UserSettingsStatusEnum.CUSTOM
+        }
+
+        def ask_custom_dns():
+            custom_dns = input(
+                "Please enter your custom DNS servers (space separated): "
+            )
+            custom_dns = custom_dns.strip().split()
+
+            # Check DNS Servers for validity
+            if len(custom_dns) > 3:
+                print("[!] Don't enter more than 3 DNS Servers")
+                return
+
+            for dns in custom_dns:
+                if not self.user_conf_manager.is_valid_ip(dns):
+                    print(
+                        "[!] {0} is invalid. Please try again.\n".format(dns)
+                    )
+                    return
+            return " ".join(dns for dns in custom_dns)
+
+        while True:
+            print(
+                "Please select what you want to do:\n"
+                "\n"
+                "[a]llow automatic DNS management\n"
+                "[d]isallow automatic DNS management\n"
+                "[c]ustom DNS management\n"
+                "[s]how allowed custom DNS\n"
+                "[r]eturn\n"
+                "[e]xit\n"
+            )
+
+            user_choice = input(
+                "Default protocol: "
+            ).strip()
+
+            user_choice = user_choice.lower()
+
+            if user_choice == "r":
+                return
+            if user_choice == "e":
+                sys.exit()
+            if user_choice == "s":
+                user_configs = self.user_conf_manager.get_user_configurations()
+                dns_settings = user_configs[UserSettingsEnum.CONNECTION]["dns"]
+                print(
+                    "Your custom DNSs are: {}\n".format(
+                        dns_settings["custom_dns"]
+                    )
+                )
+                return
+
+            try:
+                user_int_choice = user_choice_options_dict[user_choice]
+            except KeyError:
+                print(
+                    "[!] Invalid choice. "
+                    "Please enter the number of a valid choice.\n"
+                )
+                time.sleep(self.time_sleep_value)
+                continue
+
+            custom_dns_list = None
+            if user_int_choice == UserSettingsStatusEnum.CUSTOM:
+                custom_dns_list = ask_custom_dns()
+
+            self.user_conf_manager.update_dns(user_int_choice, custom_dns_list)
 
     def extract_server_info(self, servername):
         """Extract server information to be displayed.

@@ -1,17 +1,14 @@
 import json
 import os
+import re
 
 from ..constants import (
+    CONFIG_STATUSES,
     PROTON_XDG_CONFIG_HOME,
     USER_CONFIG_TEMPLATE,
-    USER_CONFIGURATIONS_FILEPATH,
-    CONFIG_STATUSES
+    USER_CONFIGURATIONS_FILEPATH
 )
-from ..enums import (
-    UserSettingsEnum,
-    UserSettingsStatusEnum,
-    ProtocolEnum
-)
+from ..enums import ProtocolEnum, UserSettingsEnum, UserSettingsStatusEnum
 
 
 class UserConfigurationManager():
@@ -21,7 +18,6 @@ class UserConfigurationManager():
         self.init_configuration_file()
 
     def update_default_protocol(self, protocol):
-        print("protocol: ",  protocol)
         if protocol not in [
             ProtocolEnum.TCP,
             ProtocolEnum.UDP,
@@ -73,3 +69,17 @@ class UserConfigurationManager():
     def set_user_configurations(self, config_dict):
         with open(USER_CONFIGURATIONS_FILEPATH, "w") as f:
             json.dump(config_dict, f, indent=4)
+
+    def is_valid_ip(self, ipaddr):
+        valid_ip_re = re.compile(
+            r'^(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.'
+            r'(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.'
+            r'(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.'
+            r'(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)'
+            r'(/(3[0-2]|[12][0-9]|[1-9]))?$'  # Matches CIDR
+        )
+
+        if valid_ip_re.match(ipaddr):
+            return True
+
+        return False
