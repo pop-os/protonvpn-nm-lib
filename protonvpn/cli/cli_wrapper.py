@@ -209,7 +209,7 @@ class CLIWrapper():
             "p": self.ask_default_protocol,
             "d": self.ask_dns_status,
             "k": self.ask_killswitch,
-            "s": self.user_conf_manager.update_split_tunneling,
+            # "s": self.user_conf_manager.update_split_tunneling,
             "r": self.user_conf_manager.reset_default_configs,
         }
 
@@ -220,7 +220,7 @@ class CLIWrapper():
                 "[p]rotocol (default)\n"
                 "[d]ns Management\n"
                 "[k]ill Switch Management\n"
-                "[s]plit Tunneling\n"
+                # "[s]plit Tunneling\n"
                 "[r]eset Default Configurations\n"
                 "[e]xit\n"
             )
@@ -555,7 +555,7 @@ class CLIWrapper():
     ):
         """Proxymethod to get certficate filename and server domain."""
         try:
-            invoke_dialog = command[0]
+            invoke_dialog = command[0] # noqa
         except TypeError:
             servername, protocol = dialog(
                 self.server_manager,
