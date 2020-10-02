@@ -322,7 +322,7 @@ class CLIWrapper():
             sys.exit(1)
         except exceptions.EmptyServerListError as e:
             print(
-                "[!] {} This could mean that the ".format(e)
+                "\n[!] {} This could mean that the ".format(e)
                 + "server(s) are under maintenance or "
                 + "inaccessible with your plan."
             )

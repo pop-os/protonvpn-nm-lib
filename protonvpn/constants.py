@@ -89,5 +89,5 @@ Commands:
     d, disconnect       Disconnect the current session.
     s, status           Show connection status.
 Arguments:
-    <servername>        Servername (CH#4, CH-US-1, HK5-Tor).
+    <servername>        Servername (CH#4, CA-CH#1, CH#18-TOR).
 """
