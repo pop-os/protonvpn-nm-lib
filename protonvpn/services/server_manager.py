@@ -207,7 +207,7 @@ class ServerManager():
         )
 
         if len(filtered_servers) == 0:
-            err_msg = "No available servers could be found for \"{}\".".format(
+            err_msg = "No available servers could be found for \"{}\"".format(
                 servername
             )
             logger.error(
