@@ -208,12 +208,12 @@ class CLIWrapper():
             print(
                 "What do you want to change?\n"
                 "\n"
-                "[P]rotocol (default)\n"
-                "[D]NS Management\n"
-                "[K]ill Switch Management\n"
-                "[S]plit Tunneling\n"
-                "[R]eset Default Configurations\n"
-                "[E]xit\n"
+                "[p]rotocol (default)\n"
+                "[d]ns Management\n"
+                "[k]ill Switch Management\n"
+                "[s]plit Tunneling\n"
+                "[r]eset Default Configurations\n"
+                "[e]xit\n"
             )
 
             user_choice = input(
@@ -255,12 +255,20 @@ class CLIWrapper():
                 "[u]dp\n"
                 "[i]kev2\n"
                 "[w]reguard\n"
-                "e) Exit\n"
+                "[b]ack to menu\n"
+                "[e]xit\n"
             )
 
             user_choice = input(
                 "Default protocol: "
             ).strip()
+
+            user_choice = user_choice.lower()
+
+            if user_choice == "b":
+                return
+            if user_choice == "e":
+                sys.exit()
 
             try:
                 if len(user_choice) == 1:
