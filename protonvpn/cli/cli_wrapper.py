@@ -207,7 +207,7 @@ class CLIWrapper():
     def configure(self):
         method_dict = {
             "p": self.ask_default_protocol,
-            "d": self.ask_dns_status,
+            # "d": self.ask_dns_status,
             "k": self.ask_killswitch,
             # "s": self.user_conf_manager.update_split_tunneling,
             "r": self.restore_default_configurations,
@@ -218,7 +218,7 @@ class CLIWrapper():
                 "What do you want to change?\n"
                 "\n"
                 "[p]rotocol (default)\n"
-                "[d]ns Management\n"
+                # "[d]ns Management\n"
                 "[k]ill Switch Management\n"
                 # "[s]plit Tunneling\n"
                 "[r]restore Default Configurations\n"
