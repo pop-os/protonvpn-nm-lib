@@ -107,6 +107,7 @@ Usage:
     protonvpn-exp (c | connect) [-r | --random] [-p <protocol>]
     protonvpn-exp (d | disconnect)
     protonvpn-exp (s | status)
+    protpnvpn-exp configure
     protonvpn-exp (-h | --help)
     protonvpn-exp (-v | --version)
 Options:
@@ -122,6 +123,7 @@ Options:
 Commands:
     login               Login ProtonVPN.
     logout              Logout ProtonVPN.
+    configure           Configurations menu.
     c, connect          Connect to a ProtonVPN server.
     d, disconnect       Disconnect the current session.
     s, status           Show connection status.
