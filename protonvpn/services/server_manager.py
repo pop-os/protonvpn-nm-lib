@@ -106,7 +106,7 @@ class ServerManager():
         self.cache_servers(session)
         servers = self.extract_server_list()
         excluded_features = [
-            FeatureEnum.NORMAL, FeatureEnum.TOR, FeatureEnum.P2P
+            FeatureEnum.TOR, FeatureEnum.SECURE_CORE
         ]
         filtered_servers = self.filter_servers(
             session,
