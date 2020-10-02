@@ -210,7 +210,7 @@ class CLIWrapper():
             "d": self.ask_dns_status,
             "k": self.ask_killswitch,
             # "s": self.user_conf_manager.update_split_tunneling,
-            "r": self.user_conf_manager.reset_default_configs,
+            "r": self.restore_default_configurations,
         }
 
         while True:
@@ -221,7 +221,7 @@ class CLIWrapper():
                 "[d]ns Management\n"
                 "[k]ill Switch Management\n"
                 # "[s]plit Tunneling\n"
-                "[r]eset Default Configurations\n"
+                "[r]restore Default Configurations\n"
                 "[e]xit\n"
             )
 
@@ -248,7 +248,7 @@ class CLIWrapper():
                 print("\n[!] {}\n".format(e))
                 continue
             else:
-                print(resp)
+                print("\n{}\n".format(resp))
                 sys.exit()
 
     def ask_default_protocol(self):
@@ -309,7 +309,7 @@ class CLIWrapper():
                 FLAT_SUPPORTED_PROTOCOLS[index]
             )
 
-            return "\nSuccessfully updated default protocol!\n"
+            return "Successfully updated default protocol!"
 
     def ask_dns_status(self):
         user_choice_options_dict = {
@@ -385,7 +385,7 @@ class CLIWrapper():
 
             self.user_conf_manager.update_dns(user_int_choice, custom_dns_list)
 
-            return "\nSuccessfully updated DNS settings!\n"
+            return "Successfully updated DNS settings!"
 
     def ask_killswitch(self):
         user_choice_options_dict = {
@@ -424,7 +424,25 @@ class CLIWrapper():
 
             self.user_conf_manager.update_killswitch(user_int_choice)
 
-            return "\nSuccessfully updated KillSwitch settings!\n"
+            return "Successfully updated KillSwitch settings!"
+
+    def restore_default_configurations(self):
+        user_choice = input(
+            "Are you sure you want to restore to "
+            "default configurations? [y/N]: "
+        ).lower().strip()
+
+        if not user_choice == "y":
+            return
+
+        print("Restoring default ProtonVPN configurations...")
+        time.sleep(0.5)
+
+        # should it disconnect prior to resetting user configurations ?
+
+        self.user_conf_manager.reset_default_configs()
+
+        return "Configurations were successfully restored back to defaults!"
 
     def extract_server_info(self, servername):
         """Extract server information to be displayed.

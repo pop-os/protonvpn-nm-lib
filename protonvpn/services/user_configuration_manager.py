@@ -60,7 +60,7 @@ class UserConfigurationManager():
         self.init_configuration_file(True)
 
     def init_configuration_file(self, force_init=False):
-        if not os.path.isfile(USER_CONFIGURATIONS_FILEPATH) or not force_init:
+        if not os.path.isfile(USER_CONFIGURATIONS_FILEPATH) or force_init:
             self.set_user_configurations(USER_CONFIG_TEMPLATE)
 
     def get_user_configurations(self):
