@@ -333,7 +333,7 @@ class CLIWrapper():
 
     def determine_protocol(self, args):
         """Determine protocol based on CLI input arguments."""
-        protocol = ProtocolEnum.TCP
+        protocol = ProtocolEnum.UDP
         try:
             protocol = args.protocol.lower().strip()
         except AttributeError:
