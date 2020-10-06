@@ -15,7 +15,8 @@ from .enums import (
     ProtocolEnum,
     FeatureEnum,
     UserSettingEnum,
-    UserSettingStatusEnum
+    UserSettingStatusEnum,
+    UserSettingConnectionEnum
 )
 
 APP_VERSION = '0.0.4'
@@ -77,15 +78,15 @@ APP_CONFIG = os.path.join(PWD, "app.cfg")
 
 USER_CONFIG_TEMPLATE = {
     UserSettingEnum.CONNECTION: {
-        "default_protocol": ProtocolEnum.TCP,
-        "killswitch": UserSettingStatusEnum.DISABLED,
-        "dns": {
-            "status": UserSettingStatusEnum.DISABLED,
-            "custom_dns": []
+        UserSettingConnectionEnum.DEFAULT_PROTOCOL: ProtocolEnum.UDP,
+        UserSettingConnectionEnum.KILLSWITCH: UserSettingStatusEnum.DISABLED,
+        UserSettingConnectionEnum.DNS: {
+            UserSettingConnectionEnum.DNS_STATUS: UserSettingStatusEnum.DISABLED, # noqa
+            UserSettingConnectionEnum.CUSTOM_DNS: []
         },
-        "split_tunneling": {
-            "status": UserSettingStatusEnum.DISABLED,
-            "ip_list": []
+        UserSettingConnectionEnum.SPLIT_TUNNELING: {
+            UserSettingConnectionEnum.SPLIT_TUNNELING_STATUS: UserSettingStatusEnum.DISABLED, # noqa
+            UserSettingConnectionEnum.IP_LIST: []
         }
     },
     UserSettingEnum.GENERAL: {},
