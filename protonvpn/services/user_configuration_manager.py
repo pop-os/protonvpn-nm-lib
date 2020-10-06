@@ -8,7 +8,7 @@ from ..constants import (
     USER_CONFIG_TEMPLATE,
     USER_CONFIGURATIONS_FILEPATH
 )
-from ..enums import ProtocolEnum, UserSettingsEnum, UserSettingsStatusEnum
+from ..enums import ProtocolEnum, UserSettingsEnum, UserSettingStatusEnum
 
 
 class UserConfigurationManager():
@@ -37,7 +37,7 @@ class UserConfigurationManager():
         user_configs = self.get_user_configurations()
 
         user_configs[UserSettingsEnum.CONNECTION]["dns"]["status"] = status
-        if status == UserSettingsStatusEnum.CUSTOM:
+        if status == UserSettingStatusEnum.CUSTOM:
             user_configs[UserSettingsEnum.CONNECTION]["dns"]["custom_dns"] = custom_dns # noqa
 
         self.set_user_configurations(user_configs)

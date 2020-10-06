@@ -15,7 +15,7 @@ from .enums import (
     ProtocolEnum,
     FeatureEnum,
     UserSettingsEnum,
-    UserSettingsStatusEnum
+    UserSettingStatusEnum
 )
 
 APP_VERSION = '0.0.4'
@@ -66,9 +66,9 @@ SUPPORTED_FEATURES = {
 }
 
 CONFIG_STATUSES = [
-    UserSettingsStatusEnum.DISABLED,
-    UserSettingsStatusEnum.ENABLED,
-    UserSettingsStatusEnum.CUSTOM,
+    UserSettingStatusEnum.DISABLED,
+    UserSettingStatusEnum.ENABLED,
+    UserSettingStatusEnum.CUSTOM,
 ]
 
 VIRTUAL_DEVICE_NAME = "proton0"
@@ -78,13 +78,13 @@ APP_CONFIG = os.path.join(PWD, "app.cfg")
 USER_CONFIG_TEMPLATE = {
     UserSettingsEnum.CONNECTION: {
         "default_protocol": ProtocolEnum.TCP,
-        "killswitch": UserSettingsStatusEnum.DISABLED,
+        "killswitch": UserSettingStatusEnum.DISABLED,
         "dns": {
-            "status": UserSettingsStatusEnum.DISABLED,
+            "status": UserSettingStatusEnum.DISABLED,
             "custom_dns": []
         },
         "split_tunneling": {
-            "status": UserSettingsStatusEnum.DISABLED,
+            "status": UserSettingStatusEnum.DISABLED,
             "ip_list": []
         }
     },

@@ -19,7 +19,7 @@ from ..enums import (
     ConnectionMetadataEnum,
     ProtocolEnum,
     UserSettingsEnum,
-    UserSettingsStatusEnum
+    UserSettingStatusEnum
 )
 from ..logger import logger
 from ..services import capture_exception
@@ -315,9 +315,9 @@ class CLIWrapper():
 
     def ask_dns_status(self):
         user_choice_options_dict = {
-            "a": UserSettingsStatusEnum.ENABLED,
-            "d": UserSettingsStatusEnum.DISABLED,
-            "c": UserSettingsStatusEnum.CUSTOM
+            "a": UserSettingStatusEnum.ENABLED,
+            "d": UserSettingStatusEnum.DISABLED,
+            "c": UserSettingStatusEnum.CUSTOM
         }
 
         def ask_custom_dns():
@@ -383,7 +383,7 @@ class CLIWrapper():
                 continue
 
             custom_dns_list = None
-            if user_int_choice == UserSettingsStatusEnum.CUSTOM:
+            if user_int_choice == UserSettingStatusEnum.CUSTOM:
                 custom_dns_list = ask_custom_dns()
 
             self.user_conf_manager.update_dns(user_int_choice, custom_dns_list)
@@ -392,9 +392,9 @@ class CLIWrapper():
 
     def ask_killswitch(self):
         user_choice_options_dict = {
-            "a": UserSettingsStatusEnum.ENABLED,
-            "d": UserSettingsStatusEnum.DISABLED,
-            "c": UserSettingsStatusEnum.CUSTOM
+            "a": UserSettingStatusEnum.ENABLED,
+            "d": UserSettingStatusEnum.DISABLED,
+            "c": UserSettingStatusEnum.CUSTOM
         }
         while True:
             print(

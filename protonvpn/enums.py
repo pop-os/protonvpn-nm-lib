@@ -53,7 +53,18 @@ class UserSettingsEnum(object):
     ADVANCED = "advanced"
 
 
-class UserSettingsStatusEnum(object):
+class UserSettingStatusEnum(object):
     DISABLED = 0
     ENABLED = 1
     CUSTOM = 2
+
+
+class UserSettingConnectionEnum(object):
+    DEFAULT_PROTOCOL = "default_protocol"
+    KILLSWITCH = "killswitch"
+    DNS = "dns"
+    DNS_STATUS = "status"
+    CUSTOM_DNS = "custom_dns"
+    SPLIT_TUNNELING = "split_tunneling"
+    SPLIT_TUNNELING_STATUS = "status"
+    IP_LIST = "ip_list"
