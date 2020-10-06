@@ -222,6 +222,7 @@ class CLIWrapper():
                 "[k]ill Switch Management\n"
                 # "[s]plit Tunneling\n"
                 "[r]restore Default Configurations\n"
+                "----------\n"
                 "[e]xit\n"
             )
 
@@ -267,6 +268,7 @@ class CLIWrapper():
                 "[u]dp\n"
                 "[i]kev2\n"
                 "[w]reguard\n"
+                "----------\n"
                 "[r]eturn\n"
                 "[e]xit\n"
             )
@@ -345,6 +347,7 @@ class CLIWrapper():
                 "[d]isallow automatic DNS management\n"
                 "[c]ustom DNS management\n"
                 "[s]how allowed custom DNS\n"
+                "----------\n"
                 "[r]eturn\n"
                 "[e]xit\n"
             )
@@ -399,6 +402,7 @@ class CLIWrapper():
                 "\n"
                 "[a]llow killswitch management\n"
                 "[d]isallow killswitch management\n"
+                "----------\n"
                 "[r]eturn\n"
                 "[e]xit\n"
             )
