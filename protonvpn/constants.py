@@ -14,7 +14,7 @@ from .enums import (
     ProtocolImplementationEnum,
     ProtocolEnum,
     FeatureEnum,
-    UserSettingsEnum,
+    UserSettingEnum,
     UserSettingStatusEnum
 )
 
@@ -76,7 +76,7 @@ LOGGER_NAME = "protonvpn"
 APP_CONFIG = os.path.join(PWD, "app.cfg")
 
 USER_CONFIG_TEMPLATE = {
-    UserSettingsEnum.CONNECTION: {
+    UserSettingEnum.CONNECTION: {
         "default_protocol": ProtocolEnum.TCP,
         "killswitch": UserSettingStatusEnum.DISABLED,
         "dns": {
@@ -88,9 +88,9 @@ USER_CONFIG_TEMPLATE = {
             "ip_list": []
         }
     },
-    UserSettingsEnum.GENERAL: {},
-    UserSettingsEnum.ADVANCED: {},
-    UserSettingsEnum.TRAY: {},
+    UserSettingEnum.GENERAL: {},
+    UserSettingEnum.ADVANCED: {},
+    UserSettingEnum.TRAY: {},
 }
 
 USAGE = """

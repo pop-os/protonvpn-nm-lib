@@ -18,7 +18,7 @@ from ..constants import (
 from ..enums import (
     ConnectionMetadataEnum,
     ProtocolEnum,
-    UserSettingsEnum,
+    UserSettingEnum,
     UserSettingStatusEnum
 )
 from ..logger import logger
@@ -364,7 +364,7 @@ class CLIWrapper():
                 sys.exit()
             if user_choice == "s":
                 user_configs = self.user_conf_manager.get_user_configurations()
-                dns_settings = user_configs[UserSettingsEnum.CONNECTION]["dns"]
+                dns_settings = user_configs[UserSettingEnum.CONNECTION]["dns"]
                 print(
                     "Your custom DNSs are: {}\n".format(
                         dns_settings["custom_dns"]

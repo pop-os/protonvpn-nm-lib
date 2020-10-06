@@ -8,7 +8,7 @@ from ..constants import (
     USER_CONFIG_TEMPLATE,
     USER_CONFIGURATIONS_FILEPATH
 )
-from ..enums import ProtocolEnum, UserSettingsEnum, UserSettingStatusEnum
+from ..enums import ProtocolEnum, UserSettingEnum, UserSettingStatusEnum
 
 
 class UserConfigurationManager():
@@ -27,7 +27,7 @@ class UserConfigurationManager():
             raise KeyError("Illegal options")
 
         user_configs = self.get_user_configurations()
-        user_configs[UserSettingsEnum.CONNECTION]["default_protocol"] = protocol # noqa
+        user_configs[UserSettingEnum.CONNECTION]["default_protocol"] = protocol # noqa
         self.set_user_configurations(user_configs)
 
     def update_dns(self, status, custom_dns=None):
@@ -36,9 +36,9 @@ class UserConfigurationManager():
 
         user_configs = self.get_user_configurations()
 
-        user_configs[UserSettingsEnum.CONNECTION]["dns"]["status"] = status
+        user_configs[UserSettingEnum.CONNECTION]["dns"]["status"] = status
         if status == UserSettingStatusEnum.CUSTOM:
-            user_configs[UserSettingsEnum.CONNECTION]["dns"]["custom_dns"] = custom_dns # noqa
+            user_configs[UserSettingEnum.CONNECTION]["dns"]["custom_dns"] = custom_dns # noqa
 
         self.set_user_configurations(user_configs)
 
@@ -47,7 +47,7 @@ class UserConfigurationManager():
             raise KeyError("Illegal options")
 
         user_configs = self.get_user_configurations()
-        user_configs[UserSettingsEnum.CONNECTION]["killswitch"] = status
+        user_configs[UserSettingEnum.CONNECTION]["killswitch"] = status
         self.set_user_configurations(user_configs)
 
     def update_split_tunneling(self, status, ip_list=None):
