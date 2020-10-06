@@ -238,7 +238,7 @@ class CLIWrapper():
             except KeyError:
                 print(
                     "[!] Invalid choice. "
-                    "Please enter the number of a valid choice.\n"
+                    "Please enter the value of a valid choice.\n"
                 )
                 time.sleep(self.time_sleep_value)
                 continue
@@ -377,7 +377,7 @@ class CLIWrapper():
             except KeyError:
                 print(
                     "[!] Invalid choice. "
-                    "Please enter the number of a valid choice.\n"
+                    "Please enter the value of a valid choice.\n"
                 )
                 time.sleep(self.time_sleep_value)
                 continue
@@ -421,7 +421,7 @@ class CLIWrapper():
             except KeyError:
                 print(
                     "[!] Invalid choice. "
-                    "Please enter the number of a valid choice.\n"
+                    "Please enter the value of a valid choice.\n"
                 )
                 time.sleep(self.time_sleep_value)
                 continue
