@@ -84,10 +84,12 @@ class UserManager(UserSessionManager):
 
     def get_stored_vpn_credentials(self, session=False):
         """Get OpenVPN credentials from keyring."""
+        logger.info("{} {}".format(self.keyring_userdata, self.keyring_service))
         stored_user_data = self.get_stored_data(
             self.keyring_userdata,
             self.keyring_service,
         )
+        logger.info(stored_user_data)
 
         return (
             self.append_suffix(stored_user_data["username"]),
@@ -120,7 +122,10 @@ class UserManager(UserSessionManager):
 
     def load_session(self):
         """Load ProtonVPN user session."""
-        return self.load_stored_user_session()
+        return self.load_stored_user_session(
+            self.keyring_sessiondata,
+            self.keyring_service
+        )
 
     def validate_username_password(self, username, password):
         """Validate ProtonVPN username and password.
