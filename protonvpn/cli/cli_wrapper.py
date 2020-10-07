@@ -324,13 +324,13 @@ class CLIWrapper():
                 session, protocol, command
             )
         except KeyError as e:
-            print("KeyError: {}".format(e))
+            print("\nKeyError: {}".format(e))
             sys.exit(1)
         except TypeError as e:
-            print("TypeError: {}".format(e))
+            print("\nTypeError: {}".format(e))
             sys.exit(1)
         except ValueError as e:
-            print("ValueError: {}".format(e))
+            print("\nValueError: {}".format(e))
             sys.exit(1)
         except exceptions.EmptyServerListError as e:
             print(
@@ -340,7 +340,10 @@ class CLIWrapper():
             )
             sys.exit(1)
         except exceptions.IllegalServername as e:
-            print("[!] {}".format(e))
+            print("\n[!] {}".format(e))
+            sys.exit(1)
+        except exceptions.CacheLogicalServersError as e:
+            print("\n[!] {}".format(e))
             sys.exit(1)
 
     def determine_protocol(self, args):

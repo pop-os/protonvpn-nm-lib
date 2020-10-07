@@ -88,7 +88,8 @@ class EmptyServerListError(ProtonVPNBaseException):
     """Empty server list error"""
 
 
-class IllegalData(ProtonVPNBaseException):
+
+class IllegalData(ProtonVPNBaseException): # noqa
     """Illegal/unexpected data type"""
 
 
@@ -100,7 +101,8 @@ class IllegalUserData(IllegalData):
     """Illegal/unexpected UserData type"""
 
 
-class JSONError(ProtonVPNBaseException):
+
+class JSONError(ProtonVPNBaseException): # noqa
     """JSON generated errors"""
 
 
@@ -114,3 +116,16 @@ class JSONDataNoneError(JSONError):
 
 class JSONDataError(JSONError):
     """JSON SessionData error"""
+
+
+
+class CacheServersError(ProtonVPNBaseException): # noqa
+    """Cache servers error"""
+
+
+class CacheLogicalServersError(CacheServersError):
+    """Cache logical servers error"""
+
+
+class CacheLogicalServersFallbackError(CacheServersError):
+    """Cache logical servers fallback error"""
