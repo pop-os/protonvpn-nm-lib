@@ -5,6 +5,7 @@ import random
 import re
 
 from proton.api import Session
+from proton.api import ProtonError
 
 from .. import exceptions
 from ..constants import CACHED_SERVERLIST, PROTON_XDG_CACHE_HOME
@@ -450,6 +451,8 @@ class ServerManager():
             force (bool): wether refresh interval shuld be ignored or not
         """
         logger.info("Caching servers")
+        was_previously_cached = False
+
         if not isinstance(cached_serverlist, str):
             err_msg = "Incorrect object type, "\
                 "str is expected but got {} instead".format(
@@ -486,6 +489,8 @@ class ServerManager():
         except Exception as e:
             logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
+        else:
+            was_previously_cached = True
 
         now_time = datetime.datetime.now()
         time_ago = now_time - datetime.timedelta(minutes=self.REFRESH_INTERVAL)
@@ -496,10 +501,25 @@ class ServerManager():
             time_ago > last_modified_time or force
         ):
 
-            data = session.api_request(endpoint="/vpn/logicals")
+            try:
+                data = session.api_request(endpoint="/vpn/logicals")
+            except ProtonError as e:
+                if not was_previously_cached:
+                    logger.exception(
+                        "[!] CacheLogicalServersError: {}.".format(e)
+                        + "Raising exception."
+                    )
+                    raise exceptions.CacheLogicalServersError(
+                        "Unable to reach API to cache servers."
+                    )
 
-            with open(cached_serverlist, "w") as f:
-                json.dump(data, f)
+                logger.info(
+                    "Unable to reach API to cache servers, falling back "
+                    + "to existing cache. Exception: {}".format(e)
+                )
+            else:
+                with open(cached_serverlist, "w") as f:
+                    json.dump(data, f)
 
     def generate_ip_list(
         self, servername, servers,
