@@ -12,7 +12,7 @@ from protonvpn.services.server_manager import ServerManager
 from protonvpn.services.user_manager import UserManager
 from protonvpn.services.user_session_manager import UserSessionManager
 
-MOCK_AUTHDATA = {
+MOCK_SESSIONDATA = {
     "api_url": "https://api.protonvpn.ch/tests/ping",
     "appversion": "4",
     "User-Agent": "CI Test User Agent",
@@ -89,7 +89,7 @@ SERVERS = [
     },
 ]
 
-MOCK_DATA_JSON = json.dumps(MOCK_AUTHDATA)
+MOCK_DATA_JSON = json.dumps(MOCK_SESSIONDATA)
 PWD = os.path.dirname(os.path.abspath(__file__))
 CERT_FOLDER = os.path.join(PWD, "certificates/connection_manager")
 TEST_CERTS = os.path.join(PWD, "test_certs")

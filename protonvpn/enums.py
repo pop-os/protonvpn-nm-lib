@@ -37,3 +37,9 @@ class ClientSuffixEnum(object):
     NETSHIELD_ADS_TRACKING = "f2"
     NETSHIELD_NA = "f3"
     RANDOMAZIED_NAT = "nr"
+
+
+class KeyringEnum(object):
+    DEFAULT_KEYRING_SERVICE = "ProtonVPN"
+    DEFAULT_KEYRING_SESSIONDATA = "SessionData"
+    DEFAULT_KEYRING_USERDATA = "UserData"

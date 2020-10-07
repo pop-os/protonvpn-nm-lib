@@ -16,8 +16,9 @@ from . import capture_exception
 class ServerManager():
     REFRESH_INTERVAL = 15
 
-    def __init__(self, cert_manager):
+    def __init__(self, cert_manager, user_manager):
         self.cert_manager = cert_manager
+        self.user_manager = user_manager
 
     def fastest(self, session, protocol, *_):
         """Connect to fastest server.
@@ -551,7 +552,7 @@ class ServerManager():
             list: serverlist extracted from raw json
         """
         logger.info("Filtering servers")
-        user_tier = self.fetch_user_tier(session)
+        user_tier = self.fetch_user_tier()
 
         filtered_servers = []
         for server in servers:
@@ -591,16 +592,13 @@ class ServerManager():
 
         return server_data["LogicalServers"]
 
-    def fetch_user_tier(self, session):
-        """Fetches a users tier from the API.
+    def fetch_user_tier(self):
+        """Get user tier.
 
-        Args:
-            session (proton.api.Session): current user session
         Returns:
             int: current user session tier
         """
-        data = session.api_request(endpoint="/vpn")
-        return data["VPN"]["MaxTier"]
+        return self.user_manager.tier
 
     def get_fastest_server(self, server_pool):
         """Get fastest server from a list of servers.

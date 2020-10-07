@@ -39,7 +39,7 @@ class TestIntegrationConnectionManager():
     user = os.environ["vpntest_user"]
     pwd = os.environ["vpntest_pwd"]
     um.keyring_service = "TestConnectionManager"
-    um.keyring_username = "TestAuthData"
+    um.keyring_username = "TestSessionData"
     um.login(user, pwd)
     random_domain = "random.domain.to.add"
 
@@ -49,7 +49,7 @@ class TestIntegrationConnectionManager():
 
     @pytest.fixture
     def test_keyring_username(self):
-        return "TestAuthData"
+        return "TestSessionData"
 
     def test_add_correct_connection(self):
         self.cm.add_connection(

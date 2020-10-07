@@ -25,7 +25,7 @@ from .cli_dialog import dialog  # noqa
 class CLIWrapper():
     connection_manager = ConnectionManager()
     user_manager = UserManager()
-    server_manager = ServerManager(CertificateManager())
+    server_manager = ServerManager(CertificateManager(), user_manager)
 
     def connect(self, args):
         """Proxymethdo to connect to ProtonVPN."""
@@ -127,7 +127,7 @@ class CLIWrapper():
         print()
 
         try:
-            self.user_manager.delete_user_session()
+            self.user_manager.logout()
         except exceptions.StoredSessionNotFound:
             print("[!] Unable to logout. No session was found.")
         except exceptions.AccessKeyringError:
@@ -261,34 +261,46 @@ class CLIWrapper():
             "ProtonVPN connection was successfully added to Network Manager."
         )
 
-    def get_ovpn_credentials(self, session, exit_type):
+    def get_ovpn_credentials(self, session, exit_type, retry=True):
         """Proxymethod to get user OVPN credentials."""
         openvpn_username, openvpn_password = None, None
+
         try:
-            openvpn_username, openvpn_password = self.user_manager.fetch_vpn_credentials( # noqa
+            openvpn_username, openvpn_password = self.user_manager.get_stored_vpn_credentials( # noqa
                 session
             )
-        except exceptions.JSONAuthDataEmptyError:
+        except exceptions.JSONSDataEmptyError:
             print(
-                "[!] The stored session might be corrupted. "
+                "\n[!] The stored session might be corrupted. "
                 + "Please, try to login again."
             )
             sys.exit(exit_type)
         except (
-            exceptions.JSONAuthDataError,
-            exceptions.JSONAuthDataNoneError
+            exceptions.JSONDataError,
+            exceptions.JSONDataNoneError
         ):
-            print("[!] There is no stored session. Please, login first.")
-            sys.exit(exit_type)
+            if not retry:
+                print(
+                    "\n[!] Missing user data. Please, "
+                    "login first."
+                )
+                sys.exit(exit_type)
+            else:
+                print(
+                    "User data was not previously cached. "
+                    "Caching user data..."
+                )
+                self.user_manager.cache_user_data()
+                return self.get_ovpn_credentials(session, exit_type, False)
         except Exception as e:
             capture_exception(e)
             logger.exception(
                 "[!] Unknown error: {}".format(e)
             )
-            print("[!] Unknown error occured: {}.".format(e))
+            print("\n[!] Unknown error occured: {}.".format(e))
             sys.exit(exit_type)
-
-        return openvpn_username, openvpn_password
+        else:
+            return openvpn_username, openvpn_password
 
     def get_cert_filename_and_domain(
         self, cli_commands, session,
@@ -349,7 +361,7 @@ class CLIWrapper():
 
         try:
             session = self.user_manager.load_session()
-        except exceptions.JSONAuthDataEmptyError:
+        except exceptions.JSONSDataEmptyError:
             print(
                 "[!] The stored session might be corrupted. "
                 + "Please, try to login again."
@@ -357,8 +369,8 @@ class CLIWrapper():
             if is_connecting:
                 sys.exit(exit_type)
         except (
-            exceptions.JSONAuthDataError,
-            exceptions.JSONAuthDataNoneError
+            exceptions.JSONDataError,
+            exceptions.JSONDataNoneError
         ):
             if is_connecting:
                 print("\n[!] There is no stored session. Please, login first.")

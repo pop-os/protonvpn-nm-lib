@@ -1,14 +1,13 @@
 import json
 import os
 import shutil
-
 import proton
 import pytest
 
 from common import (
     CACHED_OPENVPN_CERTIFICATE, MOCK_DATA_JSON, SERVERS,
     TEST_CACHED_SERVERFILE, CertificateManager, ServerManager,
-    exceptions
+    UserManager, exceptions, MOCK_SESSIONDATA
 )
 
 session = proton.Session.load(json.loads(MOCK_DATA_JSON))
@@ -17,9 +16,18 @@ pwd = os.environ["vpntest_pwd"]
 REAL_SESSION = proton.Session("https://api.protonvpn.ch")
 REAL_SESSION.authenticate(user, pwd)
 
+um = UserManager(
+    keyring_service="TestServerManager",
+    keyring_sessiondata="TestServerSessionData",
+    keyring_userdata="TestServerUserData"
+)
+
 
 class TestUnitServerManager:
-    server_man = ServerManager(CertificateManager())
+    server_man = ServerManager(
+        CertificateManager(),
+        um
+    )
 
     @classmethod
     def setup_class(cls):
@@ -29,9 +37,27 @@ class TestUnitServerManager:
             shutil.rmtree(TEST_CACHED_SERVERFILE)
             os.mkdir(TEST_CACHED_SERVERFILE)
 
+        um.store_data(
+            MOCK_SESSIONDATA, "TestServerSessionData", "TestServerManager"
+        )
+        um.store_data(
+            dict(
+                VPN=dict(
+                    Name="test_username",
+                    Password="test_password",
+                    MaxTier="2",
+                )
+            ),
+            "TestServerUserData",
+            "TestServerManager",
+            store_user_data=True
+        )
+
     @classmethod
     def teardown_class(cls):
         shutil.rmtree(TEST_CACHED_SERVERFILE)
+        um.delete_stored_data("TestServerSessionData", "TestServerManager")
+        um.delete_stored_data("TestServerUserData", "TestServerManager")
 
     def test_none_path_cache_servers(self):
         with pytest.raises(TypeError):
@@ -189,11 +215,34 @@ class TestUnitServerManager:
 
 
 class TestIntegrationServerManager:
-    server_man = ServerManager(CertificateManager())
+    server_man = ServerManager(
+        CertificateManager(),
+        um
+    )
+
+    @classmethod
+    def setup_class(cls):
+        um.store_data(
+            MOCK_SESSIONDATA, "TestServerSessionData", "TestServerManager"
+        )
+        um.store_data(
+            dict(
+                VPN=dict(
+                    Name="test_username",
+                    Password="test_password",
+                    MaxTier="2",
+                )
+            ),
+            "TestServerUserData",
+            "TestServerManager",
+            store_user_data=True
+        )
 
     @classmethod
     def teardown_class(cls):
         os.remove(CACHED_OPENVPN_CERTIFICATE)
+        um.delete_stored_data("TestServerSessionData", "TestServerManager")
+        um.delete_stored_data("TestServerUserData", "TestServerManager")
 
     def test_correct_generate_connect_fastest(self):
         servername, domain = self.server_man.fastest(REAL_SESSION, "tcp")
