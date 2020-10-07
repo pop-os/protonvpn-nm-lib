@@ -68,20 +68,20 @@ class ProtocolNotFound(ProtonVPNBaseException):
     """Protocol not found upon generate certificate"""
 
 
-class IllegalAuthData(ProtonVPNBaseException):
-    """Unexpected AuthData type"""
+class IllegalSessionData(ProtonVPNBaseException):
+    """Unexpected SessionData type"""
 
 
-class JSONAuthDataEmptyError(ProtonVPNBaseException):
-    """JSON AuthData empty error"""
+class JSONSessionDataEmptyError(ProtonVPNBaseException):
+    """JSON SessionData empty error"""
 
 
-class JSONAuthDataNoneError(ProtonVPNBaseException):
-    """JSON AuthData none error"""
+class JSONSessionDataNoneError(ProtonVPNBaseException):
+    """JSON SessionData none error"""
 
 
-class JSONAuthDataError(ProtonVPNBaseException):
-    """JSON AuthData error"""
+class JSONSessionDataError(ProtonVPNBaseException):
+    """JSON SessionData error"""
 
 
 class OptimumBackendNotFound(ProtonVPNBaseException):

@@ -6,7 +6,7 @@ import keyring
 import proton
 
 from .. import exceptions
-from ..constants import DEFAULT_KEYRING_SERVICE, DEFAULT_KEYRING_USERNAME
+from ..enums import KeyringEnum
 from ..logger import logger
 from . import capture_exception
 
@@ -24,8 +24,8 @@ class UserSessionManager:
 
     def load_stored_user_session(
         self,
-        keyring_service=DEFAULT_KEYRING_SERVICE,
-        keyring_username=DEFAULT_KEYRING_USERNAME
+        keyring_service=KeyringEnum.DEFAULT_KEYRING_SERVICE,
+        keyring_username=KeyringEnum.DEFAULT_KEYRING_SESSIONDATA
     ):
         """Load stored user session from keychain.
 
@@ -52,9 +52,9 @@ class UserSessionManager:
 
     def store_user_session(
         self,
-        auth_data,
-        keyring_service=DEFAULT_KEYRING_SERVICE,
-        keyring_username=DEFAULT_KEYRING_USERNAME
+        session_data,
+        keyring_service=KeyringEnum.DEFAULT_KEYRING_SERVICE,
+        keyring_username=KeyringEnum.DEFAULT_KEYRING_SESSIONDATA
     ):
         """Store user session in keychain.
 
@@ -63,23 +63,23 @@ class UserSessionManager:
             keyring_username (string): the keyring username (optional)
         """
         logger.info("Storing user session")
-        json_auth_data = self.json_session_transform(
-            auth_data,
+        json_session_data = self.json_session_transform(
+            session_data,
             "save"
         )
 
-        if auth_data is None or len(auth_data) < 1:
+        if session_data is None or len(session_data) < 1:
             logger.error(
-                "[!] IllegalAuthData: Unexpected AuthData type. "
+                "[!] IllegalSessionData: Unexpected SessionData type. "
                 + "Raising exception."
             )
-            raise exceptions.IllegalAuthData("Unexpected AuthData type")
+            raise exceptions.IllegalSessionData("Unexpected SessionData type")
 
         try:
             keyring.set_password(
                 keyring_service,
                 keyring_username,
-                json_auth_data
+                json_session_data
             )
         except (
             keyring.errors.InitError,
@@ -95,8 +95,8 @@ class UserSessionManager:
 
     def get_stored_user_session(
         self,
-        keyring_service=DEFAULT_KEYRING_SERVICE,
-        keyring_username=DEFAULT_KEYRING_USERNAME
+        keyring_service=KeyringEnum.DEFAULT_KEYRING_SERVICE,
+        keyring_username=KeyringEnum.DEFAULT_KEYRING_SESSIONDATA
     ):
         """Get stored user session from keychain.
 
@@ -125,19 +125,19 @@ class UserSessionManager:
                 "load"
             )
         except json.decoder.JSONDecodeError as e:
-            logger.exception("[!] JSONAuthDataEmptyError: {}".format(e))
-            raise exceptions.JSONAuthDataEmptyError(e)
+            logger.exception("[!] JSONSessionDataEmptyError: {}".format(e))
+            raise exceptions.JSONSessionDataEmptyError(e)
         except TypeError as e:
-            logger.exception("[!] JSONAuthDataNoneError: {}".format(e))
-            raise exceptions.JSONAuthDataNoneError(e)
+            logger.exception("[!] JSONSessionDataNoneError: {}".format(e))
+            raise exceptions.JSONSessionDataNoneError(e)
         except Exception as e:
-            logger.exception("[!] JSONAuthDataError: {}".format(e))
-            raise exceptions.JSONAuthDataError(e)
+            logger.exception("[!] JSONSessionDataError: {}".format(e))
+            raise exceptions.JSONSessionDataError(e)
 
     def delete_user_session(
         self,
-        keyring_service=DEFAULT_KEYRING_SERVICE,
-        keyring_username=DEFAULT_KEYRING_USERNAME
+        keyring_service=KeyringEnum.DEFAULT_KEYRING_SERVICE,
+        keyring_username=KeyringEnum.DEFAULT_KEYRING_SESSIONDATA
     ):
         """Delete stored user session from keychain.
 
@@ -166,11 +166,11 @@ class UserSessionManager:
             logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
 
-    def json_session_transform(self, auth_data, action=["save", "load"]):
-        """JSON encode/decode auth_data.
+    def json_session_transform(self, session_data, action=["save", "load"]):
+        """JSON encode/decode session_data.
 
         Args:
-            auth_data (string): api response containg json headers
+            session_data (string): api response containg json headers
             action (string): [save, load]
         Returns:
             string or json
@@ -182,15 +182,15 @@ class UserSessionManager:
             json_action = json.loads
 
         # try:
-        return json_action(auth_data)
+        return json_action(session_data)
         # except Exception as e:
-        #     raise exceptions.JSONAuthDataError(e)
+        #     raise exceptions.JSONSessionDataError(e)
         # except json.decoder.JSONDecodeError as e:
-        #     raise exceptions.JSONAuthDataEmptyError(e)
+        #     raise exceptions.JSONSessionDataEmptyError(e)
         # except TypeError as e:
-        #     raise exceptions.JSONAuthDataNoneError(e)
+        #     raise exceptions.JSONSessionDataNoneError(e)
         # except Exception as e:
-        #     raise exceptions.JSONAuthDataError(e)
+        #     raise exceptions.JSONSessionDataError(e)
 
     def set_optimum_keyring_backend(self):
         """Determines the optimum keyring backend to be used.

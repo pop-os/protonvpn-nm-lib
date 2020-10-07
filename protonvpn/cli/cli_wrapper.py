@@ -268,15 +268,15 @@ class CLIWrapper():
             openvpn_username, openvpn_password = self.user_manager.fetch_vpn_credentials( # noqa
                 session
             )
-        except exceptions.JSONAuthDataEmptyError:
+        except exceptions.JSONSessionDataEmptyError:
             print(
                 "[!] The stored session might be corrupted. "
                 + "Please, try to login again."
             )
             sys.exit(exit_type)
         except (
-            exceptions.JSONAuthDataError,
-            exceptions.JSONAuthDataNoneError
+            exceptions.JSONSessionDataError,
+            exceptions.JSONSessionDataNoneError
         ):
             print("[!] There is no stored session. Please, login first.")
             sys.exit(exit_type)
@@ -349,7 +349,7 @@ class CLIWrapper():
 
         try:
             session = self.user_manager.load_session()
-        except exceptions.JSONAuthDataEmptyError:
+        except exceptions.JSONSessionDataEmptyError:
             print(
                 "[!] The stored session might be corrupted. "
                 + "Please, try to login again."
@@ -357,8 +357,8 @@ class CLIWrapper():
             if is_connecting:
                 sys.exit(exit_type)
         except (
-            exceptions.JSONAuthDataError,
-            exceptions.JSONAuthDataNoneError
+            exceptions.JSONSessionDataError,
+            exceptions.JSONSessionDataNoneError
         ):
             if is_connecting:
                 print("\n[!] There is no stored session. Please, login first.")

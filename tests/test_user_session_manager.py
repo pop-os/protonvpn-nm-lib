@@ -1,7 +1,7 @@
 import pytest
 from proton.api import Session
 
-from common import MOCK_AUTHDATA, UserSessionManager, exceptions
+from common import MOCK_SESSIONDATA, UserSessionManager, exceptions
 
 TEST_KEYRING = dict(
     sname=["test1", "test2", "test3"],
@@ -14,36 +14,36 @@ class TestUserSessionManager:
     usm = UserSessionManager()
 
     @pytest.mark.parametrize(
-        "unexpected_auth_data,exception",
+        "unexpected_session_data,exception",
         [
-            ("", exceptions.IllegalAuthData),
-            ({}, exceptions.IllegalAuthData),
-            (None, exceptions.IllegalAuthData)
+            ("", exceptions.IllegalSessionData),
+            ({}, exceptions.IllegalSessionData),
+            (None, exceptions.IllegalSessionData)
         ]
     )
     def test_unxexpected_store_user_session(
         self,
-        unexpected_auth_data,
+        unexpected_session_data,
         exception
     ):
         with pytest.raises(exception):
-            self.usm.store_user_session(unexpected_auth_data)
+            self.usm.store_user_session(unexpected_session_data)
 
     @pytest.mark.parametrize(
-        "auth_data,expected_servicename,expected_username",
+        "session_data,expected_servicename,expected_username",
         [
             (
-                MOCK_AUTHDATA,
+                MOCK_SESSIONDATA,
                 TEST_KEYRING["sname"][0],
                 TEST_KEYRING["uname"][0]
             ),
             (
-                MOCK_AUTHDATA,
+                MOCK_SESSIONDATA,
                 TEST_KEYRING["sname"][1],
                 TEST_KEYRING["uname"][0]
             ),
             (
-                MOCK_AUTHDATA,
+                MOCK_SESSIONDATA,
                 TEST_KEYRING["sname"][2],
                 TEST_KEYRING["uname"][0]
             )
@@ -51,12 +51,12 @@ class TestUserSessionManager:
     )
     def test_store_expected_session(
         self,
-        auth_data,
+        session_data,
         expected_servicename,
         expected_username,
     ):
         self.usm.store_user_session(
-            auth_data=auth_data,
+            session_data=session_data,
             keyring_service=expected_servicename,
             keyring_username=expected_username
         )

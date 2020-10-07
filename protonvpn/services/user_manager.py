@@ -2,9 +2,9 @@ import distro
 import proton
 
 from ..constants import (
-    APP_VERSION, DEFAULT_KEYRING_SERVICE, DEFAULT_KEYRING_USERNAME
+    APP_VERSION
 )
-from ..enums import ClientSuffixEnum
+from ..enums import ClientSuffixEnum, KeyringEnum
 from ..logger import logger
 from .. import exceptions
 from .user_session_manager import UserSessionManager
@@ -13,8 +13,8 @@ from .user_session_manager import UserSessionManager
 class UserManager(UserSessionManager):
     def __init__(
         self,
-        keyring_service=DEFAULT_KEYRING_SERVICE,
-        keyring_username=DEFAULT_KEYRING_USERNAME
+        keyring_service=KeyringEnum.DEFAULT_KEYRING_SERVICE,
+        keyring_username=KeyringEnum.DEFAULT_KEYRING_SESSIONDATA
     ):
         self.keyring_service = keyring_service
         self.keyring_username = keyring_username
