@@ -14,13 +14,19 @@ class UserManager(UserSessionManager):
     def __init__(
         self,
         keyring_service=KeyringEnum.DEFAULT_KEYRING_SERVICE,
-        keyring_username=KeyringEnum.DEFAULT_KEYRING_SESSIONDATA
+        keyring_sessiondata=KeyringEnum.DEFAULT_KEYRING_SESSIONDATA,
+        keyring_userdata=KeyringEnum.DEFAULT_KEYRING_USERDATA
     ):
         self.keyring_service = keyring_service
-        self.keyring_username = keyring_username
+        self.keyring_sessiondata = keyring_sessiondata
+        self.keyring_userdata = keyring_userdata
+
         logger.info(
-            "Initialized UserManager: service-> \"{}\"; user-> \"{}\"".format(
-                self.keyring_service, self.keyring_username
+            "Initialized UserManager: service-> \"{}\"; ".format(
+                self.keyring_service
+            ) + "users-> \"[{}, {}]\"".format(
+                self.keyring_sessiondata,
+                self.keyring_userdata
             )
         )
         super().__init__()
@@ -49,11 +55,19 @@ class UserManager(UserSessionManager):
             else:
                 raise exceptions.APIAuthenticationError(e)
         else:
-            self.store_user_session(
+            self.store_data(
                 session.dump(),
-                self.keyring_service,
-                self.keyring_username
+                self.keyring_sessiondata,
+                self.keyring_service
             )
+
+        user_data = session.api_request('/vpn')
+
+        self.store_data(
+            user_data,
+            self.keyring_userdata,
+            self.keyring_service
+        )
 
     def get_distro_info(self):
         distribution, version, code_nome = distro.linux_distribution()
@@ -61,32 +75,52 @@ class UserManager(UserSessionManager):
 
     def logout(self):
         """Logout ProtonVPN user."""
-        self.delete_user_session(self.keyring_service, self.keyring_username)
+        self.delete_stored_data(
+            self.keyring_sessiondata, self.keyring_service
+        )
+        self.delete_stored_data(
+            self.keyring_userdata, self.keyring_service
+        )
 
-    def fetch_vpn_credentials(self, session=False):
-        """Fetch OpenVPN credentials from API."""
+    def get_stored_vpn_credentials(self, session=False):
+        """Get OpenVPN credentials from keyring."""
+        stored_user_data = self.get_stored_data(
+            self.keyring_userdata,
+            self.keyring_service,
+        )
+
+        return (
+            self.append_suffix(stored_user_data["username"]),
+            stored_user_data["password"]
+        )
+
+    def cache_user_data(self, session=False):
+        """Cache user data from API."""
         if not session:
             session = self.load_session()
-        api_resp = session.api_request('/vpn')
 
-        return self.append_suffix(api_resp)
+        user_data = session.api_request('/vpn')
 
-    def append_suffix(self, api_resp):
+        self.store_data(
+            user_data,
+            self.keyring_userdata,
+            self.keyring_service
+        )
+
+    def append_suffix(self, username):
         suffixes = [
             ClientSuffixEnum.PLATFORM
         ]
 
-        username = api_resp["VPN"]["Name"] + "+" + "+".join(
+        _username = username + "+" + "+".join(
             suffix for suffix in suffixes
         )
-        password = api_resp["VPN"]["Password"]
-        return username, password
+
+        return _username
 
     def load_session(self):
         """Load ProtonVPN user session."""
-        return self.load_stored_user_session(
-            self.keyring_service, self.keyring_username
-        )
+        return self.load_stored_user_session()
 
     def validate_username_password(self, username, password):
         """Validate ProtonVPN username and password.

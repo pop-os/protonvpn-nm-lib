@@ -89,11 +89,11 @@ class TestUnitUserManager():
     def test_load_no_session(self):
         self.um.keyring_service = "Example"
         self.um.keyring_username = "Session"
-        with pytest.raises(exceptions.JSONSessionDataNoneError):
+        with pytest.raises(exceptions.JSONDataNoneError):
             self.um.load_session()
 
     def test_load_missing_session(self):
-        with pytest.raises(exceptions.JSONSessionDataNoneError):
+        with pytest.raises(exceptions.JSONDataNoneError):
             self.um.keyring_service = ""
             self.um.keyring_username = ""
             self.um.load_session()
@@ -115,7 +115,7 @@ class TestUnitUserManager():
     ):
         self.um.keyring_service = "Example"
         self.um.keyring_username = test_keyring_username
-        with pytest.raises(exceptions.JSONSessionDataNoneError):
+        with pytest.raises(exceptions.JSONDataNoneError):
             self.um.fetch_vpn_credentials()
 
     def test_correct_logout(
@@ -124,7 +124,7 @@ class TestUnitUserManager():
         self.um.keyring_service = test_keyring_service
         self.um.keyring_username = test_keyring_username
         self.um.logout()
-        with pytest.raises(exceptions.JSONSessionDataNoneError):
+        with pytest.raises(exceptions.JSONDataNoneError):
             self.um.load_session()
 
     def test_incorrect_logout(

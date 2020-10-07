@@ -16,6 +16,16 @@ class UserSessionManager:
         keyring.backends.kwallet.DBusKeyring,
         keyring.backends.SecretService.Keyring,
     ]
+    EXCEPTIONS_DICT = {
+        KeyringEnum.DEFAULT_KEYRING_SESSIONDATA: {
+            "display": "IllegalSessionData",
+            "exception": exceptions.IllegalSessionData,
+        },
+        KeyringEnum.DEFAULT_KEYRING_USERDATA: {
+            "display": "IllegalUserData",
+            "exception": exceptions.IllegalSessionData
+        }
+    }
 
     def __init__(self):
         self.set_optimum_keyring_backend()
@@ -24,8 +34,8 @@ class UserSessionManager:
 
     def load_stored_user_session(
         self,
+        keyring_username=KeyringEnum.DEFAULT_KEYRING_SESSIONDATA,
         keyring_service=KeyringEnum.DEFAULT_KEYRING_SERVICE,
-        keyring_username=KeyringEnum.DEFAULT_KEYRING_SESSIONDATA
     ):
         """Load stored user session from keychain.
 
@@ -36,9 +46,9 @@ class UserSessionManager:
             session (proton.api.Session)
         """
         logger.info("Loading stored user session")
-        stored_session = self.get_stored_user_session(
+        stored_session = self.get_stored_data(
+            keyring_username,
             keyring_service,
-            keyring_username
         )
 
         # Needs to be catched
@@ -50,36 +60,49 @@ class UserSessionManager:
         except Exception as e:
             capture_exception(e)
 
-    def store_user_session(
+    def store_data(
         self,
-        session_data,
+        data,
+        keyring_username,
         keyring_service=KeyringEnum.DEFAULT_KEYRING_SERVICE,
-        keyring_username=KeyringEnum.DEFAULT_KEYRING_SESSIONDATA
     ):
         """Store user session in keychain.
 
         Args:
+            data (dict(json)): data to be stored
+            keyring_username (string): the keyring username
             keyring_service (string): the keyring servicename (optional)
-            keyring_username (string): the keyring username (optional)
         """
-        logger.info("Storing user session")
-        json_session_data = self.json_session_transform(
-            session_data,
+        logger.info("Storing {} session".format(keyring_username))
+
+        if data is None or len(data) < 1:
+            logger.error(
+                "[!] {}: Unexpected SessionData type. "
+                "Raising exception.".format(
+                    self.EXCEPTIONS_DICT[data]["display"]
+                )
+            )
+            raise self.EXCEPTIONS_DICT[keyring_username]["exception"](
+                "Unexpected SessionData type"
+            )
+
+        if keyring_username == KeyringEnum.DEFAULT_KEYRING_USERDATA:
+            data = {
+                "username": data["VPN"]["Name"],
+                "password": data["VPN"]["Password"],
+                "tier": data["VPN"]["MaxTier"]
+            }
+
+        json_data = self.json_session_transform(
+            data,
             "save"
         )
-
-        if session_data is None or len(session_data) < 1:
-            logger.error(
-                "[!] IllegalSessionData: Unexpected SessionData type. "
-                + "Raising exception."
-            )
-            raise exceptions.IllegalSessionData("Unexpected SessionData type")
 
         try:
             keyring.set_password(
                 keyring_service,
                 keyring_username,
-                json_session_data
+                json_data
             )
         except (
             keyring.errors.InitError,
@@ -93,21 +116,21 @@ class UserSessionManager:
         except Exception as e:
             capture_exception(e)
 
-    def get_stored_user_session(
+    def get_stored_data(
         self,
+        keyring_username,
         keyring_service=KeyringEnum.DEFAULT_KEYRING_SERVICE,
-        keyring_username=KeyringEnum.DEFAULT_KEYRING_SESSIONDATA
     ):
-        """Get stored user session from keychain.
+        """Get stored data from keychain.
 
         Args:
+            keyring_username (string): the keyring username
             keyring_service (string): the keyring servicename (optional)
-            keyring_username (string): the keyring username (optional)
         Returns:
             json: json encoded authentication data
         """
         try:
-            stored_session = keyring.get_password(
+            stored_data = keyring.get_password(
                 keyring_service,
                 keyring_username
             )
@@ -121,31 +144,31 @@ class UserSessionManager:
 
         try:
             return self.json_session_transform(
-                stored_session,
+                stored_data,
                 "load"
             )
         except json.decoder.JSONDecodeError as e:
-            logger.exception("[!] JSONSessionDataEmptyError: {}".format(e))
-            raise exceptions.JSONSessionDataEmptyError(e)
+            logger.exception("[!] JSONSDataEmptyError: {}".format(e))
+            raise exceptions.JSONSDataEmptyError(e)
         except TypeError as e:
-            logger.exception("[!] JSONSessionDataNoneError: {}".format(e))
-            raise exceptions.JSONSessionDataNoneError(e)
+            logger.exception("[!] JSONDataNoneError: {}".format(e))
+            raise exceptions.JSONDataNoneError(e)
         except Exception as e:
-            logger.exception("[!] JSONSessionDataError: {}".format(e))
-            raise exceptions.JSONSessionDataError(e)
+            logger.exception("[!] JSONDataError: {}".format(e))
+            raise exceptions.JSONDataError(e)
 
-    def delete_user_session(
+    def delete_stored_data(
         self,
+        keyring_username,
         keyring_service=KeyringEnum.DEFAULT_KEYRING_SERVICE,
-        keyring_username=KeyringEnum.DEFAULT_KEYRING_SESSIONDATA
     ):
-        """Delete stored user session from keychain.
+        """Delete stored data from keychain.
 
         Args:
+            keyring_username (string): the keyring username
             keyring_service (string): the keyring servicename (optional)
-            keyring_username (string): the keyring username (optional)
         """
-        logger.info("Deleting user session")
+        logger.info("Deleting stored {}".format(keyring_username))
         try:
             keyring.delete_password(
                 keyring_service,
@@ -184,13 +207,13 @@ class UserSessionManager:
         # try:
         return json_action(session_data)
         # except Exception as e:
-        #     raise exceptions.JSONSessionDataError(e)
+        #     raise exceptions.JSONDataError(e)
         # except json.decoder.JSONDecodeError as e:
-        #     raise exceptions.JSONSessionDataEmptyError(e)
+        #     raise exceptions.JSONSDataEmptyError(e)
         # except TypeError as e:
-        #     raise exceptions.JSONSessionDataNoneError(e)
+        #     raise exceptions.JSONDataNoneError(e)
         # except Exception as e:
-        #     raise exceptions.JSONSessionDataError(e)
+        #     raise exceptions.JSONDataError(e)
 
     def set_optimum_keyring_backend(self):
         """Determines the optimum keyring backend to be used.

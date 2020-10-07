@@ -104,13 +104,13 @@ class JSONError(ProtonVPNBaseException):
     """JSON generated errors"""
 
 
-class JSONSessionDataEmptyError(JSONError):
+class JSONSDataEmptyError(JSONError):
     """JSON SessionData empty error"""
 
 
-class JSONSessionDataNoneError(JSONError):
+class JSONDataNoneError(JSONError):
     """JSON SessionData none error"""
 
 
-class JSONSessionDataError(JSONError):
+class JSONDataError(JSONError):
     """JSON SessionData error"""
