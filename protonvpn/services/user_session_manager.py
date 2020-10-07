@@ -67,12 +67,13 @@ class UserSessionManager:
         keyring_service=KeyringEnum.DEFAULT_KEYRING_SERVICE,
         store_user_data=False
     ):
-        """Store user session in keychain.
+        """Store data to keychain.
 
         Args:
             data (dict(json)): data to be stored
             keyring_username (string): the keyring username
             keyring_service (string): the keyring servicename (optional)
+            store_user_data (bool): if data to be stored is user data
         """
         logger.info("Storing {} session".format(keyring_username))
 
@@ -85,7 +86,6 @@ class UserSessionManager:
                 "Unexpected SessionData type"
             )
 
-        logger.info(data)
         if store_user_data:
             data = {
                 "username": data["VPN"]["Name"],
@@ -127,7 +127,7 @@ class UserSessionManager:
             keyring_username (string): the keyring username
             keyring_service (string): the keyring servicename (optional)
         Returns:
-            json: json encoded authentication data
+            json: json encoded data
         """
         try:
             stored_data = keyring.get_password(

@@ -593,7 +593,7 @@ class ServerManager():
         return server_data["LogicalServers"]
 
     def fetch_user_tier(self):
-        """Get user tier from keyring.
+        """Get user tier.
 
         Returns:
             int: current user session tier

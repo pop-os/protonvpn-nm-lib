@@ -70,6 +70,11 @@ class UserManager(UserSessionManager):
         )
 
     def get_distro_info(self):
+        """Get distribution version
+        
+        Returns:
+            string: Linux distribution
+        """
         distribution, version, code_nome = distro.linux_distribution()
         return "ProtonVPN (Linux; {}/{})".format(distribution, version)
 
@@ -84,12 +89,10 @@ class UserManager(UserSessionManager):
 
     def get_stored_vpn_credentials(self, session=False):
         """Get OpenVPN credentials from keyring."""
-        logger.info("{} {}".format(self.keyring_userdata, self.keyring_service))
         stored_user_data = self.get_stored_data(
             self.keyring_userdata,
             self.keyring_service,
         )
-        logger.info(stored_user_data)
 
         return (
             self.append_suffix(stored_user_data["username"]),
@@ -110,6 +113,7 @@ class UserManager(UserSessionManager):
         )
 
     def append_suffix(self, username):
+        """Append suffixes to OpenVPN username."""
         suffixes = [
             ClientSuffixEnum.PLATFORM
         ]
@@ -157,6 +161,7 @@ class UserManager(UserSessionManager):
 
     @property
     def tier(self):
+        """Tier property."""
         stored_user_data = self.get_stored_data(
             self.keyring_userdata,
             self.keyring_service,
