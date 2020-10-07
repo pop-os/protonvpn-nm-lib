@@ -68,22 +68,6 @@ class ProtocolNotFound(ProtonVPNBaseException):
     """Protocol not found upon generate certificate"""
 
 
-class IllegalSessionData(ProtonVPNBaseException):
-    """Unexpected SessionData type"""
-
-
-class JSONSessionDataEmptyError(ProtonVPNBaseException):
-    """JSON SessionData empty error"""
-
-
-class JSONSessionDataNoneError(ProtonVPNBaseException):
-    """JSON SessionData none error"""
-
-
-class JSONSessionDataError(ProtonVPNBaseException):
-    """JSON SessionData error"""
-
-
 class OptimumBackendNotFound(ProtonVPNBaseException):
     """Optimum keyring backend not found"""
 
@@ -102,3 +86,31 @@ class IllegalServername(ProtonVPNBaseException):
 
 class EmptyServerListError(ProtonVPNBaseException):
     """Empty server list error"""
+
+
+class IllegalData(ProtonVPNBaseException):
+    """Illegal/unexpected data type"""
+
+
+class IllegalSessionData(IllegalData):
+    """Illegal/unexpected SessionData type"""
+
+
+class IllegalUserData(IllegalData):
+    """Illegal/unexpected UserData type"""
+
+
+class JSONError(ProtonVPNBaseException):
+    """JSON generated errors"""
+
+
+class JSONSessionDataEmptyError(JSONError):
+    """JSON SessionData empty error"""
+
+
+class JSONSessionDataNoneError(JSONError):
+    """JSON SessionData none error"""
+
+
+class JSONSessionDataError(JSONError):
+    """JSON SessionData error"""
