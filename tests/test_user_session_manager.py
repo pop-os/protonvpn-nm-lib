@@ -13,21 +13,39 @@ class TestUserSessionManager:
 
     usm = UserSessionManager()
 
+    @pytest.fixture
+    def test_keyring_service(self):
+        return "TestUserSessionManager"
+
+    @pytest.fixture
+    def test_keyring_username_sessiondata(self):
+        return "TestSessionData"
+
+    @pytest.fixture
+    def test_keyring_username_userdata(self):
+        return "TestUserData"
+
     @pytest.mark.parametrize(
         "unexpected_session_data,exception",
         [
-            ("", exceptions.IllegalSessionData),
-            ({}, exceptions.IllegalSessionData),
-            (None, exceptions.IllegalSessionData)
+            ("", exceptions.IllegalData),
+            ({}, exceptions.IllegalData),
+            (None, exceptions.IllegalData)
         ]
     )
     def test_unxexpected_store_user_session(
         self,
         unexpected_session_data,
-        exception
+        exception,
+        test_keyring_service,
+        test_keyring_username_sessiondata
     ):
         with pytest.raises(exception):
-            self.usm.store_user_session(unexpected_session_data)
+            self.usm.store_data(
+                unexpected_session_data,
+                test_keyring_username_sessiondata,
+                test_keyring_service
+            )
 
     @pytest.mark.parametrize(
         "session_data,expected_servicename,expected_username",
@@ -55,8 +73,8 @@ class TestUserSessionManager:
         expected_servicename,
         expected_username,
     ):
-        self.usm.store_user_session(
-            session_data=session_data,
+        self.usm.store_data(
+            data=session_data,
             keyring_service=expected_servicename,
             keyring_username=expected_username
         )
@@ -74,7 +92,7 @@ class TestUserSessionManager:
         expected_servicename,
         expected_username,
     ):
-        self.usm.get_stored_user_session(
+        self.usm.get_stored_data(
             keyring_service=expected_servicename,
             keyring_username=expected_username
         )
@@ -113,7 +131,7 @@ class TestUserSessionManager:
         expected_servicename,
         expected_username,
     ):
-        self.usm.delete_user_session(
+        self.usm.delete_stored_data(
             keyring_service=expected_servicename,
             keyring_username=expected_username
         )

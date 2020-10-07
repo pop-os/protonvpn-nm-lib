@@ -23,7 +23,7 @@ class UserSessionManager:
         },
         KeyringEnum.DEFAULT_KEYRING_USERDATA: {
             "display": "IllegalUserData",
-            "exception": exceptions.IllegalSessionData
+            "exception": exceptions.IllegalUserData
         }
     }
 
@@ -78,12 +78,10 @@ class UserSessionManager:
 
         if data is None or len(data) < 1:
             logger.error(
-                "[!] {}: Unexpected SessionData type. "
-                "Raising exception.".format(
-                    self.EXCEPTIONS_DICT[data]["display"]
-                )
+                "[!] IllegalData: Unexpected SessionData type. "
+                + "Raising exception."
             )
-            raise self.EXCEPTIONS_DICT[keyring_username]["exception"](
+            raise exceptions.IllegalData(
                 "Unexpected SessionData type"
             )
 
