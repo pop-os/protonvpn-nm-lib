@@ -149,3 +149,12 @@ class UserManager(UserSessionManager):
                 "[!] ValueError: {}. Raising exception.".format(err_msg)
             )
             raise ValueError(err_msg)
+
+    @property
+    def tier(self):
+        stored_user_data = self.get_stored_data(
+            self.keyring_userdata,
+            self.keyring_service,
+        )
+
+        return int(stored_user_data["tier"])

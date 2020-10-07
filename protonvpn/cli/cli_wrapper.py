@@ -25,7 +25,7 @@ from .cli_dialog import dialog  # noqa
 class CLIWrapper():
     connection_manager = ConnectionManager()
     user_manager = UserManager()
-    server_manager = ServerManager(CertificateManager())
+    server_manager = ServerManager(CertificateManager(), user_manager)
 
     def connect(self, args):
         """Proxymethdo to connect to ProtonVPN."""
