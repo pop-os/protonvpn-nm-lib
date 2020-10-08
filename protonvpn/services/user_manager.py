@@ -15,11 +15,13 @@ class UserManager(UserSessionManager):
         self,
         keyring_service=KeyringEnum.DEFAULT_KEYRING_SERVICE,
         keyring_sessiondata=KeyringEnum.DEFAULT_KEYRING_SESSIONDATA,
-        keyring_userdata=KeyringEnum.DEFAULT_KEYRING_USERDATA
+        keyring_userdata=KeyringEnum.DEFAULT_KEYRING_USERDATA,
+        keyring_proton_user=KeyringEnum.DEFAULT_KEYRING_PROTON_USER
     ):
         self.keyring_service = keyring_service
         self.keyring_sessiondata = keyring_sessiondata
         self.keyring_userdata = keyring_userdata
+        self.keyring_proton_user = keyring_proton_user
 
         logger.info(
             "Initialized UserManager: service-> \"{}\"; ".format(
@@ -54,38 +56,85 @@ class UserManager(UserSessionManager):
                 raise exceptions.IncorrectCredentialsError(e)
             else:
                 raise exceptions.APIAuthenticationError(e)
-        else:
-            self.store_data(
-                session.dump(),
-                self.keyring_sessiondata,
-                self.keyring_service
-            )
 
+        # fetch user data
         user_data = session.api_request('/vpn')
 
+        # Store session data
+        self.store_data(
+            session.dump(),
+            self.keyring_sessiondata,
+            self.keyring_service
+        )
+
+        # Store user data
         self.store_data(
             user_data,
             self.keyring_userdata,
+            self.keyring_service,
+            store_user_data=True
+        )
+
+        # Store proton username
+        self.store_data(
+            {"proton_username": username},
+            self.keyring_proton_user,
             self.keyring_service
         )
 
     def get_distro_info(self):
         """Get distribution version
-        
+
         Returns:
             string: Linux distribution
         """
         distribution, version, code_nome = distro.linux_distribution()
         return "ProtonVPN (Linux; {}/{})".format(distribution, version)
 
-    def logout(self):
+    def logout(self, _pass_check, _removed):
         """Logout ProtonVPN user."""
-        self.delete_stored_data(
-            self.keyring_sessiondata, self.keyring_service
-        )
-        self.delete_stored_data(
-            self.keyring_userdata, self.keyring_service
-        )
+        if (
+            exceptions.StoredProtonUsernameNotFound in _pass_check
+        ) and (
+            exceptions.StoredUserDataNotFound in _pass_check
+        ) and (
+            exceptions.StoredSessionNotFound in _pass_check
+        ):
+            if len(_removed) == 0:
+                raise exceptions.KeyringDataNotFound("No data was found")
+
+            return
+
+        if exceptions.StoredProtonUsernameNotFound not in _pass_check:
+            try:
+                self.delete_stored_data(
+                    self.keyring_proton_user, self.keyring_service
+                )
+                _removed.append("StoredProtonUsername")
+            except exceptions.KeyringDataNotFound:
+                raise exceptions.StoredProtonUsernameNotFound(
+                    "Proton username not found"
+                )
+
+        if exceptions.StoredUserDataNotFound not in _pass_check:
+            try:
+                self.delete_stored_data(
+                    self.keyring_userdata, self.keyring_service
+                )
+                _removed.append("StoredUserData")
+            except exceptions.KeyringDataNotFound:
+                raise exceptions.StoredUserDataNotFound(
+                    "User data not found"
+                )
+
+        if exceptions.StoredSessionNotFound not in _pass_check:
+            try:
+                self.delete_stored_data(
+                    self.keyring_sessiondata, self.keyring_service
+                )
+                _removed.append("StoredSession")
+            except exceptions.KeyringDataNotFound:
+                raise exceptions.StoredSessionNotFound("Session not found")
 
     def get_stored_vpn_credentials(self, session=False):
         """Get OpenVPN credentials from keyring."""
@@ -168,3 +217,13 @@ class UserManager(UserSessionManager):
         )
 
         return int(stored_user_data["tier"])
+
+    @property
+    def protonvpn_username(self):
+        """ProtonVPN username property."""
+        stored_user_data = self.get_stored_data(
+            self.keyring_proton_user,
+            self.keyring_service,
+        )
+
+        return stored_user_data

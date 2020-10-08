@@ -30,10 +30,12 @@ official policies, either expressed or implied, of DOMEN KOZAR.
 """
 
 import getpass
+
 import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
 
+from ..constants import VIRTUAL_DEVICE_NAME
 from ..logger import logger
 from ..services.connection_state_manager import ConnectionStateManager
 from ..services.dbus_get_wrapper import DbusGetWrapper
@@ -268,5 +270,5 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
 
 DBusGMainLoop(set_as_default=True)
 loop = GLib.MainLoop()
-ins = ProtonVPNReconnector("proton0", loop)
+ins = ProtonVPNReconnector(VIRTUAL_DEVICE_NAME, loop)
 loop.run()

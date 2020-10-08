@@ -76,10 +76,6 @@ class SessionError(ProtonVPNBaseException):
     """Session error"""
 
 
-class StoredSessionNotFound(ProtonVPNBaseException):
-    """Stored session was not found"""
-
-
 class IllegalServername(ProtonVPNBaseException):
     """Unexpected servername"""
 
@@ -129,3 +125,20 @@ class CacheLogicalServersError(CacheServersError):
 
 class CacheLogicalServersFallbackError(CacheServersError):
     """Cache logical servers fallback error"""
+
+
+
+class KeyringDataNotFound(ProtonVPNBaseException): # noqa
+    """Keyring data not found"""
+
+
+class StoredSessionNotFound(KeyringDataNotFound):
+    """Stored session was not found"""
+
+
+class StoredUserDataNotFound(KeyringDataNotFound):
+    """Stored user data was not found"""
+
+
+class StoredProtonUsernameNotFound(KeyringDataNotFound):
+    """Stored user data was not found"""

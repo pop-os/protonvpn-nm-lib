@@ -25,11 +25,6 @@ class TestUnitUserManager():
             True
         )
 
-    # @classmethod
-    # def teardown_class(cls):
-    #     um = UserManager()
-    #     um.delete_stored_data("TestSessionData", "TestUserManager")
-
     @pytest.fixture
     def pvpn_user(self):
         user = os.environ["vpntest_user"]
@@ -51,6 +46,10 @@ class TestUnitUserManager():
     @pytest.fixture
     def test_keyring_username_userdata(self):
         return "TestUserData"
+
+    @pytest.fixture
+    def test_keyring_username_proton_username(self):
+        return "TestProtonUsername"
 
     def test_correct_login(
         self,
@@ -148,7 +147,7 @@ class TestUnitUserManager():
     ):
         self.um.keyring_service = test_keyring_service
         self.um.keyring_sessiondata = test_keyring_username_sessiondata
-        self.um.logout()
+        self.um.logout([], [])
         with pytest.raises(exceptions.JSONDataNoneError):
             self.um.load_session()
 
@@ -157,5 +156,5 @@ class TestUnitUserManager():
     ):
         self.um.keyring_service = ""
         self.um.keyring_sessiondata = test_keyring_username_sessiondata
-        with pytest.raises(exceptions.StoredSessionNotFound):
-            self.um.logout()
+        with pytest.raises(exceptions.StoredProtonUsernameNotFound):
+            self.um.logout([], [])
