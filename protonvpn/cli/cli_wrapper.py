@@ -118,20 +118,33 @@ class CLIWrapper():
         protonvpn_password = getpass.getpass("Enter your ProtonVPN password: ")
         self.login_user(exit_type, protonvpn_username, protonvpn_password)
 
-    def logout(self):
+    def logout(self, _pass_check=None, _removed=None):
         """Proxymethod to logout user."""
-        print("Logging out...")
         exit_type = 1
 
-        self.remove_existing_connection()
-        print()
+        if _pass_check is None and _removed is None:
+            print("Logging out...")
+            self.remove_existing_connection()
+            _pass_check = []
+            _removed = []
+            print()
 
         try:
-            self.user_manager.logout()
+            self.user_manager.logout(_pass_check, _removed)
+        except exceptions.StoredProtonUsernameNotFound:
+            _pass_check.append(exceptions.StoredProtonUsernameNotFound)
+            self.logout(_pass_check, _removed)
+        except exceptions.StoredUserDataNotFound:
+            _pass_check.append(exceptions.StoredUserDataNotFound)
+            self.logout(_pass_check, _removed)
         except exceptions.StoredSessionNotFound:
+            _pass_check.append(exceptions.StoredSessionNotFound)
+            self.logout(_pass_check, _removed)
+        except exceptions.KeyringDataNotFound:
             print("[!] Unable to logout. No session was found.")
         except exceptions.AccessKeyringError:
             print("[!] Unable to logout. Could not access keyring.")
+
         except Exception as e:
             capture_exception(e)
             logger.exception(

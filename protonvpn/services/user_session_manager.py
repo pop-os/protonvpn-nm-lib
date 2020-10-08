@@ -183,8 +183,8 @@ class UserSessionManager:
                 "Could not access keychain: {}".format(e)
             )
         except keyring.errors.PasswordDeleteError as e:
-            logger.exception("[!] StoredSessionNotFound: {}".format(e))
-            raise exceptions.StoredSessionNotFound(e)
+            logger.exception("[!] KeyringDataNotFound: {}".format(e))
+            raise exceptions.KeyringDataNotFound(e)
         except Exception as e:
             logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
@@ -204,16 +204,7 @@ class UserSessionManager:
         if action == "load":
             json_action = json.loads
 
-        # try:
         return json_action(session_data)
-        # except Exception as e:
-        #     raise exceptions.JSONDataError(e)
-        # except json.decoder.JSONDecodeError as e:
-        #     raise exceptions.JSONSDataEmptyError(e)
-        # except TypeError as e:
-        #     raise exceptions.JSONDataNoneError(e)
-        # except Exception as e:
-        #     raise exceptions.JSONDataError(e)
 
     def set_optimum_keyring_backend(self):
         """Determines the optimum keyring backend to be used.

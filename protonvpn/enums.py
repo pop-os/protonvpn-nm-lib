@@ -43,3 +43,4 @@ class KeyringEnum(object):
     DEFAULT_KEYRING_SERVICE = "ProtonVPN"
     DEFAULT_KEYRING_SESSIONDATA = "SessionData"
     DEFAULT_KEYRING_USERDATA = "UserData"
+    DEFAULT_KEYRING_PROTON_USER = "ProtonUser"
