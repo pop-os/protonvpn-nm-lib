@@ -9,7 +9,7 @@ import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
 from .. import exceptions
-from ..constants import SUPPORTED_FEATURES
+from ..constants import SUPPORTED_FEATURES, VIRTUAL_DEVICE_NAME
 from ..enums import ConnectionMetadataEnum, ProtocolEnum
 from ..logger import logger
 from ..services import capture_exception
@@ -77,7 +77,7 @@ class CLIWrapper():
         self.connection_manager.start_connection()
         DBusGMainLoop(set_as_default=True)
         loop = GLib.MainLoop()
-        MonitorVPNState("proton0", loop)
+        MonitorVPNState(VIRTUAL_DEVICE_NAME, loop)
         loop.run()
         sys.exit(exit_type)
 

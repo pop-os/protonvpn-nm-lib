@@ -71,7 +71,7 @@ class UserManager(UserSessionManager):
 
     def get_distro_info(self):
         """Get distribution version
-        
+
         Returns:
             string: Linux distribution
         """
