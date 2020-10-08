@@ -24,12 +24,27 @@ class UserManager(UserSessionManager):
         self.keyring_proton_user = keyring_proton_user
 
         logger.info(
-            "Initialized UserManager: service-> \"{}\"; ".format(
+            "\n"
+            + "---------------------"
+            + "---------------------"
+            + "---------------------"
+            + "---------------------"
+            + "---------------------"
+            + "------------\n\n"
+            + "-----------\t"
+            + "Initialized UserManager: service-> \"{}\"; ".format(
                 self.keyring_service
-            ) + "users-> \"[{}, {}]\"".format(
+            ) + "users-> \"[{}, {}, {}]\"".format(
                 self.keyring_sessiondata,
-                self.keyring_userdata
-            )
+                self.keyring_userdata,
+                self.keyring_proton_user
+            ) + "\t-----------\n\n"
+            + "---------------------"
+            + "---------------------"
+            + "---------------------"
+            + "---------------------"
+            + "---------------------"
+            + "------------"
         )
         super().__init__()
 
