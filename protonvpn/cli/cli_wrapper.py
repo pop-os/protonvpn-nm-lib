@@ -217,7 +217,7 @@ class CLIWrapper():
             print(
                 "What do you want to change?\n"
                 "\n"
-                "[p]rotocol (default)\n"
+                "[p]rotocol\n"
                 # "[d]ns Management\n"
                 "[k]ill Switch Management\n"
                 # "[s]plit Tunneling\n"
@@ -249,8 +249,8 @@ class CLIWrapper():
                 print("\n[!] {}\n".format(e))
                 continue
             else:
-                print("\n{}\n".format(resp))
-                sys.exit()
+                if resp is not None and len(resp) > 0:
+                    print("\n{}\n".format(resp))
 
     def ask_default_protocol(self):
         proto_short = {
