@@ -64,11 +64,11 @@ class CLIWrapper():
 
         logger.info("CLI connect type: {}".format(command))
 
-        certificate_filename, domain = self.get_cert_filename_and_domain(
-            cli_commands, session, protocol, command
-        )
         openvpn_username, openvpn_password = self.get_ovpn_credentials(
             session, exit_type
+        )
+        certificate_filename, domain = self.get_cert_filename_and_domain(
+            cli_commands, session, protocol, command
         )
 
         logger.info("OpenVPN credentials were fetched.")
@@ -547,7 +547,7 @@ class CLIWrapper():
         except (
             exceptions.JSONDataError,
             exceptions.JSONDataNoneError
-        ):
+        ) as e:
             if not retry:
                 print(
                     "\n[!] Missing user data. Please, "
@@ -555,9 +555,11 @@ class CLIWrapper():
                 )
                 sys.exit(exit_type)
             else:
-                print(
-                    "User data was not previously cached. "
-                    "Caching user data..."
+                logger.info(
+                    "[!] JSONDataError/JSONDataNoneError: {}"
+                    "\n--->User data was not previously cached. "
+                    "Caching user data and re-attempt to "
+                    "get ovpn credentials.".format(e)
                 )
                 self.user_manager.cache_user_data()
                 return self.get_ovpn_credentials(session, exit_type, False)

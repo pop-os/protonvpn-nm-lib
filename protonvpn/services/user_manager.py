@@ -169,11 +169,11 @@ class UserManager(UserSessionManager):
             session = self.load_session()
 
         user_data = session.api_request('/vpn')
-
         self.store_data(
             user_data,
             self.keyring_userdata,
-            self.keyring_service
+            self.keyring_service,
+            store_user_data=True
         )
 
     def append_suffix(self, username):
