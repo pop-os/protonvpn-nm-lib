@@ -108,4 +108,4 @@ class TestIntegrationConnectionManager():
         with pytest.raises(exceptions.ConnectionNotFound):
             self.cm.remove_connection()
 
-    um.logout()
+    um.logout([], [])
