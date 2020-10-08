@@ -8,24 +8,36 @@ from textwrap import dedent
 import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
+
 from .. import exceptions
-from ..constants import SUPPORTED_FEATURES, VIRTUAL_DEVICE_NAME
-from ..enums import ConnectionMetadataEnum, ProtocolEnum
+from ..constants import (
+    FLAT_SUPPORTED_PROTOCOLS,
+    SUPPORTED_FEATURES,
+    VIRTUAL_DEVICE_NAME
+)
+from ..enums import (
+    ConnectionMetadataEnum,
+    ProtocolEnum,
+    UserSettingEnum,
+    UserSettingStatusEnum
+)
 from ..logger import logger
 from ..services import capture_exception
 from ..services.certificate_manager import CertificateManager
 from ..services.connection_manager import ConnectionManager
 from ..services.dbus_get_wrapper import DbusGetWrapper
 from ..services.server_manager import ServerManager
+from ..services.user_configuration_manager import UserConfigurationManager
 from ..services.user_manager import UserManager
-
 from .cli_dialog import dialog  # noqa
 
 
 class CLIWrapper():
+    time_sleep_value = 1
     connection_manager = ConnectionManager()
     user_manager = UserManager()
     server_manager = ServerManager(CertificateManager(), user_manager)
+    user_conf_manager = UserConfigurationManager()
 
     def connect(self, args):
         """Proxymethdo to connect to ProtonVPN."""
@@ -52,11 +64,11 @@ class CLIWrapper():
 
         logger.info("CLI connect type: {}".format(command))
 
-        certificate_filename, domain = self.get_cert_filename_and_domain(
-            cli_commands, session, protocol, command
-        )
         openvpn_username, openvpn_password = self.get_ovpn_credentials(
             session, exit_type
+        )
+        certificate_filename, domain = self.get_cert_filename_and_domain(
+            cli_commands, session, protocol, command
         )
 
         logger.info("OpenVPN credentials were fetched.")
@@ -192,6 +204,250 @@ class CLIWrapper():
         print(status_to_print)
         sys.exit()
 
+    def configure(self):
+        method_dict = {
+            "p": self.ask_default_protocol,
+            # "d": self.ask_dns_status,
+            "k": self.ask_killswitch,
+            # "s": self.user_conf_manager.update_split_tunneling,
+            "r": self.restore_default_configurations,
+        }
+
+        while True:
+            print(
+                "What do you want to change?\n"
+                "\n"
+                "[p]rotocol (default)\n"
+                # "[d]ns Management\n"
+                "[k]ill Switch Management\n"
+                # "[s]plit Tunneling\n"
+                "[r]restore Default Configurations\n"
+                "----------\n"
+                "[e]xit\n"
+            )
+
+            user_choice = input(
+                "Please enter your choice: "
+            ).strip()
+
+            if user_choice == "e":
+                sys.exit()
+
+            try:
+                _call_method = method_dict[user_choice]
+            except KeyError:
+                print(
+                    "[!] Invalid choice. "
+                    "Please enter the value of a valid choice.\n"
+                )
+                time.sleep(self.time_sleep_value)
+                continue
+
+            try:
+                resp = _call_method()
+            except exceptions.SelectedOptionError as e:
+                print("\n[!] {}\n".format(e))
+                continue
+            else:
+                print("\n{}\n".format(resp))
+                sys.exit()
+
+    def ask_default_protocol(self):
+        proto_short = {
+            "t": ProtocolEnum.TCP,
+            "u": ProtocolEnum.UDP,
+            "i": ProtocolEnum.IKEV2,
+            "w": ProtocolEnum.WIREGUARD,
+        }
+
+        while True:
+            print(
+                "Please select default protocol:\n"
+                "\n"
+                "[t]cp\n"
+                "[u]dp\n"
+                "[i]kev2\n"
+                "[w]reguard\n"
+                "----------\n"
+                "[r]eturn\n"
+                "[e]xit\n"
+            )
+
+            user_choice = input(
+                "Default protocol: "
+            ).strip()
+
+            user_choice = user_choice.lower()
+
+            if user_choice == "r":
+                return
+            if user_choice == "e":
+                sys.exit()
+
+            try:
+                if len(user_choice) == 1:
+                    user_choice = proto_short[user_choice]
+            except KeyError:
+                raise exceptions.SelectedOptionError(
+                    "Selected option \"{}\" is incorrect. ".format(user_choice)
+                    + "Please select from one of the possible protocols "
+                    + "[ [t]cp | [u]dp | [i]kev2 | [w]reguard ]"
+                )
+                time.sleep(self.time_sleep_value)
+                continue
+
+            try:
+                index = FLAT_SUPPORTED_PROTOCOLS.index(user_choice)
+            except ValueError:
+                print(
+                    "[!] Selected option \"{}\" is either incorrect ".format(
+                        user_choice
+                    ) + "or protocol is (yet) not supported"
+                )
+                time.sleep(self.time_sleep_value)
+                continue
+
+            self.user_conf_manager.update_default_protocol(
+                FLAT_SUPPORTED_PROTOCOLS[index]
+            )
+
+            return "Successfully updated default protocol!"
+
+    def ask_dns_status(self):
+        user_choice_options_dict = {
+            "a": UserSettingStatusEnum.ENABLED,
+            "d": UserSettingStatusEnum.DISABLED,
+            "c": UserSettingStatusEnum.CUSTOM
+        }
+
+        def ask_custom_dns():
+            custom_dns = input(
+                "Please enter your custom DNS servers (space separated): "
+            )
+            custom_dns = custom_dns.strip().split()
+
+            # Check DNS Servers for validity
+            if len(custom_dns) > 3:
+                print("[!] Don't enter more than 3 DNS Servers")
+                return
+
+            for dns in custom_dns:
+                if not self.user_conf_manager.is_valid_ip(dns):
+                    print(
+                        "[!] {0} is invalid. Please try again.\n".format(dns)
+                    )
+                    return
+            return " ".join(dns for dns in custom_dns)
+
+        while True:
+            print(
+                "Please select what you want to do:\n"
+                "\n"
+                "[a]llow automatic DNS management\n"
+                "[d]isallow automatic DNS management\n"
+                "[c]ustom DNS management\n"
+                "[s]how allowed custom DNS\n"
+                "----------\n"
+                "[r]eturn\n"
+                "[e]xit\n"
+            )
+
+            user_choice = input(
+                "Selected option: "
+            ).strip()
+
+            user_choice = user_choice.lower()
+
+            if user_choice == "r":
+                return
+            if user_choice == "e":
+                sys.exit()
+            if user_choice == "s":
+                user_configs = self.user_conf_manager.get_user_configurations()
+                dns_settings = user_configs[UserSettingEnum.CONNECTION]["dns"]
+                print(
+                    "Your custom DNSs are: {}\n".format(
+                        dns_settings["custom_dns"]
+                    )
+                )
+                return
+
+            try:
+                user_int_choice = user_choice_options_dict[user_choice]
+            except KeyError:
+                print(
+                    "[!] Invalid choice. "
+                    "Please enter the value of a valid choice.\n"
+                )
+                time.sleep(self.time_sleep_value)
+                continue
+
+            custom_dns_list = None
+            if user_int_choice == UserSettingStatusEnum.CUSTOM:
+                custom_dns_list = ask_custom_dns()
+
+            self.user_conf_manager.update_dns(user_int_choice, custom_dns_list)
+
+            return "Successfully updated DNS settings!"
+
+    def ask_killswitch(self):
+        user_choice_options_dict = {
+            "a": UserSettingStatusEnum.ENABLED,
+            "d": UserSettingStatusEnum.DISABLED,
+            "c": UserSettingStatusEnum.CUSTOM
+        }
+        while True:
+            print(
+                "Please select what you want to do:\n"
+                "\n"
+                "[a]llow killswitch management\n"
+                "[d]isallow killswitch management\n"
+                "----------\n"
+                "[r]eturn\n"
+                "[e]xit\n"
+            )
+
+            user_choice = input(
+                "Selected option: "
+            ).strip()
+
+            if user_choice == "r":
+                return
+            if user_choice == "e":
+                sys.exit()
+
+            try:
+                user_int_choice = user_choice_options_dict[user_choice]
+            except KeyError:
+                print(
+                    "[!] Invalid choice. "
+                    "Please enter the value of a valid choice.\n"
+                )
+                time.sleep(self.time_sleep_value)
+                continue
+
+            self.user_conf_manager.update_killswitch(user_int_choice)
+
+            return "Successfully updated KillSwitch settings!"
+
+    def restore_default_configurations(self):
+        user_choice = input(
+            "Are you sure you want to restore to "
+            "default configurations? [y/N]: "
+        ).lower().strip()
+
+        if not user_choice == "y":
+            return
+
+        print("Restoring default ProtonVPN configurations...")
+        time.sleep(0.5)
+
+        # should it disconnect prior to resetting user configurations ?
+
+        self.user_conf_manager.reset_default_configs()
+
+        return "Configurations were successfully restored back to defaults!"
+
     def extract_server_info(self, servername):
         """Extract server information to be displayed.
 
@@ -291,7 +547,7 @@ class CLIWrapper():
         except (
             exceptions.JSONDataError,
             exceptions.JSONDataNoneError
-        ):
+        ) as e:
             if not retry:
                 print(
                     "\n[!] Missing user data. Please, "
@@ -299,9 +555,11 @@ class CLIWrapper():
                 )
                 sys.exit(exit_type)
             else:
-                print(
-                    "User data was not previously cached. "
-                    "Caching user data..."
+                logger.info(
+                    "[!] JSONDataError/JSONDataNoneError: {}"
+                    "\n--->User data was not previously cached. "
+                    "Caching user data and re-attempt to "
+                    "get ovpn credentials.".format(e)
                 )
                 self.user_manager.cache_user_data()
                 return self.get_ovpn_credentials(session, exit_type, False)
@@ -321,7 +579,7 @@ class CLIWrapper():
     ):
         """Proxymethod to get certficate filename and server domain."""
         try:
-            invoke_dialog = command[0]
+            invoke_dialog = command[0] # noqa
         except TypeError:
             servername, protocol = dialog(
                 self.server_manager,
