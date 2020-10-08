@@ -46,7 +46,7 @@ class KeyringEnum(object):
     DEFAULT_KEYRING_PROTON_USER = "ProtonUser"
 
 
-class UserSettingsEnum(object):
+class UserSettingEnum(object):
     GENERAL = "general"
     CONNECTION = "connection"
     TRAY = "tray"
