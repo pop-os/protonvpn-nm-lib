@@ -141,6 +141,13 @@ class ConnectionManager(ConnectionStateManager):
 
     def add_vpn_credentials(self, vpn_settings,
                             openvpn_username, openvpn_password):
+        """Add OpenVPN credentials to ProtonVPN connection.
+
+        Args:
+            vpn_settings (NM.SettingVpn): NM.SettingVPN object
+            openvpn_username (string): openvpn/ikev2 username
+            openvpn_password (string): openvpn/ikev2 password
+        """
         # returns NM.SettingVpn if the connection contains one, otherwise None
         # https://lazka.github.io/pgi-docs/NM-1.0/classes/SettingVpn.html
         logger.info("Adding OpenVPN credentials")
@@ -159,7 +166,7 @@ class ConnectionManager(ConnectionStateManager):
         """Apply dns configurations to ProtonVPN connection.
 
         Args:
-            connection (NM.RemoteConnection): vpn connection object
+            connection (NM.SimpleConnection): vpn connection object
             user_configurations (dict): contains user configurations
         """
         dns_configs = user_configurations[
