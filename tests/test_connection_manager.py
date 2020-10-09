@@ -11,7 +11,23 @@ from common import (
     CertificateManager, ConnectionManager, UserManager,
     exceptions
 )
-
+USER_CONFIGURATIONS = {
+    "connection": {
+        "default_protocol": "tcp",
+        "killswitch": 1,
+        "dns": {
+            "status": 2,
+            "custom_dns": "10.18.0.1"
+        },
+        "split_tunneling": {
+            "status": 0,
+            "ip_list": []
+        }
+    },
+    "general": {},
+    "advanced": {},
+    "tray": {}
+}
 os.environ[ENV_CI_NAME] = "true"
 
 
@@ -57,7 +73,8 @@ class TestIntegrationConnectionManager():
             self.user,
             self.pwd,
             CertificateManager.delete_cached_certificate,
-            self.random_domain
+            self.random_domain,
+            USER_CONFIGURATIONS
         )
         assert isinstance(
             self.cm.get_proton_connection("all_connections")[0],
@@ -71,7 +88,8 @@ class TestIntegrationConnectionManager():
                 self.user,
                 self.pwd,
                 CertificateManager.delete_cached_certificate,
-                self.random_domain
+                self.random_domain,
+                USER_CONFIGURATIONS
             )
 
     @pytest.mark.parametrize(
@@ -88,7 +106,8 @@ class TestIntegrationConnectionManager():
                 user,
                 pwd,
                 CertificateManager.delete_cached_certificate,
-                self.random_domain
+                self.random_domain,
+                USER_CONFIGURATIONS
             )
 
     def test_add_missing_method_connection(self):
@@ -98,7 +117,8 @@ class TestIntegrationConnectionManager():
                 self.user,
                 self.pwd,
                 "",
-                self.random_domain
+                self.random_domain,
+                USER_CONFIGURATIONS
             )
 
     def test_remove_correct_connection(self):

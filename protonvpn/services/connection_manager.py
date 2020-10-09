@@ -9,6 +9,11 @@ from gi.repository import NM, GLib
 
 from .. import exceptions
 from ..constants import ENV_CI_NAME, VIRTUAL_DEVICE_NAME
+from ..enums import (
+    UserSettingConnectionEnum,
+    UserSettingEnum,
+    UserSettingStatusEnum
+)
 from ..logger import logger
 from ..services.connection_state_manager import ConnectionStateManager
 from . import capture_exception
@@ -24,7 +29,8 @@ class ConnectionManager(ConnectionStateManager):
 
     def add_connection(
         self, filename, username,
-        password, delete_cached_cert, domain
+        password, delete_cached_cert, domain,
+        user_configurations
     ):
         """Setup and add ProtonVPN connection.
 
@@ -104,6 +110,7 @@ class ConnectionManager(ConnectionStateManager):
         self.add_vpn_credentials(vpn_settings, username, password)
         self.add_server_certificate_check(vpn_settings, domain)
         self.apply_virtual_device_type(vpn_settings, filename)
+        self.apply_dns_configurations(connection, user_configurations)
 
         client.add_connection_async(
             connection,
@@ -134,6 +141,13 @@ class ConnectionManager(ConnectionStateManager):
 
     def add_vpn_credentials(self, vpn_settings,
                             openvpn_username, openvpn_password):
+        """Add OpenVPN credentials to ProtonVPN connection.
+
+        Args:
+            vpn_settings (NM.SettingVpn): NM.SettingVPN object
+            openvpn_username (string): openvpn/ikev2 username
+            openvpn_password (string): openvpn/ikev2 password
+        """
         # returns NM.SettingVpn if the connection contains one, otherwise None
         # https://lazka.github.io/pgi-docs/NM-1.0/classes/SettingVpn.html
         logger.info("Adding OpenVPN credentials")
@@ -147,6 +161,38 @@ class ConnectionManager(ConnectionStateManager):
             )
             capture_exception(e)
             raise exceptions.AddConnectionCredentialsError(e)
+
+    def apply_dns_configurations(self, connection, user_configurations):
+        """Apply dns configurations to ProtonVPN connection.
+
+        Args:
+            connection (NM.SimpleConnection): vpn connection object
+            user_configurations (dict): contains user configurations
+        """
+        dns_configs = user_configurations[
+            UserSettingEnum.CONNECTION
+        ][UserSettingConnectionEnum.DNS]
+
+        setting_status = dns_configs[UserSettingConnectionEnum.DNS_STATUS]
+        custom_dns = [dns_configs[UserSettingConnectionEnum.CUSTOM_DNS]]
+
+        if setting_status == UserSettingStatusEnum.ENABLED:
+            connection.get_setting_ip4_config().props.dns_priority = -50
+            connection.get_setting_ip6_config().props.dns_priority = -50
+            print("Using DNS from OpenVPN")
+        else:
+            connection.get_setting_ip4_config().props.ignore_auto_dns = True
+            connection.get_setting_ip6_config().props.ignore_auto_dns = True
+
+            if setting_status == UserSettingStatusEnum.CUSTOM:
+                print("Using custom DNS management")
+                print(custom_dns)
+                connection.get_setting_ip4_config().props.dns_priority = -50
+                connection.get_setting_ip6_config().props.dns_priority = -50
+
+                connection.get_setting_ip4_config().props.dns = custom_dns
+            else:
+                print("Not using DNS management")
 
     def add_server_certificate_check(self, vpn_settings, domain):
         logger.info("Adding server ceritificate check")
