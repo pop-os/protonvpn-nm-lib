@@ -207,7 +207,7 @@ class CLIWrapper():
     def configure(self):
         method_dict = {
             "p": self.ask_default_protocol,
-            # "d": self.ask_dns_status,
+            "d": self.ask_dns_status,
             "k": self.ask_killswitch,
             # "s": self.user_conf_manager.update_split_tunneling,
             "r": self.restore_default_configurations,
@@ -218,7 +218,7 @@ class CLIWrapper():
                 "What do you want to change?\n"
                 "\n"
                 "[p]rotocol\n"
-                # "[d]ns Management\n"
+                "[d]ns Management\n"
                 "[k]ill Switch Management\n"
                 # "[s]plit Tunneling\n"
                 "[r]restore Default Configurations\n"
@@ -507,11 +507,14 @@ class CLIWrapper():
     ):
         """Proxymethod to add ProtonVPN connection."""
         print("Adding ProtonVPN connection...")
+
+        user_configs = self.user_conf_manager.get_user_configurations()
+
         try:
             self.connection_manager.add_connection(
                 certificate_filename, openvpn_username,
                 openvpn_password, CertificateManager.delete_cached_certificate,
-                domain
+                domain, user_configs
             )
         except exceptions.ImportConnectionError as e:
             logger.exception("[!] ImportConnectionError: {}".format(e))
