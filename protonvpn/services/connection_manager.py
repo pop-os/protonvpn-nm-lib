@@ -176,20 +176,23 @@ class ConnectionManager(ConnectionStateManager):
         setting_status = dns_configs[UserSettingConnectionEnum.DNS_STATUS]
         custom_dns = [dns_configs[UserSettingConnectionEnum.CUSTOM_DNS]]
 
+        ipv4_config = connection.get_setting_ip4_config()
+        ipv6_config = connection.get_setting_ip6_config()
+
         if setting_status == UserSettingStatusEnum.ENABLED:
             logger.info("Applying automatic DNS...")
-            connection.get_setting_ip4_config().props.dns_priority = -50
-            connection.get_setting_ip6_config().props.dns_priority = -50
+            ipv4_config.props.dns_priority = -50
+            ipv6_config.props.dns_priority = -50
         else:
-            connection.get_setting_ip4_config().props.ignore_auto_dns = True
-            connection.get_setting_ip6_config().props.ignore_auto_dns = True
+            ipv4_config.props.ignore_auto_dns = True
+            ipv6_config.props.ignore_auto_dns = True
 
             if setting_status == UserSettingStatusEnum.CUSTOM:
                 logger.info("Applying custom DNS: {}".format(custom_dns))
-                connection.get_setting_ip4_config().props.dns_priority = -50
-                connection.get_setting_ip6_config().props.dns_priority = -50
+                ipv4_config.props.dns_priority = -50
+                ipv6_config.props.dns_priority = -50
 
-                connection.get_setting_ip4_config().props.dns = custom_dns
+                ipv4_config.props.dns = custom_dns
             else:
                 logger.info("DNS managemenet disallowed...")
 
