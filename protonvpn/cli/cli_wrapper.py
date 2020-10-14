@@ -1,6 +1,7 @@
 import datetime
 import getpass
 import inspect
+import os
 import sys
 import time
 from textwrap import dedent
@@ -10,17 +11,10 @@ from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
 
 from .. import exceptions
-from ..constants import (
-    FLAT_SUPPORTED_PROTOCOLS,
-    SUPPORTED_FEATURES,
-    VIRTUAL_DEVICE_NAME
-)
-from ..enums import (
-    ConnectionMetadataEnum,
-    ProtocolEnum,
-    UserSettingEnum,
-    UserSettingStatusEnum
-)
+from ..constants import (FLAT_SUPPORTED_PROTOCOLS, SUPPORTED_FEATURES,
+                         VIRTUAL_DEVICE_NAME)
+from ..enums import (ConnectionMetadataEnum, ProtocolEnum, UserSettingEnum,
+                     UserSettingStatusEnum)
 from ..logger import logger
 from ..services import capture_exception
 from ..services.certificate_manager import CertificateManager
@@ -156,7 +150,6 @@ class CLIWrapper():
             print("[!] Unable to logout. No session was found.")
         except exceptions.AccessKeyringError:
             print("[!] Unable to logout. Could not access keyring.")
-
         except Exception as e:
             capture_exception(e)
             logger.exception(
@@ -182,14 +175,14 @@ class CLIWrapper():
         )
 
         status_to_print = dedent("""
-        ProtonVPN Connection Status
-        ---------------------------
-        Country: {country}
-        Server: {server}
-        Load: {load}%
-        Protocol: {proto}
-        Feature(s): {features}
-        Connection time: {time}\
+            ProtonVPN Connection Status
+            ---------------------------
+            Country: {country}
+            Server: {server}
+            Load: {load}%
+            Protocol: {proto}
+            Feature(s): {features}
+            Connection time: {time}\
         """).format(
             country=country,
             server=conn_status[ConnectionMetadataEnum.SERVER],
@@ -207,7 +200,7 @@ class CLIWrapper():
     def configure(self):
         method_dict = {
             "p": self.ask_default_protocol,
-            "d": self.ask_dns_status,
+            "d": self.ask_dns,
             "k": self.ask_killswitch,
             # "s": self.user_conf_manager.update_split_tunneling,
             "r": self.restore_default_configurations,
@@ -280,6 +273,7 @@ class CLIWrapper():
             user_choice = user_choice.lower()
 
             if user_choice == "r":
+                os.system("clear")
                 return
             if user_choice == "e":
                 sys.exit()
@@ -313,7 +307,7 @@ class CLIWrapper():
 
             return "Successfully updated default protocol!"
 
-    def ask_dns_status(self):
+    def ask_dns(self):
         user_choice_options_dict = {
             "a": UserSettingStatusEnum.ENABLED,
             "d": UserSettingStatusEnum.DISABLED,
@@ -359,6 +353,7 @@ class CLIWrapper():
             user_choice = user_choice.lower()
 
             if user_choice == "r":
+                os.system("clear")
                 return
             if user_choice == "e":
                 sys.exit()
@@ -412,6 +407,7 @@ class CLIWrapper():
             ).strip()
 
             if user_choice == "r":
+                os.system("clear")
                 return
             if user_choice == "e":
                 sys.exit()
