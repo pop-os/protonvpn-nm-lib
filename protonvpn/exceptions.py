@@ -4,84 +4,24 @@ class ProtonVPNBaseException(BaseException):
         super(ProtonVPNBaseException, self).__init__(self.message)
 
 
-class AccessKeyringError(ProtonVPNBaseException):
-    """Python-keyring error occured."""
+class FinishError(ProtonVPNBaseException): # noqa
+    """Finish async callback error."""
 
 
-class AddConnectionCredentialsError(ProtonVPNBaseException):
-    """Add credentials to connection error."""
-
-
-class AddServerCertificateCheckError(ProtonVPNBaseException):
-    """Add server certificate check error"""
-
-
-class IncorrectCredentialsError(ProtonVPNBaseException):
-    """Incorrect credentials error."""
-
-
-class APIAuthenticationError(ProtonVPNBaseException):
-    """Incorrect credentials error."""
-
-
-class ImportConnectionError(ProtonVPNBaseException):
-    """Import connection configurations error."""
-
-
-class VirtualDeviceNotFound(ProtonVPNBaseException):
-    """Virtual device could not be found."""
-
-
-class IllegalVirtualDevice(ProtonVPNBaseException):
-    """Unexpeced virtual device."""
-
-
-class AddConnectionFinishError(ProtonVPNBaseException):
+class AddConnectionFinishError(FinishError):
     """Add connection finish error."""
 
 
-class StartConnectionFinishError(ProtonVPNBaseException):
+class StartConnectionFinishError(FinishError):
     """Start connection finish error."""
 
 
-class StopConnectionFinishError(ProtonVPNBaseException):
+class StopConnectionFinishError(FinishError):
     """Stop connection finish error."""
 
 
-class RemoveConnectionFinishError(ProtonVPNBaseException):
+class RemoveConnectionFinishError(FinishError):
     """Remove connection finish error."""
-
-
-class IllegalVPNProtocol(ProtonVPNBaseException):
-    """Unexpexted plugin for specified protocol."""
-
-
-class ProtocolPluginNotFound(ProtonVPNBaseException):
-    """Plugin for specified protocol was not found."""
-
-
-class ConnectionNotFound(ProtonVPNBaseException):
-    """ProtonVPN connection not found"""
-
-
-class ProtocolNotFound(ProtonVPNBaseException):
-    """Protocol not found upon generate certificate"""
-
-
-class OptimumBackendNotFound(ProtonVPNBaseException):
-    """Optimum keyring backend not found"""
-
-
-class SessionError(ProtonVPNBaseException):
-    """Session error"""
-
-
-class IllegalServername(ProtonVPNBaseException):
-    """Unexpected servername"""
-
-
-class EmptyServerListError(ProtonVPNBaseException):
-    """Empty server list error"""
 
 
 
@@ -128,7 +68,20 @@ class CacheLogicalServersFallbackError(CacheServersError):
 
 
 
-class KeyringDataNotFound(ProtonVPNBaseException): # noqa
+class KeyringError(ProtonVPNBaseException):  # noqa
+    """Keyring error"""
+
+
+class OptimumBackendNotFound(KeyringError):
+    """Optimum keyring backend not found"""
+
+
+class AccessKeyringError(KeyringError):
+    """Access keyring error."""
+
+
+
+class KeyringDataNotFound(KeyringError): # noqa
     """Keyring data not found"""
 
 
@@ -146,3 +99,59 @@ class StoredProtonUsernameNotFound(KeyringDataNotFound):
 
 class SelectedOptionError(ProtonVPNBaseException):
     """Selected option error"""
+
+
+class AddConnectionCredentialsError(ProtonVPNBaseException):
+    """Add credentials to connection error."""
+
+
+class AddServerCertificateCheckError(ProtonVPNBaseException):
+    """Add server certificate check error"""
+
+
+class IncorrectCredentialsError(ProtonVPNBaseException):
+    """Incorrect credentials error."""
+
+
+class APIAuthenticationError(ProtonVPNBaseException):
+    """Incorrect credentials error."""
+
+
+class ImportConnectionError(ProtonVPNBaseException):
+    """Import connection configurations error."""
+
+
+class VirtualDeviceNotFound(ProtonVPNBaseException):
+    """Virtual device could not be found."""
+
+
+class IllegalVirtualDevice(ProtonVPNBaseException):
+    """Unexpeced virtual device."""
+
+
+class IllegalVPNProtocol(ProtonVPNBaseException):
+    """Unexpexted plugin for specified protocol."""
+
+
+class ProtocolPluginNotFound(ProtonVPNBaseException):
+    """Plugin for specified protocol was not found."""
+
+
+class ConnectionNotFound(ProtonVPNBaseException):
+    """ProtonVPN connection not found"""
+
+
+class ProtocolNotFound(ProtonVPNBaseException):
+    """Protocol not found upon generate certificate"""
+
+
+class SessionError(ProtonVPNBaseException):
+    """Session error"""
+
+
+class IllegalServername(ProtonVPNBaseException):
+    """Unexpected servername"""
+
+
+class EmptyServerListError(ProtonVPNBaseException):
+    """Empty server list error"""
