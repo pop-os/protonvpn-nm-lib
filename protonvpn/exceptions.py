@@ -97,7 +97,29 @@ class StoredProtonUsernameNotFound(KeyringDataNotFound):
     """Stored user data was not found"""
 
 
-class SelectedOptionError(ProtonVPNBaseException):
+
+class IPv6LeakProtectionError(ProtonVPNBaseException): # noqa
+    """IPv6 leak protection error."""
+
+
+class IPv6LeakProtectionOptionError(IPv6LeakProtectionError):
+    """IPv6 leak protection option error."""
+
+
+class IPv6LeakProtectionSubprocessError(IPv6LeakProtectionError):
+    """IPv6 leak protection subprocess run error."""
+
+
+class IPv6LeakProtectionAddError(IPv6LeakProtectionError):
+    """IPv6 leak protection subprocess add error."""
+
+
+class IPv6LeakProtectionDeleteError(IPv6LeakProtectionError):
+    """IPv6 leak protection subprocess delete error."""
+
+
+
+class SelectedOptionError(ProtonVPNBaseException): # noqa
     """Selected option error"""
 
 

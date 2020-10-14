@@ -8,12 +8,13 @@ gi.require_version("NM", "1.0")
 from gi.repository import NM, GLib
 
 from .. import exceptions
-from ..constants import ENV_CI_NAME, VIRTUAL_DEVICE_NAME
-from ..enums import (
-    UserSettingConnectionEnum,
-    UserSettingEnum,
-    UserSettingStatusEnum
-)
+from ..constants import (ENV_CI_NAME, VIRTUAL_DEVICE_NAME,
+                         IPv6_LEAK_PROTECTION_CONN_NAME,
+                         IPv6_LEAK_PROTECTION_IFACE_NAME,
+                         IPv6_DUMMY_ADDRESS,
+                         IPv6_DUMMY_GATEWAY)
+from ..enums import (UserSettingConnectionEnum, UserSettingEnum,
+                     UserSettingStatusEnum)
 from ..logger import logger
 from ..services.connection_state_manager import ConnectionStateManager
 from . import capture_exception
@@ -111,6 +112,7 @@ class ConnectionManager(ConnectionStateManager):
         self.add_server_certificate_check(vpn_settings, domain)
         self.apply_virtual_device_type(vpn_settings, filename)
         self.apply_dns_configurations(connection, user_configurations)
+        self.ipv6_leak_manager("add")
 
         client.add_connection_async(
             connection,
@@ -127,6 +129,66 @@ class ConnectionManager(ConnectionStateManager):
         )
 
         main_loop.run()
+
+    def ipv6_leak_manager(self, command):
+        """IPv6 leak manager.
+
+        Args:
+            command (string): only 'add' or 'delete'
+        """
+        exception_dict = {
+            "add": exceptions.IPv6LeakProtectionAddError,
+            "delete": exceptions.IPv6LeakProtectionDeleteError
+        }
+
+        if command == "add":
+            cli_command = ""\
+                "nmcli c a type dummy ifname {iface} "\
+                "con-name {conn} ipv6.method manual "\
+                "ipv6.addresses {ipv6_addr} ipv6.gateway {ipv6_gtwy} "\
+                "ipv6.route-metric 95".format(
+                    iface=IPv6_LEAK_PROTECTION_IFACE_NAME,
+                    conn=IPv6_LEAK_PROTECTION_CONN_NAME,
+                    ipv6_addr=IPv6_DUMMY_ADDRESS,
+                    ipv6_gtwy=IPv6_DUMMY_GATEWAY
+                ).split()
+            condition = "successfully added"
+        elif command == "delete":
+            cli_command = "nmcli c delete pvpn-ipv6leak-protection".split()
+            condition = "successfully deleted"
+        else:
+            raise exceptions.IPv6LeakProtectionOptionError(
+                "Incorrect option for IPv6 leak manager"
+            )
+
+        subprocess_outpout = subprocess.run(
+            cli_command, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+        )
+
+        if subprocess_outpout.returncode != 10:
+            if subprocess_outpout.returncode != 0:
+                logger.error(
+                    "[!] IPv6LeakProtectionSubprocessError: "
+                    + "Raising exception. Output: {}".format(
+                        subprocess_outpout
+                    )
+                )
+                raise exceptions.IPv6LeakProtectionSubprocessError(
+                    "Unable to run command to {} IPv6 interface".format(
+                        command
+                    )
+                )
+
+            if condition not in subprocess_outpout.stdout.decode():
+                logger.error(
+                    "[!] {}: Raising exception. Output: {}".format(
+                        exception_dict[command],
+                        subprocess_outpout
+                    )
+                )
+                raise exception_dict[command](
+                    "Unable to {} IPv6 leak protection".format(command)
+                )
 
     def make_vpn_user_owned(self, connection):
         # returns NM.SettingConnection
@@ -303,6 +365,7 @@ class ConnectionManager(ConnectionStateManager):
 
         # conn is a NM.RemoteConnection
         # https://lazka.github.io/pgi-docs/NM-1.0/classes/RemoteConnection.html#NM.RemoteConnection
+        self.ipv6_leak_manager("delete")
 
         conn.delete_async(
             None,

@@ -20,6 +20,10 @@ from .enums import (
 )
 
 APP_VERSION = '0.0.4'
+IPv6_LEAK_PROTECTION_CONN_NAME = "pvpn-ipv6leak-protection"
+IPv6_LEAK_PROTECTION_IFACE_NAME = "ipv6leakintrf0"
+IPv6_DUMMY_ADDRESS = "fdeb:446c:912d:08da::/64"
+IPv6_DUMMY_GATEWAY = "fdeb:446c:912d:08da::1"
 
 PWD = os.path.dirname(os.path.abspath(__file__))
 
