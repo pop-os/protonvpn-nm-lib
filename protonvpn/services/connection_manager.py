@@ -6,15 +6,14 @@ import gi
 
 gi.require_version("NM", "1.0")
 from gi.repository import NM, GLib
-
 from .. import exceptions
 from ..constants import (ENV_CI_NAME, VIRTUAL_DEVICE_NAME,
                          IPv6_LEAK_PROTECTION_CONN_NAME,
                          IPv6_LEAK_PROTECTION_IFACE_NAME,
                          IPv6_DUMMY_ADDRESS,
-                         IPv6_DUMMY_GATEWAY)
-from ..enums import (UserSettingConnectionEnum, UserSettingEnum,
-                     UserSettingStatusEnum)
+                         IPv6_DUMMY_GATEWAY,
+                         CONFIG_STATUSES)
+from ..enums import UserSettingStatusEnum
 from ..logger import logger
 from ..services.connection_state_manager import ConnectionStateManager
 from . import capture_exception
@@ -29,9 +28,9 @@ class ConnectionManager(ConnectionStateManager):
         self.virtual_device_name = virtual_device_name
 
     def add_connection(
-        self, filename, username,
-        password, delete_cached_cert, domain,
-        user_configurations
+        self, filename, username, password,
+        delete_cached_cert, domain,
+        user_conf_manager, ks_manager, entry_ip
     ):
         """Setup and add ProtonVPN connection.
 
@@ -111,8 +110,9 @@ class ConnectionManager(ConnectionStateManager):
         self.add_vpn_credentials(vpn_settings, username, password)
         self.add_server_certificate_check(vpn_settings, domain)
         self.apply_virtual_device_type(vpn_settings, filename)
-        self.apply_dns_configurations(connection, user_configurations)
+        self.dns_manager(connection, user_conf_manager.dns)
         self.ipv6_leak_manager("add")
+        ks_manager.manage("pre_connection")
 
         client.add_connection_async(
             connection,
@@ -130,6 +130,73 @@ class ConnectionManager(ConnectionStateManager):
 
         main_loop.run()
 
+    def make_vpn_user_owned(self, connection):
+        # returns NM.SettingConnection
+        # https://lazka.github.io/pgi-docs/NM-1.0/classes/SettingConnection.html#NM.SettingConnection
+        logger.info("Making VPN connection be user owned")
+        connection_settings = connection.get_setting_connection()
+        connection_settings.add_permission(
+            "user",
+            getuser(),
+            None
+        )
+
+    def add_vpn_credentials(self, vpn_settings,
+                            openvpn_username, openvpn_password):
+        """Add OpenVPN credentials to ProtonVPN connection.
+
+        Args:
+            vpn_settings (NM.SettingVpn): NM.SettingVPN object
+            openvpn_username (string): openvpn/ikev2 username
+            openvpn_password (string): openvpn/ikev2 password
+        """
+        # returns NM.SettingVpn if the connection contains one, otherwise None
+        # https://lazka.github.io/pgi-docs/NM-1.0/classes/SettingVpn.html
+        logger.info("Adding OpenVPN credentials")
+        try:
+            vpn_settings.add_data_item("username", openvpn_username)
+            vpn_settings.add_secret("password", openvpn_password)
+        except Exception as e:
+            logger.exception(
+                "[!] AddConnectionCredentialsError: {}. ".format(e)
+                + "Raising exception."
+            )
+            capture_exception(e)
+            raise exceptions.AddConnectionCredentialsError(e)
+
+    def dns_manager(self, connection, dns_setting):
+        """Apply dns configurations to ProtonVPN connection.
+
+        Args:
+            connection (NM.SimpleConnection): vpn connection object
+            dns_setting (tuple(int, [])): contains dns configurations
+        """
+        logger.info("DNS configs: {}".format(dns_setting))
+        dns_status, custom_dns = dns_setting
+
+        if dns_status not in CONFIG_STATUSES:
+            raise Exception("Incorrect status configuration")
+
+        ipv4_config = connection.get_setting_ip4_config()
+        ipv6_config = connection.get_setting_ip6_config()
+
+        if dns_status == UserSettingStatusEnum.ENABLED:
+            logger.info("Applying automatic DNS...")
+            ipv4_config.props.dns_priority = -50
+            ipv6_config.props.dns_priority = -50
+        else:
+            ipv4_config.props.ignore_auto_dns = True
+            ipv6_config.props.ignore_auto_dns = True
+
+            if dns_status == UserSettingStatusEnum.CUSTOM:
+                logger.info("Applying custom DNS: {}".format(custom_dns))
+                ipv4_config.props.dns_priority = -50
+                ipv6_config.props.dns_priority = -50
+
+                ipv4_config.props.dns = custom_dns
+            else:
+                logger.info("DNS managemenet disallowed...")
+
     def ipv6_leak_manager(self, command):
         """IPv6 leak manager.
 
@@ -142,6 +209,7 @@ class ConnectionManager(ConnectionStateManager):
         }
 
         if command == "add":
+            self.ipv6_leak_manager("delete")
             cli_command = ""\
                 "nmcli c a type dummy ifname {iface} "\
                 "con-name {conn} ipv6.method manual "\
@@ -189,74 +257,6 @@ class ConnectionManager(ConnectionStateManager):
                 raise exception_dict[command](
                     "Unable to {} IPv6 leak protection".format(command)
                 )
-
-    def make_vpn_user_owned(self, connection):
-        # returns NM.SettingConnection
-        # https://lazka.github.io/pgi-docs/NM-1.0/classes/SettingConnection.html#NM.SettingConnection
-        logger.info("Making VPN connection be user owned")
-        connection_settings = connection.get_setting_connection()
-        connection_settings.add_permission(
-            "user",
-            getuser(),
-            None
-        )
-
-    def add_vpn_credentials(self, vpn_settings,
-                            openvpn_username, openvpn_password):
-        """Add OpenVPN credentials to ProtonVPN connection.
-
-        Args:
-            vpn_settings (NM.SettingVpn): NM.SettingVPN object
-            openvpn_username (string): openvpn/ikev2 username
-            openvpn_password (string): openvpn/ikev2 password
-        """
-        # returns NM.SettingVpn if the connection contains one, otherwise None
-        # https://lazka.github.io/pgi-docs/NM-1.0/classes/SettingVpn.html
-        logger.info("Adding OpenVPN credentials")
-        try:
-            vpn_settings.add_data_item("username", openvpn_username)
-            vpn_settings.add_secret("password", openvpn_password)
-        except Exception as e:
-            logger.exception(
-                "[!] AddConnectionCredentialsError: {}. ".format(e)
-                + "Raising exception."
-            )
-            capture_exception(e)
-            raise exceptions.AddConnectionCredentialsError(e)
-
-    def apply_dns_configurations(self, connection, user_configurations):
-        """Apply dns configurations to ProtonVPN connection.
-
-        Args:
-            connection (NM.SimpleConnection): vpn connection object
-            user_configurations (dict): contains user configurations
-        """
-        dns_configs = user_configurations[
-            UserSettingEnum.CONNECTION
-        ][UserSettingConnectionEnum.DNS]
-
-        setting_status = dns_configs[UserSettingConnectionEnum.DNS_STATUS]
-        custom_dns = [dns_configs[UserSettingConnectionEnum.CUSTOM_DNS]]
-
-        ipv4_config = connection.get_setting_ip4_config()
-        ipv6_config = connection.get_setting_ip6_config()
-
-        if setting_status == UserSettingStatusEnum.ENABLED:
-            logger.info("Applying automatic DNS...")
-            ipv4_config.props.dns_priority = -50
-            ipv6_config.props.dns_priority = -50
-        else:
-            ipv4_config.props.ignore_auto_dns = True
-            ipv6_config.props.ignore_auto_dns = True
-
-            if setting_status == UserSettingStatusEnum.CUSTOM:
-                logger.info("Applying custom DNS: {}".format(custom_dns))
-                ipv4_config.props.dns_priority = -50
-                ipv6_config.props.dns_priority = -50
-
-                ipv4_config.props.dns = custom_dns
-            else:
-                logger.info("DNS managemenet disallowed...")
 
     def add_server_certificate_check(self, vpn_settings, domain):
         logger.info("Adding server ceritificate check")
