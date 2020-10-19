@@ -7,7 +7,7 @@ from ..constants import (KILLSWITCH_CONN_NAME, KILLSWITCH_INTERFACE_NAME,
                          ROUTED_CONN_NAME, ROUTED_INTERFACE_NAME,
                          IPv4_DUMMY_ADDRESS, IPv4_DUMMY_GATEWAY,
                          IPv6_DUMMY_ADDRESS, IPv6_DUMMY_GATEWAY)
-from ..enums import UserSettingStatusEnum
+from ..enums import KillswitchStatusEnum
 from ..logger import logger
 
 gi.require_version("NM", "1.0")
@@ -58,18 +58,21 @@ class KillSwitchManager:
         logger.info(
             "Killswitch setting: {}".format(self.user_conf_manager.killswitch)
         )
-        if not self.user_conf_manager.killswitch:
-            return
-
         if action == "pre_connection":
             self.create_routed_connection(server_ip)
             self.deactivate_connection(self.ks_conn_name)
+            return
         elif action == "post_connection":
             self.activate_connection(self.ks_conn_name)
             self.delete_connection(self.routed_conn_name)
+            return
+        elif action == "disable":
+            self.delete_all_connections()
+
+        if self.user_conf_manager.killswitch == KillswitchStatusEnum.HARD: # noqa
+            self.create_killswitch_connection()
         else:
-            if self.user_conf_manager.killswitch == UserSettingStatusEnum.ENABLED: # noqa
-                self.create_killswitch_connection()
+            self.delete_all_connections()
 
     def create_killswitch_connection(self):
         """Create killswitch connection/interface."""

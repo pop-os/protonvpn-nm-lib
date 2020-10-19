@@ -14,7 +14,7 @@ from .. import exceptions
 from ..constants import (FLAT_SUPPORTED_PROTOCOLS, SUPPORTED_FEATURES,
                          VIRTUAL_DEVICE_NAME)
 from ..enums import (ConnectionMetadataEnum, ProtocolEnum, UserSettingEnum,
-                     UserSettingStatusEnum)
+                     UserSettingStatusEnum, KillswitchStatusEnum)
 from ..logger import logger
 from ..services import capture_exception
 from ..services.certificate_manager import CertificateManager
@@ -97,6 +97,9 @@ class CLIWrapper():
         print("Disconnecting from ProtonVPN...")
 
         exit_type = 1
+        if self.user_conf_manager.killswitch == KillswitchStatusEnum.SOFT: # noqa
+            self.ks_manager.manage("disable")
+
         try:
             self.connection_manager.remove_connection()
         except exceptions.ConnectionNotFound as e:
