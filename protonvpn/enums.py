@@ -59,6 +59,12 @@ class UserSettingStatusEnum(object):
     CUSTOM = 2
 
 
+class KillswitchStatusEnum(object):
+    DISABLED = 0
+    HARD = 1
+    SOFT = 2
+
+
 class UserSettingConnectionEnum(object):
     DEFAULT_PROTOCOL = "default_protocol"
     KILLSWITCH = "killswitch"
