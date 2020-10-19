@@ -3,10 +3,12 @@ import os
 
 from protonvpn import exceptions
 from protonvpn.constants import CACHED_OPENVPN_CERTIFICATE, ENV_CI_NAME
-from protonvpn.enums import ClientSuffixEnum
+from protonvpn.enums import (ClientSuffixEnum, KillswitchStatusEnum,
+                             UserSettingConnectionEnum, UserSettingStatusEnum)
 from protonvpn.services.certificate_manager import CertificateManager
 from protonvpn.services.connection_manager import ConnectionManager
 from protonvpn.services.connection_state_manager import ConnectionStateManager
+from protonvpn.services.killswitch_manager import KillSwitchManager
 from protonvpn.services.plugin_manager import PluginManager
 from protonvpn.services.server_manager import ServerManager
 from protonvpn.services.user_manager import UserManager

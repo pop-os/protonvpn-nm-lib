@@ -245,9 +245,9 @@ class TestIntegrationServerManager:
         um.delete_stored_data("TestServerUserData", "TestServerManager")
 
     def test_correct_generate_connect_fastest(self):
-        servername, domain = self.server_man.fastest(REAL_SESSION, "tcp")
+        servername, domain, ip = self.server_man.fastest(REAL_SESSION, "tcp")
         resp = False
-        if servername and domain:
+        if servername and domain and ip:
             resp = True
         assert os.path.isfile(resp) is True
 
@@ -267,11 +267,11 @@ class TestIntegrationServerManager:
 
     def test_correct_generate_connect_country(self):
         args = [["cc", "ES"]]
-        servername, domain = self.server_man.country_f(
+        servername, domain, ip = self.server_man.country_f(
             REAL_SESSION, "tcp", *args
         )
         resp = False
-        if servername and domain:
+        if servername and domain and ip:
             resp = True
         assert os.path.isfile(resp) is True
 
@@ -302,17 +302,17 @@ class TestIntegrationServerManager:
 
     def test_correct_generate_connect_direct(self):
         args = [["servername", "ES#5"]]
-        servername, domain = self.server_man.direct(REAL_SESSION, "tcp", *args)
+        servername, domain, ip = self.server_man.direct(REAL_SESSION, "tcp", *args)
         resp = False
-        if servername and domain:
+        if servername and domain and ip:
             resp = True
         assert os.path.isfile(resp) is True
 
     def test_correct_generate_connect_direct_dialog(self):
         args = ["ES#6"]
-        servername, domain = self.server_man.direct(REAL_SESSION, "tcp", *args)
+        servername, domain, ip = self.server_man.direct(REAL_SESSION, "tcp", *args)
         resp = False
-        if servername and domain:
+        if servername and domain and ip:
             resp = True
         assert os.path.isfile(resp) is True
 
@@ -344,11 +344,11 @@ class TestIntegrationServerManager:
 
     def test_correct_generate_connect_feature(self):
         args = [["sc", True]]
-        servername, domain = self.server_man.feature_f(
+        servername, domain, ip = self.server_man.feature_f(
             REAL_SESSION, "tcp", *args
         )
         resp = False
-        if servername and domain:
+        if servername and domain and ip:
             resp = True
         assert os.path.isfile(resp) is True
 
@@ -377,9 +377,9 @@ class TestIntegrationServerManager:
             self.server_man.feature_f(session, "tcp", *args)
 
     def test_correct_generate_connect_random(self):
-        servername, domain = self.server_man.random_c(REAL_SESSION, "tcp")
+        servername, domain, ip = self.server_man.random_c(REAL_SESSION, "tcp")
         resp = False
-        if servername and domain:
+        if servername and domain and ip:
             resp = True
         assert os.path.isfile(resp) is True
 
