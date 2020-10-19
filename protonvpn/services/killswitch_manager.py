@@ -7,6 +7,7 @@ from ..constants import (KILLSWITCH_CONN_NAME, KILLSWITCH_INTERFACE_NAME,
                          ROUTED_CONN_NAME, ROUTED_INTERFACE_NAME,
                          IPv4_DUMMY_ADDRESS, IPv4_DUMMY_GATEWAY,
                          IPv6_DUMMY_ADDRESS, IPv6_DUMMY_GATEWAY)
+from ..enums import UserSettingStatusEnum
 from ..logger import logger
 
 gi.require_version("NM", "1.0")
@@ -48,7 +49,7 @@ class KillSwitchManager:
         }
         self.update_connection_status()
 
-    def manage(self, action):
+    def manage(self, action=None, server_ip=None):
         """Manage killswitch.
 
         Args:
@@ -57,21 +58,18 @@ class KillSwitchManager:
         logger.info(
             "Killswitch setting: {}".format(self.user_conf_manager.killswitch)
         )
-        self.update_connection_status()
         if not self.user_conf_manager.killswitch:
-            print("Killswitch is not enabled")
-            return
-
-        if not self.interface_state_tracker[self.ks_conn_name]["is_running"]:
-            print("Killswitch connection/interface is not running")
             return
 
         if action == "pre_connection":
-            self.create_routed_connection()
+            self.create_routed_connection(server_ip)
             self.deactivate_connection(self.ks_conn_name)
         elif action == "post_connection":
             self.activate_connection(self.ks_conn_name)
             self.delete_connection(self.routed_conn_name)
+        else:
+            if self.user_conf_manager.killswitch == UserSettingStatusEnum.ENABLED: # noqa
+                self.create_killswitch_connection()
 
     def create_killswitch_connection(self):
         """Create killswitch connection/interface."""
@@ -140,7 +138,7 @@ class KillSwitchManager:
 
         self.update_connection_status()
         if (
-            not self.interface_state_tracker[conn_name]["exists"]
+            self.interface_state_tracker[conn_name]["exists"]
         ) and (
             not self.interface_state_tracker[conn_name]["is_running"]
         ):
@@ -169,7 +167,7 @@ class KillSwitchManager:
             "nmcli c delete {}".format(conn_name).split(" ")
 
         self.update_connection_status()
-        if self.interface_state_tracker[conn_name]["is_running"]: # noqa
+        if self.interface_state_tracker[conn_name]["exists"]: # noqa
             self.run_subprocess(*subprocess_command)
 
     def deactivate_all_connections(self):
@@ -186,8 +184,13 @@ class KillSwitchManager:
         """Update connection/interface status."""
         client = NM.Client.new(None)
         all_conns = client.get_connections()
-        all_conns = client.get_connections()
         active_conns = client.get_active_connections()
+
+        self.interface_state_tracker[self.ks_conn_name]["exists"] = False # noqa
+        self.interface_state_tracker[self.routed_conn_name]["exists"] = False  # noqa
+        self.interface_state_tracker[self.ks_conn_name]["is_running"] = False # noqa
+        self.interface_state_tracker[self.routed_conn_name]["is_running"] = False  # noqa
+
         for conn in all_conns:
             try:
                 self.interface_state_tracker[conn.get_id()]
@@ -198,11 +201,11 @@ class KillSwitchManager:
 
         for active_conn in active_conns:
             try:
-                self.interface_state_tracker[conn.get_id()]
+                self.interface_state_tracker[active_conn.get_id()]
             except KeyError:
                 pass
             else:
-                self.interface_state_tracker[conn.get_id()]["is_running"] = True # noqa
+                self.interface_state_tracker[active_conn.get_id()]["is_running"] = True # noqa
 
     def run_subprocess(self, *args):
         """Run provided input through subprocess.
@@ -213,6 +216,7 @@ class KillSwitchManager:
         subprocess_outpout = subprocess.run(
             args, stderr=subprocess.PIPE, stdout=subprocess.PIPE
         )
+
         if (
             subprocess_outpout.returncode != 0
             and subprocess_outpout.returncode != 10

@@ -428,6 +428,7 @@ class CLIWrapper():
                 continue
 
             self.user_conf_manager.update_killswitch(user_int_choice)
+            self.ks_manager.manage()
 
             return "Successfully updated KillSwitch settings!"
 
@@ -743,8 +744,9 @@ class MonitorVPNState(DbusGetWrapper):
             print("{}".format(msg))
         elif state == 5:
             msg = "Successfully connected to ProtonVPN!"
-            logger.info(msg)
             self.ks_manager.manage("post_connection")
+            logger.info(msg)
+            print(msg)
             self.loop.quit()
         elif state in [6, 7]:
 

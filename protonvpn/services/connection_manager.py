@@ -112,7 +112,7 @@ class ConnectionManager(ConnectionStateManager):
         self.apply_virtual_device_type(vpn_settings, filename)
         self.dns_manager(connection, user_conf_manager.dns)
         self.ipv6_leak_manager("add")
-        ks_manager.manage("pre_connection")
+        ks_manager.manage("pre_connection", entry_ip)
 
         client.add_connection_async(
             connection,
