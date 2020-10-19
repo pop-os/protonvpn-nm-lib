@@ -177,3 +177,7 @@ class IllegalServername(ProtonVPNBaseException):
 
 class EmptyServerListError(ProtonVPNBaseException):
     """Empty server list error"""
+
+
+class KillswtichSubprocessError(ProtonVPNBaseException):
+    """Killswitch subprocess error."""

@@ -9,6 +9,7 @@ from ..constants import (KILLSWITCH_CONN_NAME, KILLSWITCH_INTERFACE_NAME,
                          IPv6_DUMMY_ADDRESS, IPv6_DUMMY_GATEWAY)
 from ..enums import KillswitchStatusEnum
 from ..logger import logger
+from .. import exceptions
 
 gi.require_version("NM", "1.0")
 from gi.repository import NM
@@ -225,6 +226,15 @@ class KillSwitchManager:
             and subprocess_outpout.returncode != 10
         ):
             logger.error(
-                "Killswitch subprocess error: {}".format(subprocess_outpout)
+                "Interface state tracker: {}".format(
+                    self.interface_state_tracker
+                )
             )
-            print("Error")
+            logger.error(
+                "[!] KillswtichSubprocessError: {}. Raising exception.".format(
+                    subprocess_outpout
+                )
+            )
+            raise exceptions.KillswtichSubprocessError(
+                "Subprocess process error"
+            )
