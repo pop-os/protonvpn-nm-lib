@@ -88,7 +88,9 @@ class CLIWrapper():
         self.connection_manager.start_connection()
         DBusGMainLoop(set_as_default=True)
         loop = GLib.MainLoop()
-        MonitorVPNState(VIRTUAL_DEVICE_NAME, loop, self.ks_manager)
+        MonitorVPNState(
+            VIRTUAL_DEVICE_NAME, loop, self.ks_manager, self.user_conf_manager
+        )
         loop.run()
         sys.exit(exit_type)
 
@@ -395,16 +397,17 @@ class CLIWrapper():
 
     def ask_killswitch(self):
         user_choice_options_dict = {
-            "a": UserSettingStatusEnum.ENABLED,
-            "d": UserSettingStatusEnum.DISABLED,
-            "c": UserSettingStatusEnum.CUSTOM
+            "h": KillswitchStatusEnum.HARD,
+            "s": KillswitchStatusEnum.SOFT,
+            "d": KillswitchStatusEnum.DISABLED
         }
         while True:
             print(
                 "Please select what you want to do:\n"
                 "\n"
-                "[a]llow killswitch management\n"
-                "[d]isallow killswitch management\n"
+                "[h]ard killswitch management\n"
+                "[s]oft killswitch management\n"
+                "[d]isable killswitch management\n"
                 "----------\n"
                 "[r]eturn\n"
                 "[e]xit\n"
@@ -717,12 +720,16 @@ class CLIWrapper():
 
 
 class MonitorVPNState(DbusGetWrapper):
-    def __init__(self, virtual_device_name, loop, ks_manager):
+    def __init__(
+        self, virtual_device_name, loop,
+        ks_manager, user_conf_manager
+    ):
         self.max_attempts = 5
         self.delay = 5000
         self.failed_attempts = 0
         self.loop = loop
         self.virtual_device_name = virtual_device_name
+        self.user_conf_manager = user_conf_manager
         self.ks_manager = ks_manager
         self.bus = dbus.SystemBus()
         self.test()
@@ -747,7 +754,14 @@ class MonitorVPNState(DbusGetWrapper):
             print("{}".format(msg))
         elif state == 5:
             msg = "Successfully connected to ProtonVPN!"
-            self.ks_manager.manage("post_connection")
+
+            if self.user_conf_manager.killswitch == KillswitchStatusEnum.HARD: # noqa
+                self.ks_manager.manage("post_connection")
+
+            if self.user_conf_manager.killswitch == KillswitchStatusEnum.SOFT: # noqa
+                self.ks_manager.create_killswitch_connection()
+                self.ks_manager.manage("post_connection")
+
             logger.info(msg)
             print(msg)
             self.loop.quit()

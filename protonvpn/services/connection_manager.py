@@ -13,7 +13,7 @@ from ..constants import (ENV_CI_NAME, VIRTUAL_DEVICE_NAME,
                          IPv6_DUMMY_ADDRESS,
                          IPv6_DUMMY_GATEWAY,
                          CONFIG_STATUSES)
-from ..enums import UserSettingStatusEnum
+from ..enums import UserSettingStatusEnum, KillswitchStatusEnum
 from ..logger import logger
 from ..services.connection_state_manager import ConnectionStateManager
 from . import capture_exception
@@ -112,7 +112,8 @@ class ConnectionManager(ConnectionStateManager):
         self.apply_virtual_device_type(vpn_settings, filename)
         self.dns_manager(connection, user_conf_manager.dns)
         self.ipv6_leak_manager("add")
-        ks_manager.manage("pre_connection", entry_ip)
+        if user_conf_manager.killswitch == KillswitchStatusEnum.HARD: # noqa
+            ks_manager.manage("pre_connection", entry_ip)
 
         client.add_connection_async(
             connection,
