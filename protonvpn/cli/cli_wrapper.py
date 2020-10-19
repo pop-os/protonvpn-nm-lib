@@ -14,7 +14,7 @@ from .. import exceptions
 from ..constants import (FLAT_SUPPORTED_PROTOCOLS, SUPPORTED_FEATURES,
                          VIRTUAL_DEVICE_NAME)
 from ..enums import (ConnectionMetadataEnum, ProtocolEnum, UserSettingEnum,
-                     UserSettingStatusEnum)
+                     UserSettingStatusEnum, KillswitchStatusEnum)
 from ..logger import logger
 from ..services import capture_exception
 from ..services.certificate_manager import CertificateManager
@@ -23,15 +23,17 @@ from ..services.dbus_get_wrapper import DbusGetWrapper
 from ..services.server_manager import ServerManager
 from ..services.user_configuration_manager import UserConfigurationManager
 from ..services.user_manager import UserManager
+from ..services.killswitch_manager import KillSwitchManager
 from .cli_dialog import dialog  # noqa
 
 
 class CLIWrapper():
     time_sleep_value = 1
+    user_conf_manager = UserConfigurationManager()
+    ks_manager = KillSwitchManager(user_conf_manager)
     connection_manager = ConnectionManager()
     user_manager = UserManager()
     server_manager = ServerManager(CertificateManager(), user_manager)
-    user_conf_manager = UserConfigurationManager()
 
     def connect(self, args):
         """Proxymethdo to connect to ProtonVPN."""
@@ -44,6 +46,7 @@ class CLIWrapper():
             p2p=self.server_manager.feature_f,
             tor=self.server_manager.feature_f,
         )
+        self.server_manager.killswitch_status = self.user_conf_manager.killswitch # noqa
         command = False
         exit_type = 1
         protocol = self.determine_protocol(args)
@@ -61,15 +64,17 @@ class CLIWrapper():
         openvpn_username, openvpn_password = self.get_ovpn_credentials(
             session, exit_type
         )
-        certificate_filename, domain = self.get_cert_filename_and_domain(
+        logger.info("OpenVPN credentials were fetched.")
+
+        (certificate_filename, domain,
+            entry_ip) = self.get_cert_filename_and_domain(
             cli_commands, session, protocol, command
         )
-
-        logger.info("OpenVPN credentials were fetched.")
+        logger.info("Certificate, domain and entry ip were fetched.")
 
         self.add_vpn_connection(
             certificate_filename, openvpn_username, openvpn_password,
-            domain, exit_type
+            domain, exit_type, entry_ip
         )
 
         conn_status = self.connection_manager.display_connection_status(
@@ -83,7 +88,9 @@ class CLIWrapper():
         self.connection_manager.start_connection()
         DBusGMainLoop(set_as_default=True)
         loop = GLib.MainLoop()
-        MonitorVPNState(VIRTUAL_DEVICE_NAME, loop)
+        MonitorVPNState(
+            VIRTUAL_DEVICE_NAME, loop, self.ks_manager, self.user_conf_manager
+        )
         loop.run()
         sys.exit(exit_type)
 
@@ -92,6 +99,9 @@ class CLIWrapper():
         print("Disconnecting from ProtonVPN...")
 
         exit_type = 1
+        if self.user_conf_manager.killswitch == KillswitchStatusEnum.SOFT: # noqa
+            self.ks_manager.manage("disable")
+
         try:
             self.connection_manager.remove_connection()
         except exceptions.ConnectionNotFound as e:
@@ -387,16 +397,17 @@ class CLIWrapper():
 
     def ask_killswitch(self):
         user_choice_options_dict = {
-            "a": UserSettingStatusEnum.ENABLED,
-            "d": UserSettingStatusEnum.DISABLED,
-            "c": UserSettingStatusEnum.CUSTOM
+            "h": KillswitchStatusEnum.HARD,
+            "s": KillswitchStatusEnum.SOFT,
+            "d": KillswitchStatusEnum.DISABLED
         }
         while True:
             print(
                 "Please select what you want to do:\n"
                 "\n"
-                "[a]llow killswitch management\n"
-                "[d]isallow killswitch management\n"
+                "[h]ard killswitch management\n"
+                "[s]oft killswitch management\n"
+                "[d]isable killswitch management\n"
                 "----------\n"
                 "[r]eturn\n"
                 "[e]xit\n"
@@ -423,6 +434,7 @@ class CLIWrapper():
                 continue
 
             self.user_conf_manager.update_killswitch(user_int_choice)
+            self.ks_manager.manage()
 
             return "Successfully updated KillSwitch settings!"
 
@@ -499,18 +511,18 @@ class CLIWrapper():
 
     def add_vpn_connection(
         self, certificate_filename, openvpn_username,
-        openvpn_password, domain, exit_type
+        openvpn_password, domain, exit_type, entry_ip
     ):
         """Proxymethod to add ProtonVPN connection."""
         print("Adding ProtonVPN connection...")
 
-        user_configs = self.user_conf_manager.get_user_configurations()
+        # user_configs = self.user_conf_manager.get_user_configurations()
 
         try:
             self.connection_manager.add_connection(
-                certificate_filename, openvpn_username,
-                openvpn_password, CertificateManager.delete_cached_certificate,
-                domain, user_configs
+                certificate_filename, openvpn_username, openvpn_password,
+                CertificateManager.delete_cached_certificate, domain,
+                self.user_conf_manager, self.ks_manager, entry_ip
             )
         except exceptions.ImportConnectionError as e:
             logger.exception("[!] ImportConnectionError: {}".format(e))
@@ -708,12 +720,17 @@ class CLIWrapper():
 
 
 class MonitorVPNState(DbusGetWrapper):
-    def __init__(self, virtual_device_name, loop):
+    def __init__(
+        self, virtual_device_name, loop,
+        ks_manager, user_conf_manager
+    ):
         self.max_attempts = 5
         self.delay = 5000
         self.failed_attempts = 0
         self.loop = loop
         self.virtual_device_name = virtual_device_name
+        self.user_conf_manager = user_conf_manager
+        self.ks_manager = ks_manager
         self.bus = dbus.SystemBus()
         self.test()
 
@@ -737,8 +754,16 @@ class MonitorVPNState(DbusGetWrapper):
             print("{}".format(msg))
         elif state == 5:
             msg = "Successfully connected to ProtonVPN!"
+
+            if self.user_conf_manager.killswitch == KillswitchStatusEnum.HARD: # noqa
+                self.ks_manager.manage("post_connection")
+
+            if self.user_conf_manager.killswitch == KillswitchStatusEnum.SOFT: # noqa
+                self.ks_manager.create_killswitch_connection()
+                self.ks_manager.manage("post_connection")
+
             logger.info(msg)
-            print("\n{}".format(msg))
+            print(msg)
             self.loop.quit()
         elif state in [6, 7]:
 

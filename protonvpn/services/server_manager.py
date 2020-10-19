@@ -4,18 +4,19 @@ import os
 import random
 import re
 
-from proton.api import Session
-from proton.api import ProtonError
+import requests
+from proton.api import ProtonError, Session
 
 from .. import exceptions
 from ..constants import CACHED_SERVERLIST, PROTON_XDG_CACHE_HOME
-from ..enums import FeatureEnum
+from ..enums import FeatureEnum, UserSettingStatusEnum
 from ..logger import logger
 from . import capture_exception
 
 
 class ServerManager():
     REFRESH_INTERVAL = 15
+    killswitch_status = UserSettingStatusEnum.DISABLED
 
     def __init__(self, cert_manager, user_manager):
         self.cert_manager = cert_manager
@@ -64,7 +65,7 @@ class ServerManager():
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
             servername, entry_IP
-        ), domain
+        ), domain, entry_IP
 
     def country_f(self, session, protocol, *args):
         """Connect to fastest server in a specific country.
@@ -153,7 +154,7 @@ class ServerManager():
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
             servername, entry_IP
-        ), domain
+        ), domain, entry_IP
 
     def direct(self, session, protocol, *args):
         """Connect directly to specified server.
@@ -244,7 +245,7 @@ class ServerManager():
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
             servername, entry_IP
-        ), domain
+        ), domain, entry_IP
 
     def feature_f(self, session, protocol, *args):
         """Connect to fastest server based on specified feature.
@@ -348,7 +349,7 @@ class ServerManager():
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
             servername, entry_IP
-        ), domain
+        ), domain, entry_IP
 
     def random_c(self, session, protocol, *_):
         """Connect to a random server.
@@ -389,7 +390,7 @@ class ServerManager():
         return self.cert_manager.generate_vpn_cert(
             protocol, session,
             servername, entry_IP
-        ), domain
+        ), domain, entry_IP
 
     def get_matching_domain(self, server_pool, exit_IP, server_feature):
         _list = [FeatureEnum.NORMAL, FeatureEnum.SECURE_CORE]
@@ -500,26 +501,31 @@ class ServerManager():
         ) or (
             time_ago > last_modified_time or force
         ):
+            if not self.killswitch_status:
+                try:
+                    data = session.api_request(endpoint="/vpn/logicals")
+                except (
+                    ProtonError,
+                    requests.exceptions.ConnectionError
+                ) as e:
+                    if not was_previously_cached:
+                        logger.exception(
+                            "[!] CacheLogicalServersError: {}.".format(e)
+                            + "Raising exception."
+                        )
+                        raise exceptions.CacheLogicalServersError(
+                            "Unable to reach API to cache servers."
+                        )
 
-            try:
-                data = session.api_request(endpoint="/vpn/logicals")
-            except ProtonError as e:
-                if not was_previously_cached:
-                    logger.exception(
-                        "[!] CacheLogicalServersError: {}.".format(e)
-                        + "Raising exception."
+                    logger.info(
+                        "Unable to reach API to cache servers, falling back "
+                        + "to existing cache. Exception: {}".format(e)
                     )
-                    raise exceptions.CacheLogicalServersError(
-                        "Unable to reach API to cache servers."
-                    )
-
-                logger.info(
-                    "Unable to reach API to cache servers, falling back "
-                    + "to existing cache. Exception: {}".format(e)
-                )
+                else:
+                    with open(cached_serverlist, "w") as f:
+                        json.dump(data, f)
             else:
-                with open(cached_serverlist, "w") as f:
-                    json.dump(data, f)
+                logger.info("Killswitch enabled, falling-back to local cache.")
 
     def generate_ip_list(
         self, servername, servers,

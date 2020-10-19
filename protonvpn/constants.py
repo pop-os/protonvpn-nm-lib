@@ -15,13 +15,24 @@ from .enums import (
     ProtocolEnum,
     FeatureEnum,
     UserSettingEnum,
+    KillswitchStatusEnum,
     UserSettingStatusEnum,
-    UserSettingConnectionEnum
+    UserSettingConnectionEnum,
 )
 
 APP_VERSION = '0.0.4'
+
 IPv6_LEAK_PROTECTION_CONN_NAME = "pvpn-ipv6leak-protection"
 IPv6_LEAK_PROTECTION_IFACE_NAME = "ipv6leakintrf0"
+
+KILLSWITCH_CONN_NAME = "pvpn-killswitch"
+KILLSWITCH_INTERFACE_NAME = "pvpnksintrf0"
+
+ROUTED_CONN_NAME = "pvpn-routed-killswitch"
+ROUTED_INTERFACE_NAME = "pvpnroutintrf0"
+
+IPv4_DUMMY_ADDRESS = "100.85.0.1/24"
+IPv4_DUMMY_GATEWAY = "100.85.0.1"
 IPv6_DUMMY_ADDRESS = "fdeb:446c:912d:08da::/64"
 IPv6_DUMMY_GATEWAY = "fdeb:446c:912d:08da::1"
 
@@ -83,7 +94,7 @@ APP_CONFIG = os.path.join(PWD, "app.cfg")
 USER_CONFIG_TEMPLATE = {
     UserSettingEnum.CONNECTION: {
         UserSettingConnectionEnum.DEFAULT_PROTOCOL: ProtocolEnum.UDP,
-        UserSettingConnectionEnum.KILLSWITCH: UserSettingStatusEnum.DISABLED,
+        UserSettingConnectionEnum.KILLSWITCH: KillswitchStatusEnum.DISABLED,
         UserSettingConnectionEnum.DNS: {
             UserSettingConnectionEnum.DNS_STATUS: UserSettingStatusEnum.DISABLED, # noqa
             UserSettingConnectionEnum.CUSTOM_DNS: []

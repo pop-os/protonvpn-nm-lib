@@ -6,11 +6,11 @@ import pytest
 gi.require_version("NM", "1.0")
 from gi.repository import NM
 
-from common import (
-    CERT_FOLDER, ENV_CI_NAME, PLUGIN_CERT_FOLDER,
-    CertificateManager, ConnectionManager, UserManager,
-    exceptions
-)
+from common import (CERT_FOLDER, ENV_CI_NAME, PLUGIN_CERT_FOLDER,
+                    CertificateManager, ConnectionManager, KillSwitchManager,
+                    UserManager, KillswitchStatusEnum, UserSettingStatusEnum,
+                    UserSettingConnectionEnum, exceptions)
+
 USER_CONFIGURATIONS = {
     "connection": {
         "default_protocol": "tcp",
@@ -29,6 +29,16 @@ USER_CONFIGURATIONS = {
     "tray": {}
 }
 os.environ[ENV_CI_NAME] = "true"
+
+
+class FakeUserConfigurationManager():
+    @property
+    def killswitch(self):
+        return KillswitchStatusEnum.DISABLED
+
+    @property
+    def dns(self):
+        return (UserSettingStatusEnum.DISABLED, [])
 
 
 class TestUnitConnectionManager:
@@ -50,6 +60,14 @@ class TestUnitConnectionManager:
 class TestIntegrationConnectionManager():
     cm = ConnectionManager(
         virtual_device_name="testTunnel0"
+    )
+    fake_user_conf_manager = FakeUserConfigurationManager()
+    ks_manager = KillSwitchManager(
+        fake_user_conf_manager,
+        ks_conn_name="testks",
+        ks_interface_name="testksintrf0",
+        routed_conn_name="testroutedks",
+        routed_interface_name="testroutedks0",
     )
     um = UserManager()
     user = os.environ["vpntest_user"]
@@ -74,7 +92,9 @@ class TestIntegrationConnectionManager():
             self.pwd,
             CertificateManager.delete_cached_certificate,
             self.random_domain,
-            USER_CONFIGURATIONS
+            self.fake_user_conf_manager,
+            self.ks_manager,
+            "192.168.0.1"
         )
         assert isinstance(
             self.cm.get_proton_connection("all_connections")[0],
@@ -89,7 +109,9 @@ class TestIntegrationConnectionManager():
                 self.pwd,
                 CertificateManager.delete_cached_certificate,
                 self.random_domain,
-                USER_CONFIGURATIONS
+                self.fake_user_conf_manager,
+                self.ks_manager,
+                "192.168.0.1"
             )
 
     @pytest.mark.parametrize(
@@ -107,7 +129,9 @@ class TestIntegrationConnectionManager():
                 pwd,
                 CertificateManager.delete_cached_certificate,
                 self.random_domain,
-                USER_CONFIGURATIONS
+                self.fake_user_conf_manager,
+                self.ks_manager,
+                "192.168.0.1"
             )
 
     def test_add_missing_method_connection(self):
@@ -118,7 +142,9 @@ class TestIntegrationConnectionManager():
                 self.pwd,
                 "",
                 self.random_domain,
-                USER_CONFIGURATIONS
+                self.fake_user_conf_manager,
+                self.ks_manager,
+                "192.168.0.1"
             )
 
     def test_remove_correct_connection(self):

@@ -22,6 +22,37 @@ class UserConfigurationManager():
             os.makedirs(PROTON_XDG_CONFIG_HOME)
         self.init_configuration_file()
 
+    @property
+    def default_protocol(self):
+        """Default protocol get property."""
+        user_configs = self.get_user_configurations()
+        return user_configs[
+            UserSettingEnum.CONNECTION
+        ][UserSettingConnectionEnum.DEFAULT_PROTOCOL]
+
+    @property
+    def dns(self):
+        """DNS get property."""
+        user_configs = self.get_user_configurations()
+
+        dns_status = user_configs[
+            UserSettingEnum.CONNECTION
+        ][UserSettingConnectionEnum.DNS][UserSettingConnectionEnum.DNS_STATUS]
+
+        custom_dns = user_configs[
+            UserSettingEnum.CONNECTION
+        ][UserSettingConnectionEnum.DNS][UserSettingConnectionEnum.CUSTOM_DNS]
+
+        return (dns_status, [custom_dns])
+
+    @property
+    def killswitch(self):
+        """Killswitch get property."""
+        user_configs = self.get_user_configurations()
+        return user_configs[
+            UserSettingEnum.CONNECTION
+        ][UserSettingConnectionEnum.KILLSWITCH]
+
     def update_default_protocol(self, protocol):
         if protocol not in [
             ProtocolEnum.TCP,
