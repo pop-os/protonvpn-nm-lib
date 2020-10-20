@@ -17,7 +17,7 @@ from gi.repository import NM
 
 
 class KillSwitchManager(AbstractInterfaceManager):
-    """Manage all killswitch related actions."""
+    """Manages killswitch connection/interfaces."""
     def __init__(
         self,
         user_conf_manager,
@@ -254,9 +254,11 @@ class KillSwitchManager(AbstractInterfaceManager):
                 self.interface_state_tracker[active_conn.get_id()]["is_running"] = True # noqa
 
     def run_subprocess(self, exception, exception_msg, *args):
-        """Run provided input through subprocess.
+        """Run provided input via subprocess.
 
         Args:
+            exception (exceptions.KillswitchError): exception based on action
+            exception_msg (string): exception message
             *args (list): arguments to be passed to subprocess
         """
         subprocess_outpout = subprocess.run(

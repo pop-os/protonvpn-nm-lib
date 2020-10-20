@@ -14,6 +14,7 @@ from gi.repository import NM
 
 
 class IPv6LeakProtectionManager(AbstractInterfaceManager):
+    """Manages IPv6 leak protection connection/interfaces."""
     def __init__(
         self,
         iface_name=IPv6_LEAK_PROTECTION_IFACE_NAME,
@@ -33,6 +34,11 @@ class IPv6LeakProtectionManager(AbstractInterfaceManager):
         }
 
     def manage(self, action):
+        """Manage IPv6 leak protection.
+
+        Args:
+            action (string): either enable or disable
+        """
         self.update_connection_status()
 
         if action == "enable":
@@ -45,6 +51,7 @@ class IPv6LeakProtectionManager(AbstractInterfaceManager):
             )
 
     def add_leak_protection(self):
+        """Add leak protection connection/interface."""
         self.manage("disable")
         subprocess_command = ""\
             "nmcli c a type dummy ifname {iface} "\
@@ -65,6 +72,7 @@ class IPv6LeakProtectionManager(AbstractInterfaceManager):
             )
 
     def remove_leak_protection(self):
+        """Remove leak protection connection/interface."""
         subprocess_command = "nmcli c delete {}".format(
             IPv6_LEAK_PROTECTION_CONN_NAME
         ).split(" ")
@@ -77,9 +85,12 @@ class IPv6LeakProtectionManager(AbstractInterfaceManager):
             )
 
     def run_subprocess(self, exception, exception_msg, *args):
-        """Run provided input through subprocess.
+        """Run provided input via subprocess.
 
         Args:
+            exception (exceptions.IPv6LeakProtectionError):
+                exception based on action
+            exception_msg (string): exception message
             *args (list): arguments to be passed to subprocess
         """
         subprocess_outpout = subprocess.run(
