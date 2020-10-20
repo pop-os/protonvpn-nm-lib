@@ -187,6 +187,16 @@ class CLIWrapper():
         country, load, features = self.extract_server_info(
             conn_status[ConnectionMetadataEnum.SERVER]
         )
+        ks_configuration = "Disabled"
+        if self.user_conf_manager.killswitch == KillswitchStatusEnum.HARD:
+            ks_configuration = "Hard"
+        elif self.user_conf_manager.killswitch == KillswitchStatusEnum.SOFT:
+            ks_configuration = "Soft"
+
+        self.ks_manager.update_connection_status()
+        ks_status = "(Running)"
+        if not self.ks_manager.interface_state_tracker[self.ks_manager.ks_conn_name]["is_running"]: # noqa
+            ks_status = "(Not running)"
 
         status_to_print = dedent("""
             ProtonVPN Connection Status
@@ -196,6 +206,7 @@ class CLIWrapper():
             Load: {load}%
             Protocol: {proto}
             Feature(s): {features}
+            Killswitch Status: {killswitch_status}{ks_interface}
             Connection time: {time}\
         """).format(
             country=country,
@@ -205,9 +216,10 @@ class CLIWrapper():
                 conn_status[ConnectionMetadataEnum.CONNECTED_TIME]
             ),
             load=load,
+            killswitch_status=ks_configuration,
+            ks_interface=ks_status,
             features=", ".join(features)
         )
-
         print(status_to_print)
         sys.exit()
 
@@ -319,7 +331,9 @@ class CLIWrapper():
                 FLAT_SUPPORTED_PROTOCOLS[index]
             )
 
-            return "Successfully updated default protocol!"
+            return "Successfully updated default protocol to {}!".format(
+                user_choice.upper()
+            )
 
     def ask_dns(self):
         user_choice_options_dict = {
@@ -397,7 +411,15 @@ class CLIWrapper():
 
             self.user_conf_manager.update_dns(user_int_choice, custom_dns_list)
 
-            return "Successfully updated DNS settings!"
+            context_msg = "disallow"
+            if user_int_choice == UserSettingStatusEnum.ENABLED:
+                context_msg = "allow"
+            elif user_int_choice == UserSettingStatusEnum.CUSTOM:
+                context_msg = "custom"
+
+            return "Successfully updated DNS settings to {}!".format(
+                context_msg
+            )
 
     def ask_killswitch(self):
         user_choice_options_dict = {
@@ -440,7 +462,13 @@ class CLIWrapper():
             self.user_conf_manager.update_killswitch(user_int_choice)
             self.ks_manager.manage(user_int_choice, True)
 
-            return "Successfully updated KillSwitch settings!"
+            context_msg = "disabled"
+            if user_int_choice == KillswitchStatusEnum.HARD:
+                context_msg = "hard"
+            elif user_int_choice == KillswitchStatusEnum.SOFT:
+                context_msg = "soft"
+
+            return "Successfully updated KillSwitch to {}!".format(context_msg)
 
     def restore_default_configurations(self):
         user_choice = input(
