@@ -8,6 +8,8 @@ from protonvpn.enums import (ClientSuffixEnum, KillswitchStatusEnum,
 from protonvpn.services.certificate_manager import CertificateManager
 from protonvpn.services.connection_manager import ConnectionManager
 from protonvpn.services.connection_state_manager import ConnectionStateManager
+from protonvpn.services.ipv6_leak_protection_manager import \
+    IPv6LeakProtectionManager
 from protonvpn.services.killswitch_manager import KillSwitchManager
 from protonvpn.services.plugin_manager import PluginManager
 from protonvpn.services.server_manager import ServerManager

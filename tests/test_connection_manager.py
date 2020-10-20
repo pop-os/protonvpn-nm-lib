@@ -8,8 +8,8 @@ from gi.repository import NM
 
 from common import (CERT_FOLDER, ENV_CI_NAME, PLUGIN_CERT_FOLDER,
                     CertificateManager, ConnectionManager, KillSwitchManager,
-                    UserManager, KillswitchStatusEnum, UserSettingStatusEnum,
-                    UserSettingConnectionEnum, exceptions)
+                    UserManager, IPv6LeakProtectionManager,
+                    KillswitchStatusEnum, UserSettingStatusEnum, exceptions)
 
 USER_CONFIGURATIONS = {
     "connection": {
@@ -69,6 +69,10 @@ class TestIntegrationConnectionManager():
         routed_conn_name="testroutedks",
         routed_interface_name="testroutedks0",
     )
+    ipv6_lp_manager = IPv6LeakProtectionManager(
+        conn_name="test-ipv6-leak-prot",
+        iface_name="testipv6intrf0",
+    )
     um = UserManager()
     user = os.environ["vpntest_user"]
     pwd = os.environ["vpntest_pwd"]
@@ -94,6 +98,7 @@ class TestIntegrationConnectionManager():
             self.random_domain,
             self.fake_user_conf_manager,
             self.ks_manager,
+            self.ipv6_lp_manager,
             "192.168.0.1"
         )
         assert isinstance(
@@ -111,6 +116,7 @@ class TestIntegrationConnectionManager():
                 self.random_domain,
                 self.fake_user_conf_manager,
                 self.ks_manager,
+                self.ipv6_lp_manager,
                 "192.168.0.1"
             )
 
@@ -131,6 +137,7 @@ class TestIntegrationConnectionManager():
                 self.random_domain,
                 self.fake_user_conf_manager,
                 self.ks_manager,
+                self.ipv6_lp_manager,
                 "192.168.0.1"
             )
 
@@ -144,14 +151,23 @@ class TestIntegrationConnectionManager():
                 self.random_domain,
                 self.fake_user_conf_manager,
                 self.ks_manager,
+                self.ipv6_lp_manager,
                 "192.168.0.1"
             )
 
     def test_remove_correct_connection(self):
-        self.cm.remove_connection()
+        self.cm.remove_connection(
+            self.fake_user_conf_manager,
+            self.ks_manager,
+            self.ipv6_lp_manager
+        )
 
     def test_remove_inexistent_connection(self):
         with pytest.raises(exceptions.ConnectionNotFound):
-            self.cm.remove_connection()
+            self.cm.remove_connection(
+                self.fake_user_conf_manager,
+                self.ks_manager,
+                self.ipv6_lp_manager
+            )
 
     um.logout([], [])
