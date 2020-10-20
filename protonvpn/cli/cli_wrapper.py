@@ -187,6 +187,16 @@ class CLIWrapper():
         country, load, features = self.extract_server_info(
             conn_status[ConnectionMetadataEnum.SERVER]
         )
+        ks_configuration = "Disabled"
+        if self.user_conf_manager.killswitch == KillswitchStatusEnum.HARD:
+            ks_configuration = "Hard"
+        elif self.user_conf_manager.killswitch == KillswitchStatusEnum.SOFT:
+            ks_configuration = "Soft"
+
+        self.ks_manager.update_connection_status()
+        ks_status = "(Running)"
+        if not self.ks_manager.interface_state_tracker[self.ks_manager.ks_conn_name]["is_running"]: # noqa
+            ks_status = "(Not running)"
 
         status_to_print = dedent("""
             ProtonVPN Connection Status
@@ -196,6 +206,7 @@ class CLIWrapper():
             Load: {load}%
             Protocol: {proto}
             Feature(s): {features}
+            Killswitch Status: {killswitch_status}{ks_interface}
             Connection time: {time}\
         """).format(
             country=country,
@@ -205,9 +216,10 @@ class CLIWrapper():
                 conn_status[ConnectionMetadataEnum.CONNECTED_TIME]
             ),
             load=load,
+            killswitch_status=ks_configuration,
+            ks_interface=ks_status,
             features=", ".join(features)
         )
-
         print(status_to_print)
         sys.exit()
 
