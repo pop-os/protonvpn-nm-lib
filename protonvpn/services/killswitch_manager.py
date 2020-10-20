@@ -55,12 +55,17 @@ class KillSwitchManager(AbstractInterfaceManager):
         """Manage killswitch.
 
         Args:
-            action (string): either pre_connection or post_connection
-            is_menu (bool): if the action comes from configurations menu
+            action (string|int): either pre_connection or post_connection
+            is_menu (bool): if the action comes from configurations menu,
+                if so, then action is int
             server_ip (string): server ip to be connected to
         """
         logger.info(
-            "Killswitch setting: {}".format(self.user_conf_manager.killswitch)
+            "Action({}) -> is_menu({}); Killswitch setting: {}".format(
+                action,
+                is_menu,
+                self.user_conf_manager.killswitch
+            )
         )
         if is_menu:
             if int(action) == KillswitchStatusEnum.HARD:
@@ -85,6 +90,8 @@ class KillSwitchManager(AbstractInterfaceManager):
         elif action == "soft_connection":
             self.create_killswitch_connection()
             self.manage("post_connection")
+        elif action == "disable":
+            self.delete_all_connections()
         else:
             raise exceptions.KillswitchError(
                 "Incorrect option for killswitch manager"
@@ -179,7 +186,7 @@ class KillSwitchManager(AbstractInterfaceManager):
             self.run_subprocess(
                 exceptions.ActivateKillswitchError,
                 "Unable to activate {}".format(conn_name),
-                *subprocess_command
+                subprocess_command
             )
 
     def deactivate_connection(self, conn_name):
