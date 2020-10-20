@@ -38,7 +38,7 @@ class CLIWrapper():
     ipv6_lp_manager = IPv6LeakProtectionManager()
 
     def connect(self, args):
-        """Proxymethdo to connect to ProtonVPN."""
+        """Proxymethod to connect to ProtonVPN."""
         cli_commands = dict(
             servername=self.server_manager.direct,
             fastest=self.server_manager.fastest,
