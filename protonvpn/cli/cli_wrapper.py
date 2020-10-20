@@ -24,6 +24,7 @@ from ..services.server_manager import ServerManager
 from ..services.user_configuration_manager import UserConfigurationManager
 from ..services.user_manager import UserManager
 from ..services.killswitch_manager import KillSwitchManager
+from ..services.ipv6_leak_protection_manager import IPv6LeakProtectionManager
 from .cli_dialog import dialog  # noqa
 
 
@@ -34,6 +35,7 @@ class CLIWrapper():
     connection_manager = ConnectionManager()
     user_manager = UserManager()
     server_manager = ServerManager(CertificateManager(), user_manager)
+    ipv6_lp_manager = IPv6LeakProtectionManager()
 
     def connect(self, args):
         """Proxymethdo to connect to ProtonVPN."""
@@ -99,11 +101,13 @@ class CLIWrapper():
         print("Disconnecting from ProtonVPN...")
 
         exit_type = 1
-        if self.user_conf_manager.killswitch == KillswitchStatusEnum.SOFT: # noqa
-            self.ks_manager.manage("disable")
 
         try:
-            self.connection_manager.remove_connection()
+            self.connection_manager.remove_connection(
+                self.user_conf_manager,
+                self.ks_manager,
+                self.ipv6_lp_manager
+            )
         except exceptions.ConnectionNotFound as e:
             print("[!] Unable to disconnect: {}".format(e))
         except (
@@ -248,7 +252,7 @@ class CLIWrapper():
 
             try:
                 resp = _call_method()
-            except exceptions.SelectedOptionError as e:
+            except exceptions.ConfigurationsSelectedOptionError as e:
                 print("\n[!] {}\n".format(e))
                 continue
             else:
@@ -292,7 +296,7 @@ class CLIWrapper():
                 if len(user_choice) == 1:
                     user_choice = proto_short[user_choice]
             except KeyError:
-                raise exceptions.SelectedOptionError(
+                raise exceptions.ConfigurationsSelectedOptionError(
                     "Selected option \"{}\" is incorrect. ".format(user_choice)
                     + "Please select from one of the possible protocols "
                     + "[ [t]cp | [u]dp | [i]kev2 | [w]reguard ]"
@@ -522,7 +526,8 @@ class CLIWrapper():
             self.connection_manager.add_connection(
                 certificate_filename, openvpn_username, openvpn_password,
                 CertificateManager.delete_cached_certificate, domain,
-                self.user_conf_manager, self.ks_manager, entry_ip
+                self.user_conf_manager, self.ks_manager, self.ipv6_lp_manager,
+                entry_ip
             )
         except exceptions.ImportConnectionError as e:
             logger.exception("[!] ImportConnectionError: {}".format(e))
@@ -712,7 +717,11 @@ class CLIWrapper():
 
     def remove_existing_connection(self):
         try:
-            self.connection_manager.remove_connection()
+            self.connection_manager.remove_connection(
+                self.user_conf_manager,
+                self.ks_manager,
+                self.ipv6_lp_manager
+            )
         except exceptions.ConnectionNotFound:
             pass
         else:

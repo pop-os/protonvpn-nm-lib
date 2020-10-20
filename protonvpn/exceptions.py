@@ -25,6 +25,7 @@ class RemoveConnectionFinishError(FinishError):
 
 
 
+
 class IllegalData(ProtonVPNBaseException): # noqa
     """Illegal/unexpected data type"""
 
@@ -35,6 +36,7 @@ class IllegalSessionData(IllegalData):
 
 class IllegalUserData(IllegalData):
     """Illegal/unexpected UserData type"""
+
 
 
 
@@ -55,6 +57,7 @@ class JSONDataError(JSONError):
 
 
 
+
 class CacheServersError(ProtonVPNBaseException): # noqa
     """Cache servers error"""
 
@@ -68,6 +71,7 @@ class CacheLogicalServersFallbackError(CacheServersError):
 
 
 
+
 class KeyringError(ProtonVPNBaseException):  # noqa
     """Keyring error"""
 
@@ -78,7 +82,6 @@ class OptimumBackendNotFound(KeyringError):
 
 class AccessKeyringError(KeyringError):
     """Access keyring error."""
-
 
 
 class KeyringDataNotFound(KeyringError): # noqa
@@ -98,6 +101,7 @@ class StoredProtonUsernameNotFound(KeyringDataNotFound):
 
 
 
+
 class IPv6LeakProtectionError(ProtonVPNBaseException): # noqa
     """IPv6 leak protection error."""
 
@@ -106,20 +110,35 @@ class IPv6LeakProtectionOptionError(IPv6LeakProtectionError):
     """IPv6 leak protection option error."""
 
 
-class IPv6LeakProtectionSubprocessError(IPv6LeakProtectionError):
-    """IPv6 leak protection subprocess run error."""
-
-
-class IPv6LeakProtectionAddError(IPv6LeakProtectionError):
+class EnableIPv6LeakProtectionError(IPv6LeakProtectionError):
     """IPv6 leak protection subprocess add error."""
 
 
-class IPv6LeakProtectionDeleteError(IPv6LeakProtectionError):
+class DisableIPv6LeakProtectionError(IPv6LeakProtectionError):
     """IPv6 leak protection subprocess delete error."""
 
 
 
-class SelectedOptionError(ProtonVPNBaseException): # noqa
+
+class KillswitchError(ProtonVPNBaseException): # noqa
+    """Killswitch error."""
+
+
+class KillswitchOptionError(KillswitchError):
+    """Killswitch option error."""
+
+
+class EnableKillswitchError(KillswitchError):
+    """Killswitch subprocess add error."""
+
+
+class DisableKillswitchError(KillswitchError):
+    """IPv6 leak protection subprocess add error."""
+
+
+
+
+class ConfigurationsSelectedOptionError(ProtonVPNBaseException): # noqa
     """Selected option error"""
 
 

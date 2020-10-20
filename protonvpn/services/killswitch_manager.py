@@ -10,12 +10,13 @@ from ..constants import (KILLSWITCH_CONN_NAME, KILLSWITCH_INTERFACE_NAME,
 from ..enums import KillswitchStatusEnum
 from ..logger import logger
 from .. import exceptions
+from .abstract_interface_manager import AbstractInterfaceManager
 
 gi.require_version("NM", "1.0")
 from gi.repository import NM
 
 
-class KillSwitchManager:
+class KillSwitchManager(AbstractInterfaceManager):
     """Manage all killswitch related actions."""
     def __init__(
         self,
@@ -231,10 +232,10 @@ class KillSwitchManager:
                 )
             )
             logger.error(
-                "[!] KillswtichSubprocessError: {}. Raising exception.".format(
+                "[!] KillswitchError: {}. Raising exception.".format(
                     subprocess_outpout
                 )
             )
-            raise exceptions.KillswtichSubprocessError(
+            raise exceptions.KillswitchError(
                 "Subprocess process error"
             )
