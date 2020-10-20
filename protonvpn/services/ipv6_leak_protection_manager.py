@@ -15,6 +15,8 @@ from gi.repository import NM
 
 class IPv6LeakProtectionManager(AbstractInterfaceManager):
     """Manages IPv6 leak protection connection/interfaces."""
+    enable_ipv6_leak_protection = True
+
     def __init__(
         self,
         iface_name=IPv6_LEAK_PROTECTION_IFACE_NAME,
@@ -41,7 +43,7 @@ class IPv6LeakProtectionManager(AbstractInterfaceManager):
         """
         self.update_connection_status()
 
-        if action == "enable":
+        if action == "enable" and self.enable_ipv6_leak_protection:
             self.add_leak_protection()
         elif action == "disable":
             self.remove_leak_protection()
