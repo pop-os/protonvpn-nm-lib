@@ -8,10 +8,6 @@ gi.require_version("NM", "1.0")
 from gi.repository import NM, GLib
 from .. import exceptions
 from ..constants import (ENV_CI_NAME, VIRTUAL_DEVICE_NAME,
-                         IPv6_LEAK_PROTECTION_CONN_NAME,
-                         IPv6_LEAK_PROTECTION_IFACE_NAME,
-                         IPv6_DUMMY_ADDRESS,
-                         IPv6_DUMMY_GATEWAY,
                          CONFIG_STATUSES)
 from ..enums import UserSettingStatusEnum, KillswitchStatusEnum
 from ..logger import logger
@@ -30,7 +26,8 @@ class ConnectionManager(ConnectionStateManager):
     def add_connection(
         self, filename, username, password,
         delete_cached_cert, domain,
-        user_conf_manager, ks_manager, entry_ip
+        user_conf_manager, ks_manager, ipv6_lp_manager,
+        entry_ip
     ):
         """Setup and add ProtonVPN connection.
 
@@ -111,9 +108,9 @@ class ConnectionManager(ConnectionStateManager):
         self.add_server_certificate_check(vpn_settings, domain)
         self.apply_virtual_device_type(vpn_settings, filename)
         self.dns_manager(connection, user_conf_manager.dns)
-        self.ipv6_leak_manager("add")
+        ipv6_lp_manager.manage("enable")
         if user_conf_manager.killswitch == KillswitchStatusEnum.HARD: # noqa
-            ks_manager.manage("pre_connection", entry_ip)
+            ks_manager.manage("pre_connection", server_ip=entry_ip)
 
         client.add_connection_async(
             connection,
@@ -197,67 +194,6 @@ class ConnectionManager(ConnectionStateManager):
                 ipv4_config.props.dns = custom_dns
             else:
                 logger.info("DNS managemenet disallowed...")
-
-    def ipv6_leak_manager(self, command):
-        """IPv6 leak manager.
-
-        Args:
-            command (string): only 'add' or 'delete'
-        """
-        exception_dict = {
-            "add": exceptions.IPv6LeakProtectionAddError,
-            "delete": exceptions.IPv6LeakProtectionDeleteError
-        }
-
-        if command == "add":
-            self.ipv6_leak_manager("delete")
-            cli_command = ""\
-                "nmcli c a type dummy ifname {iface} "\
-                "con-name {conn} ipv6.method manual "\
-                "ipv6.addresses {ipv6_addr} ipv6.gateway {ipv6_gtwy} "\
-                "ipv6.route-metric 95".format(
-                    iface=IPv6_LEAK_PROTECTION_IFACE_NAME,
-                    conn=IPv6_LEAK_PROTECTION_CONN_NAME,
-                    ipv6_addr=IPv6_DUMMY_ADDRESS,
-                    ipv6_gtwy=IPv6_DUMMY_GATEWAY
-                ).split()
-            condition = "successfully added"
-        elif command == "delete":
-            cli_command = "nmcli c delete pvpn-ipv6leak-protection".split()
-            condition = "successfully deleted"
-        else:
-            raise exceptions.IPv6LeakProtectionOptionError(
-                "Incorrect option for IPv6 leak manager"
-            )
-
-        subprocess_outpout = subprocess.run(
-            cli_command, stderr=subprocess.PIPE, stdout=subprocess.PIPE
-        )
-
-        if subprocess_outpout.returncode != 10:
-            if subprocess_outpout.returncode != 0:
-                logger.error(
-                    "[!] IPv6LeakProtectionSubprocessError: "
-                    + "Raising exception. Output: {}".format(
-                        subprocess_outpout
-                    )
-                )
-                raise exceptions.IPv6LeakProtectionSubprocessError(
-                    "Unable to run command to {} IPv6 interface".format(
-                        command
-                    )
-                )
-
-            if condition not in subprocess_outpout.stdout.decode():
-                logger.error(
-                    "[!] {}: Raising exception. Output: {}".format(
-                        exception_dict[command],
-                        subprocess_outpout
-                    )
-                )
-                raise exception_dict[command](
-                    "Unable to {} IPv6 leak protection".format(command)
-                )
 
     def add_server_certificate_check(self, vpn_settings, domain):
         logger.info("Adding server ceritificate check")
@@ -343,7 +279,12 @@ class ConnectionManager(ConnectionStateManager):
 
         main_loop.run()
 
-    def remove_connection(self):
+    def remove_connection(
+        self,
+        user_conf_manager,
+        ks_manager,
+        ipv6_lp_manager
+    ):
         """Stop and remove ProtonVPN connection."""
         logger.info("Removing VPN connection")
         client = NM.Client.new(None)
@@ -366,7 +307,10 @@ class ConnectionManager(ConnectionStateManager):
 
         # conn is a NM.RemoteConnection
         # https://lazka.github.io/pgi-docs/NM-1.0/classes/RemoteConnection.html#NM.RemoteConnection
-        self.ipv6_leak_manager("delete")
+        ipv6_lp_manager.manage("disable")
+
+        if user_conf_manager.killswitch == KillswitchStatusEnum.SOFT: # noqa
+            ks_manager.manage("disable")
 
         conn.delete_async(
             None,
