@@ -438,7 +438,7 @@ class CLIWrapper():
                 continue
 
             self.user_conf_manager.update_killswitch(user_int_choice)
-            self.ks_manager.manage()
+            self.ks_manager.manage(user_int_choice, True)
 
             return "Successfully updated KillSwitch settings!"
 
@@ -768,8 +768,7 @@ class MonitorVPNState(DbusGetWrapper):
                 self.ks_manager.manage("post_connection")
 
             if self.user_conf_manager.killswitch == KillswitchStatusEnum.SOFT: # noqa
-                self.ks_manager.create_killswitch_connection()
-                self.ks_manager.manage("post_connection")
+                self.ks_manager.manage("soft_connection")
 
             logger.info(msg)
             print(msg)

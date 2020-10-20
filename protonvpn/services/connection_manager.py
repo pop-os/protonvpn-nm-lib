@@ -8,10 +8,6 @@ gi.require_version("NM", "1.0")
 from gi.repository import NM, GLib
 from .. import exceptions
 from ..constants import (ENV_CI_NAME, VIRTUAL_DEVICE_NAME,
-                         IPv6_LEAK_PROTECTION_CONN_NAME,
-                         IPv6_LEAK_PROTECTION_IFACE_NAME,
-                         IPv6_DUMMY_ADDRESS,
-                         IPv6_DUMMY_GATEWAY,
                          CONFIG_STATUSES)
 from ..enums import UserSettingStatusEnum, KillswitchStatusEnum
 from ..logger import logger
@@ -114,7 +110,7 @@ class ConnectionManager(ConnectionStateManager):
         self.dns_manager(connection, user_conf_manager.dns)
         ipv6_lp_manager.manage("enable")
         if user_conf_manager.killswitch == KillswitchStatusEnum.HARD: # noqa
-            ks_manager.manage("pre_connection", entry_ip)
+            ks_manager.manage("pre_connection", server_ip=entry_ip)
 
         client.add_connection_async(
             connection,

@@ -51,30 +51,44 @@ class KillSwitchManager(AbstractInterfaceManager):
         }
         self.update_connection_status()
 
-    def manage(self, action=None, server_ip=None):
+    def manage(self, action, is_menu=False, server_ip=None):
         """Manage killswitch.
 
         Args:
             action (string): either pre_connection or post_connection
+            is_menu (bool): if the action comes from configurations menu
+            server_ip (string): server ip to be connected to
         """
         logger.info(
             "Killswitch setting: {}".format(self.user_conf_manager.killswitch)
         )
+        if is_menu:
+            if int(action) == KillswitchStatusEnum.HARD:
+                self.create_killswitch_connection()
+            elif int(action) in [
+                KillswitchStatusEnum.SOFT, KillswitchStatusEnum.DISABLED
+            ]:
+                self.delete_all_connections()
+            else:
+                raise exceptions.KillswitchError(
+                    "Incorrect option for killswitch manager"
+                )
+
+            return
+
         if action == "pre_connection":
             self.create_routed_connection(server_ip)
             self.deactivate_connection(self.ks_conn_name)
-            return
         elif action == "post_connection":
             self.activate_connection(self.ks_conn_name)
             self.delete_connection(self.routed_conn_name)
-            return
-        elif action == "disable":
-            self.delete_all_connections()
-
-        if self.user_conf_manager.killswitch == KillswitchStatusEnum.HARD: # noqa
+        elif action == "soft_connection":
             self.create_killswitch_connection()
+            self.manage("post_connection")
         else:
-            self.delete_all_connections()
+            raise exceptions.KillswitchError(
+                "Incorrect option for killswitch manager"
+            )
 
     def create_killswitch_connection(self):
         """Create killswitch connection/interface."""
@@ -93,9 +107,11 @@ class KillSwitchManager(AbstractInterfaceManager):
                 ipv6_gateway=self.ipv6_dummy_gateway,
             ).split(" ")
 
-        self.update_connection_status()
-        if not self.interface_state_tracker[self.ks_conn_name]["exists"]:
-            self.run_subprocess(*subprocess_command)
+        self.create_connection(
+            self.ks_conn_name,
+            "Unable to activate {}".format(self.ks_conn_name),
+            subprocess_command
+        )
 
     def create_routed_connection(self, server_ip):
         """Create routed connection/interface.
@@ -128,9 +144,22 @@ class KillSwitchManager(AbstractInterfaceManager):
                 routes=route_data_str
             ).split(" ")
 
+        self.create_connection(
+            self.routed_conn_name,
+            "Unable to activate {}".format(self.routed_conn_name),
+            subprocess_command
+        )
+
+    def create_connection(
+        self, conn_name, exception_msg, subprocess_command
+    ):
         self.update_connection_status()
-        if not self.interface_state_tracker[self.routed_conn_name]["exists"]:
-            self.run_subprocess(*subprocess_command)
+        if not self.interface_state_tracker[conn_name]["exists"]:
+            self.run_subprocess(
+                exceptions.CreateKillswitchError,
+                exception_msg,
+                subprocess_command
+            )
 
     def activate_connection(self, conn_name):
         """Activate a connection based on connection name.
@@ -147,7 +176,11 @@ class KillSwitchManager(AbstractInterfaceManager):
         ) and (
             not self.interface_state_tracker[conn_name]["is_running"]
         ):
-            self.run_subprocess(*subprocess_command)
+            self.run_subprocess(
+                exceptions.ActivateKillswitchError,
+                "Unable to activate {}".format(conn_name),
+                *subprocess_command
+            )
 
     def deactivate_connection(self, conn_name):
         """Deactivate a connection based on connection name.
@@ -160,7 +193,11 @@ class KillSwitchManager(AbstractInterfaceManager):
 
         self.update_connection_status()
         if self.interface_state_tracker[conn_name]["is_running"]: # noqa
-            self.run_subprocess(*subprocess_command)
+            self.run_subprocess(
+                exceptions.DectivateKillswitchError,
+                "Unable to deactivate {}".format(conn_name),
+                subprocess_command
+            )
 
     def delete_connection(self, conn_name):
         """Delete a connection based on connection name.
@@ -173,7 +210,11 @@ class KillSwitchManager(AbstractInterfaceManager):
 
         self.update_connection_status()
         if self.interface_state_tracker[conn_name]["exists"]: # noqa
-            self.run_subprocess(*subprocess_command)
+            self.run_subprocess(
+                exceptions.DeleteKillswitchError,
+                "Unable to delete {}".format(conn_name),
+                subprocess_command
+            )
 
     def deactivate_all_connections(self):
         """Deactivate all connections."""
@@ -212,14 +253,14 @@ class KillSwitchManager(AbstractInterfaceManager):
             else:
                 self.interface_state_tracker[active_conn.get_id()]["is_running"] = True # noqa
 
-    def run_subprocess(self, *args):
+    def run_subprocess(self, exception, exception_msg, *args):
         """Run provided input through subprocess.
 
         Args:
             *args (list): arguments to be passed to subprocess
         """
         subprocess_outpout = subprocess.run(
-            args, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+            *args, stderr=subprocess.PIPE, stdout=subprocess.PIPE
         )
 
         if (
@@ -232,10 +273,11 @@ class KillSwitchManager(AbstractInterfaceManager):
                 )
             )
             logger.error(
-                "[!] KillswitchError: {}. Raising exception.".format(
+                "[!] {}: {}. Raising exception.".format(
+                    exception,
                     subprocess_outpout
                 )
             )
-            raise exceptions.KillswitchError(
-                "Subprocess process error"
+            raise exception(
+                exception_msg
             )

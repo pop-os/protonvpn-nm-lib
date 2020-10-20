@@ -128,12 +128,20 @@ class KillswitchOptionError(KillswitchError):
     """Killswitch option error."""
 
 
-class EnableKillswitchError(KillswitchError):
-    """Killswitch subprocess add error."""
+class CreateKillswitchError(KillswitchError):
+    """Create killswitch error"""
 
 
-class DisableKillswitchError(KillswitchError):
-    """IPv6 leak protection subprocess add error."""
+class DeleteKillswitchError(KillswitchError):
+    """Delete killswitch error."""
+
+
+class ActivateKillswitchError(KillswitchError):
+    """Activate killswitch error."""
+
+
+class DectivateKillswitchError(KillswitchError):
+    """Deactivate killswitch error."""
 
 
 
