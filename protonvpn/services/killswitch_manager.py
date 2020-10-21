@@ -13,7 +13,7 @@ from .. import exceptions
 from .abstract_interface_manager import AbstractInterfaceManager
 
 gi.require_version("NM", "1.0")
-from gi.repository import NM
+from gi.repository import NM, GLib # noqa
 
 
 class KillSwitchManager(AbstractInterfaceManager):
@@ -49,6 +49,7 @@ class KillSwitchManager(AbstractInterfaceManager):
                 "is_running": False
             }
         }
+        self.disable_connectivity_check()
         self.update_connection_status()
 
     def manage(self, action, is_menu=False, server_ip=None):
@@ -67,6 +68,8 @@ class KillSwitchManager(AbstractInterfaceManager):
                 self.user_conf_manager.killswitch
             )
         )
+        self.disable_connectivity_check()
+
         if is_menu:
             if int(action) == KillswitchStatusEnum.HARD:
                 self.create_killswitch_connection()
@@ -290,3 +293,45 @@ class KillSwitchManager(AbstractInterfaceManager):
             raise exception(
                 exception_msg
             )
+
+    def disable_connectivity_check(self):
+        """Disable NetworkManager connectivity check."""
+        logger.info("Conn check available ({}) - Conn check enabled ({})")
+        client = NM.Client.new(None)
+        is_conn_check_available = client.connectivity_check_get_available()
+        is_conn_check_enabled = client.connectivity_check_get_enabled()
+
+        if not is_conn_check_enabled:
+            return
+
+        if not is_conn_check_available:
+            logger.error(
+                "[!] AvailableConnectivityCheckError: "
+                + "Unable to change connectivity check for killswitch."
+                + "Raising exception."
+            )
+            raise exceptions.AvailableConnectivityCheckError(
+                "Unable to change connectivity check for killswitch"
+            )
+
+        if is_conn_check_enabled:
+            # client.dbus_set_property(
+            #     "/org/freedesktop/NetworkManager",
+            #     "org.freedesktop.NetworkManager",
+            #     "ConnectivityCheckEnabled",
+            #     GLib.Variant.new_boolean(False),
+            #     -1, None, None, None
+            # )
+            client.props.connectivity_check_enabled = False
+            client = NM.Client.new(None)
+            if client.props.connectivity_check_enabled:
+                logger.error(
+                    "[!] DisableConnectivityCheckError: "
+                    + "Can not disable connectivity check for killswitch."
+                    + "Raising exception."
+                )
+                raise exceptions.DisableConnectivityCheckError(
+                    "Can not disable connectivity check for killswitch"
+                )
+
+            logger.info("Check connectivity has been disabled")
