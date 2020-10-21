@@ -155,7 +155,7 @@ class DisableConnectivityCheckError(KillswitchError):
 
 
 class ConfigurationsSelectedOptionError(ProtonVPNBaseException): # noqa
-    """Selected option error"""
+    """Selected option error."""
 
 
 class AddConnectionCredentialsError(ProtonVPNBaseException):
@@ -195,24 +195,16 @@ class ProtocolPluginNotFound(ProtonVPNBaseException):
 
 
 class ConnectionNotFound(ProtonVPNBaseException):
-    """ProtonVPN connection not found"""
+    """ProtonVPN connection not found."""
 
 
 class ProtocolNotFound(ProtonVPNBaseException):
-    """Protocol not found upon generate certificate"""
-
-
-class SessionError(ProtonVPNBaseException):
-    """Session error"""
+    """Protocol not found upon generate certificate."""
 
 
 class IllegalServername(ProtonVPNBaseException):
-    """Unexpected servername"""
+    """Unexpected servername."""
 
 
 class EmptyServerListError(ProtonVPNBaseException):
-    """Empty server list error"""
-
-
-class KillswtichSubprocessError(ProtonVPNBaseException):
-    """Killswitch subprocess error."""
+    """Empty server list error."""
