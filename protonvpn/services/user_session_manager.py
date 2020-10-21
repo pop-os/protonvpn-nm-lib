@@ -3,7 +3,7 @@ import os
 import re
 
 import keyring
-import proton
+from .proton_session_wrapper import ProtonSessionWrapper
 
 from .. import exceptions
 from ..enums import KeyringEnum
@@ -53,7 +53,7 @@ class UserSessionManager:
 
         # Needs to be catched
         try:
-            return proton.Session.load(stored_session)
+            return ProtonSessionWrapper.load_wrapper(stored_session)
         except KeyError as e:
             logger.exception("[!] Exception: {}".format(e))
             raise Exception(e)

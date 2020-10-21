@@ -6,6 +6,8 @@ import re
 
 import requests
 from proton.api import ProtonError, Session
+from .proton_session_wrapper import ProtonSessionWrapper
+
 
 from .. import exceptions
 from ..constants import CACHED_SERVERLIST, PROTON_XDG_CACHE_HOME
@@ -411,10 +413,12 @@ class ServerManager():
             protocol (ProtocolEnum): ProtocolEnum.TCP, ProtocolEnum.UDP ...
         """
         logger.info("Validating session and protocol")
-        if not isinstance(session, Session):
+        if not isinstance(session, ProtonSessionWrapper):
             err_msg = "Incorrect object type, "\
                 "{} is expected "\
-                "but got {} instead".format(type(Session), type(session))
+                "but got {} instead".format(
+                    type(ProtonSessionWrapper), type(session)
+                )
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(
                     err_msg
@@ -503,7 +507,7 @@ class ServerManager():
         ):
             if not self.killswitch_status:
                 try:
-                    data = session.api_request(endpoint="/vpn/logicals")
+                    data = session.api_call(endpoint="/vpn/logicals")
                 except (
                     ProtonError,
                     requests.exceptions.ConnectionError
