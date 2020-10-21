@@ -144,6 +144,14 @@ class DectivateKillswitchError(KillswitchError):
     """Deactivate killswitch error."""
 
 
+class AvailableConnectivityCheckError(KillswitchError):
+    """Available connectivity check error."""
+
+
+class DisableConnectivityCheckError(KillswitchError):
+    """Disable connectivity check error."""
+
+
 
 
 class ConfigurationsSelectedOptionError(ProtonVPNBaseException): # noqa
