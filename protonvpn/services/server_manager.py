@@ -5,7 +5,7 @@ import random
 import re
 
 import requests
-from proton.api import ProtonError, Session
+from proton.api import ProtonError
 from .proton_session_wrapper import ProtonSessionWrapper
 
 

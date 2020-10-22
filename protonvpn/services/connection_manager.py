@@ -196,7 +196,7 @@ class ConnectionManager(ConnectionStateManager):
                 logger.info("DNS managemenet disallowed...")
 
     def add_server_certificate_check(self, vpn_settings, domain):
-        logger.info("Adding server ceritificate check")
+        logger.info("Adding server certificate check")
         appened_domain = "name:" + domain
         try:
             vpn_settings.add_data_item(

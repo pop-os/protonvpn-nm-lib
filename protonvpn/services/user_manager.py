@@ -60,7 +60,8 @@ class UserManager(UserSessionManager):
         session = ProtonSessionWrapper(
             api_url="https://api.protonvpn.ch",
             appversion="LinuxVPN_" + APP_VERSION,
-            user_agent=self.get_distro_info()
+            user_agent=self.get_distro_info(),
+            user_manager=self
         )
 
         try:
@@ -73,7 +74,7 @@ class UserManager(UserSessionManager):
                 raise exceptions.APIAuthenticationError(e)
 
         # fetch user data
-        user_data = session.api_call('/vpn')
+        user_data = session.api_call("/vpn")
 
         # Store session data
         self.store_data(
@@ -165,10 +166,14 @@ class UserManager(UserSessionManager):
 
     def cache_user_data(self, session=False):
         """Cache user data from API."""
+        logger.info("Caching user data")
         if not session:
+            logger.info("Session not provided, loading session")
             session = self.load_session()
 
-        user_data = session.api_call('/vpn')
+        logger.info("Calling api")
+        user_data = session.api_call("/vpn")
+
         self.store_data(
             user_data,
             self.keyring_userdata,
