@@ -663,11 +663,10 @@ class CLIWrapper():
 
     def determine_protocol(self, args):
         """Determine protocol based on CLI input arguments."""
-        protocol = ProtocolEnum.UDP
         try:
             protocol = args.protocol.lower().strip()
         except AttributeError:
-            pass
+            protocol = self.user_conf_manager.default_protocol
         else:
             delattr(args, "protocol")
 
