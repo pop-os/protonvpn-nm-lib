@@ -25,7 +25,7 @@ class ProtonSessionWrapper():
         self.user_manager = kwargs.pop("user_manager")
         self.proton_session = Session(**kwargs)
 
-    def api_call(self, *args, **api_kwargs):
+    def api_request(self, *args, **api_kwargs):
         """Wrapper for proton-client api_request.
 
         Args:
@@ -118,8 +118,8 @@ class ProtonSessionWrapper():
             self.user_manager.keyring_sessiondata,
             self.user_manager.keyring_service
         )
-        logger.info("Calling api_call")
-        return self.api_call(*args, **kwargs)
+        logger.info("Calling api_request")
+        return self.api_request(*args, **kwargs)
 
     def handle_403(self, error, *args, **kwargs):
         logger.info("Catched 403 error")

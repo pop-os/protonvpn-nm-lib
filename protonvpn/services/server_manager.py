@@ -507,7 +507,7 @@ class ServerManager():
         ):
             if not self.killswitch_status:
                 try:
-                    data = session.api_call(endpoint="/vpn/logicals")
+                    data = session.api_request("/vpn/logicals")
                 except (
                     ProtonError,
                     requests.exceptions.ConnectionError

@@ -74,7 +74,7 @@ class UserManager(UserSessionManager):
                 raise exceptions.APIAuthenticationError(e)
 
         # fetch user data
-        user_data = session.api_call("/vpn")
+        user_data = session.api_request("/vpn")
 
         # Store session data
         self.store_data(
@@ -172,7 +172,7 @@ class UserManager(UserSessionManager):
             session = self.load_session()
 
         logger.info("Calling api")
-        user_data = session.api_call("/vpn")
+        user_data = session.api_request("/vpn")
 
         self.store_data(
             user_data,
