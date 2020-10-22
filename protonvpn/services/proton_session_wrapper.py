@@ -11,16 +11,7 @@ class ProtonSessionWrapper():
         self, **kwargs
     ):
         self.ERROR_CODE = {
-            400: self.handle_400,
             401: self.handle_401,
-            403: self.handle_403,
-            404: self.handle_404,
-            409: self.handle_409,
-            422: self.handle_422,
-            429: self.handle_429,
-            500: self.handle_500,
-            501: self.handle_501,
-            503: self.handle_503,
         }
         self.user_manager = kwargs.pop("user_manager")
         self.proton_session = Session(**kwargs)
@@ -102,10 +93,6 @@ class ProtonSessionWrapper():
             return self.flatten_tuple(_tuple[0]) \
                 + self.flatten_tuple(_tuple[1:])
 
-    def handle_400(self, error, *args, **kwargs):
-        logger.info("Catched 400 error")
-        raise exceptions.API400Error(error)
-
     def handle_401(self, error, *args, **kwargs):
         """Handles access token expiration."""
         logger.info("Catched 401 error")
@@ -120,35 +107,3 @@ class ProtonSessionWrapper():
         )
         logger.info("Calling api_request")
         return self.api_request(*args, **kwargs)
-
-    def handle_403(self, error, *args, **kwargs):
-        logger.info("Catched 403 error")
-        raise exceptions.API403Error(error)
-
-    def handle_404(self, error, *args, **kwargs):
-        logger.info("Catched 404 error")
-        raise exceptions.API405Error(error)
-
-    def handle_409(self, error, *args, **kwargs):
-        logger.info("Catched 409 error")
-        raise exceptions.API409Error(error)
-
-    def handle_422(self, error, *args, **kwargs):
-        logger.info("Catched 422 error")
-        raise exceptions.API422Error(error)
-
-    def handle_429(self, error, *args, **kwargs):
-        logger.info("Catched 429 error")
-        raise exceptions.API429Error(error)
-
-    def handle_500(self, error, *args, **kwargs):
-        logger.info("Catched 500 error")
-        raise exceptions.API500Error(error)
-
-    def handle_501(self, error, *args, **kwargs):
-        logger.info("Catched 501 error")
-        raise exceptions.API501Error(error)
-
-    def handle_503(self, error, *args, **kwargs):
-        logger.info("Catched 504 error")
-        raise exceptions.API503Error(error)
