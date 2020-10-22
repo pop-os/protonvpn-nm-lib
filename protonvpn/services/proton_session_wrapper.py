@@ -96,7 +96,7 @@ class ProtonSessionWrapper():
             return (_tuple,)
         elif len(_tuple) == 0:
             return ()
-        if isinstance(_tuple[0], dict):
+        elif isinstance(_tuple[0], dict):
             return self.flatten_tuple(_tuple[1:])
         else:
             return self.flatten_tuple(_tuple[0]) \
