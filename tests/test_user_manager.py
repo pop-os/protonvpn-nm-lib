@@ -1,9 +1,9 @@
 import os
 
 import pytest
-from proton.api import Session
 
-from common import ClientSuffixEnum, UserManager, exceptions
+from common import (ClientSuffixEnum, ProtonSessionWrapper, UserManager,
+                    exceptions)
 
 
 class TestUnitUserManager():
@@ -107,7 +107,7 @@ class TestUnitUserManager():
         self.um.keyring_sessiondata = test_keyring_username_sessiondata
         assert isinstance(
             self.um.load_session(),
-            Session
+            ProtonSessionWrapper
         )
 
     def test_load_no_session(self):

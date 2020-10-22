@@ -2,15 +2,20 @@ import json
 import os
 import shutil
 
-import proton
 import pytest
 
 from common import (
     MOCK_DATA_JSON, SERVERS, TEST_CERTS,
-    CertificateManager, exceptions
+    CertificateManager, ProtonSessionWrapper, UserManager, exceptions
 )
 
-session = proton.Session.load(json.loads(MOCK_DATA_JSON))
+um = UserManager(
+    keyring_service="TestCertitifcateManager",
+    keyring_sessiondata="TestCertManSessionData",
+    keyring_userdata="TestCertManUserData",
+    keyring_proton_user="TestCertManUser"
+)
+session = ProtonSessionWrapper.load(json.loads(MOCK_DATA_JSON), um)
 
 
 class TestCertificateManager:

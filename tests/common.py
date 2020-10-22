@@ -15,6 +15,7 @@ from protonvpn.services.plugin_manager import PluginManager
 from protonvpn.services.server_manager import ServerManager
 from protonvpn.services.user_manager import UserManager
 from protonvpn.services.user_session_manager import UserSessionManager
+from protonvpn.services.proton_session_wrapper import ProtonSessionWrapper
 
 MOCK_SESSIONDATA = {
     "api_url": "https://api.protonvpn.ch/tests/ping",

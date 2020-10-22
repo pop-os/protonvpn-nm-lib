@@ -1,7 +1,7 @@
 import pytest
-from proton.api import Session
 
-from common import MOCK_SESSIONDATA, UserSessionManager, exceptions
+from common import (MOCK_SESSIONDATA, ProtonSessionWrapper, UserSessionManager,
+                    exceptions)
 
 TEST_KEYRING = dict(
     sname=["test1", "test2", "test3"],
@@ -115,7 +115,7 @@ class TestUserSessionManager:
                 keyring_service=expected_servicename,
                 keyring_username=expected_username
             ),
-            Session
+            ProtonSessionWrapper
         )
 
     @pytest.mark.parametrize(

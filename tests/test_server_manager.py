@@ -1,26 +1,35 @@
 import json
 import os
 import shutil
-import proton
 import pytest
 
 from common import (
     CACHED_OPENVPN_CERTIFICATE, MOCK_DATA_JSON, SERVERS,
-    TEST_CACHED_SERVERFILE, CertificateManager, ServerManager,
-    UserManager, exceptions, MOCK_SESSIONDATA
+    TEST_CACHED_SERVERFILE, MOCK_SESSIONDATA,
+    CertificateManager, ServerManager, UserManager, ProtonSessionWrapper,
+    exceptions
 )
 
-session = proton.Session.load(json.loads(MOCK_DATA_JSON))
-user = os.environ["vpntest_user"]
-pwd = os.environ["vpntest_pwd"]
-REAL_SESSION = proton.Session("https://api.protonvpn.ch")
-REAL_SESSION.authenticate(user, pwd)
+
+TEST_KEYRING_SERVICE = "TestServerManager"
+TEST_KEYRING_SESSIONDATA = "TestServerManSessionData"
+TEST_KEYRING_USERDATA = "TestServerManUserData"
+TEST_KEYRING_PROTON_USER = "TestServerManUser"
 
 um = UserManager(
-    keyring_service="TestServerManager",
-    keyring_sessiondata="TestServerSessionData",
-    keyring_userdata="TestServerUserData"
+    keyring_service=TEST_KEYRING_SERVICE,
+    keyring_sessiondata=TEST_KEYRING_SESSIONDATA,
+    keyring_userdata=TEST_KEYRING_USERDATA,
+    keyring_proton_user=TEST_KEYRING_PROTON_USER
 )
+session = ProtonSessionWrapper.load(json.loads(MOCK_DATA_JSON), um)
+user = os.environ["vpntest_user"]
+pwd = os.environ["vpntest_pwd"]
+REAL_SESSION = ProtonSessionWrapper(
+    api_url="https://api.protonvpn.ch",
+    user_manager=um
+)
+REAL_SESSION.authenticate(user, pwd)
 
 
 class TestUnitServerManager:
@@ -38,26 +47,35 @@ class TestUnitServerManager:
             os.mkdir(TEST_CACHED_SERVERFILE)
 
         um.store_data(
-            MOCK_SESSIONDATA, "TestServerSessionData", "TestServerManager"
+            data=MOCK_SESSIONDATA,
+            keyring_username=TEST_KEYRING_SESSIONDATA,
+            keyring_service=TEST_KEYRING_SERVICE
         )
         um.store_data(
-            dict(
+            data=dict(
                 VPN=dict(
                     Name="test_username",
                     Password="test_password",
                     MaxTier="2",
                 )
             ),
-            "TestServerUserData",
-            "TestServerManager",
+            keyring_username=TEST_KEYRING_USERDATA,
+            keyring_service=TEST_KEYRING_SERVICE,
             store_user_data=True
+        )
+        um.store_data(
+            data={"test_proton_username": "test_server_man_user"},
+            keyring_username=TEST_KEYRING_PROTON_USER,
+            keyring_service=TEST_KEYRING_SERVICE,
+            store_user_data=False
         )
 
     @classmethod
     def teardown_class(cls):
         shutil.rmtree(TEST_CACHED_SERVERFILE)
-        um.delete_stored_data("TestServerSessionData", "TestServerManager")
-        um.delete_stored_data("TestServerUserData", "TestServerManager")
+        um.delete_stored_data(TEST_KEYRING_PROTON_USER, TEST_KEYRING_SERVICE)
+        um.delete_stored_data(TEST_KEYRING_SESSIONDATA, TEST_KEYRING_SERVICE)
+        um.delete_stored_data(TEST_KEYRING_USERDATA, TEST_KEYRING_SERVICE)
 
     def test_none_path_cache_servers(self):
         with pytest.raises(TypeError):
@@ -223,26 +241,35 @@ class TestIntegrationServerManager:
     @classmethod
     def setup_class(cls):
         um.store_data(
-            MOCK_SESSIONDATA, "TestServerSessionData", "TestServerManager"
+            data=MOCK_SESSIONDATA,
+            keyring_username=TEST_KEYRING_SESSIONDATA,
+            keyring_service=TEST_KEYRING_SERVICE
         )
         um.store_data(
-            dict(
+            data=dict(
                 VPN=dict(
                     Name="test_username",
                     Password="test_password",
                     MaxTier="2",
                 )
             ),
-            "TestServerUserData",
-            "TestServerManager",
+            keyring_username=TEST_KEYRING_USERDATA,
+            keyring_service=TEST_KEYRING_SERVICE,
             store_user_data=True
+        )
+        um.store_data(
+            data={"test_proton_username": "test_server_man_user"},
+            keyring_username=TEST_KEYRING_PROTON_USER,
+            keyring_service=TEST_KEYRING_SERVICE,
+            store_user_data=False
         )
 
     @classmethod
     def teardown_class(cls):
         os.remove(CACHED_OPENVPN_CERTIFICATE)
-        um.delete_stored_data("TestServerSessionData", "TestServerManager")
-        um.delete_stored_data("TestServerUserData", "TestServerManager")
+        um.delete_stored_data(TEST_KEYRING_PROTON_USER, TEST_KEYRING_SERVICE)
+        um.delete_stored_data(TEST_KEYRING_SESSIONDATA, TEST_KEYRING_SERVICE)
+        um.delete_stored_data(TEST_KEYRING_USERDATA, TEST_KEYRING_SERVICE)
 
     def test_correct_generate_connect_fastest(self):
         servername, domain, ip = self.server_man.fastest(REAL_SESSION, "tcp")
