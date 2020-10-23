@@ -6,12 +6,13 @@ verify_ssl = true
 [dev-packages]
 pytest = "*"
 pytest-cov = "*"
+pytest-xdist = "*"
 
 [packages]
 pyxdg = "*"
 pythondialog = "*"
 jinja2 = "*"
-proton-client = "*"
 pygobject = "*"
 keyring = "*"
 distro = "*"
+proton-client = "*"
