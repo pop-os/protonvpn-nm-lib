@@ -25,6 +25,14 @@ class TestUnitUserManager():
             True
         )
 
+    @classmethod
+    def teardown_class(cls):
+        um = UserManager()
+        um.delete_stored_data(
+            keyring_username="UserData",
+            keyring_service="TestUserManager"
+        )
+
     @pytest.fixture
     def pvpn_user(self):
         user = os.environ["vpntest_user"]
