@@ -1,5 +1,5 @@
 import distro
-import proton
+from .proton_session_wrapper import ProtonError, ProtonSessionWrapper
 
 from ..constants import (
     APP_VERSION
@@ -57,15 +57,16 @@ class UserManager(UserSessionManager):
         """
         self.validate_username_password(username, password)
 
-        session = proton.Session(
+        session = ProtonSessionWrapper(
             api_url="https://api.protonvpn.ch",
             appversion="LinuxVPN_" + APP_VERSION,
-            user_agent=self.get_distro_info()
+            user_agent=self.get_distro_info(),
+            user_manager=self
         )
 
         try:
             session.authenticate(username, password)
-        except proton.api.ProtonError as e:
+        except ProtonError as e:
             logger.exception("[!] API ProtonError: {}".format(e))
             if e.code == 8002:
                 raise exceptions.IncorrectCredentialsError(e)
@@ -73,7 +74,7 @@ class UserManager(UserSessionManager):
                 raise exceptions.APIAuthenticationError(e)
 
         # fetch user data
-        user_data = session.api_request('/vpn')
+        user_data = session.api_request("/vpn")
 
         # Store session data
         self.store_data(
@@ -165,10 +166,14 @@ class UserManager(UserSessionManager):
 
     def cache_user_data(self, session=False):
         """Cache user data from API."""
+        logger.info("Caching user data")
         if not session:
+            logger.info("Session not provided, loading session")
             session = self.load_session()
 
-        user_data = session.api_request('/vpn')
+        logger.info("Calling api")
+        user_data = session.api_request("/vpn")
+
         self.store_data(
             user_data,
             self.keyring_userdata,

@@ -798,7 +798,7 @@ class MonitorVPNState(DbusGetWrapper):
                 self.ks_manager.manage("soft_connection")
 
             logger.info(msg)
-            print(msg)
+            print("\n{}".format(msg))
             self.loop.quit()
         elif state in [6, 7]:
 

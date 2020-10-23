@@ -3,7 +3,7 @@ import os
 import re
 
 import keyring
-import proton
+from .proton_session_wrapper import ProtonSessionWrapper
 
 from .. import exceptions
 from ..enums import KeyringEnum
@@ -53,7 +53,7 @@ class UserSessionManager:
 
         # Needs to be catched
         try:
-            return proton.Session.load(stored_session)
+            return ProtonSessionWrapper.load(stored_session, self)
         except KeyError as e:
             logger.exception("[!] Exception: {}".format(e))
             raise Exception(e)
@@ -75,8 +75,7 @@ class UserSessionManager:
             keyring_service (string): the keyring servicename (optional)
             store_user_data (bool): if data to be stored is user data
         """
-        logger.info("Storing {} session".format(keyring_username))
-
+        logger.info("Storing {}".format(keyring_username))
         if data is None or len(data) < 1:
             logger.error(
                 "[!] IllegalData: Unexpected SessionData type. "
@@ -114,6 +113,7 @@ class UserSessionManager:
                 "Could not access keychain: {}".format(e)
             )
         except Exception as e:
+            logger.error("[!] Exception: {}".format(e))
             capture_exception(e)
 
     def get_stored_data(

@@ -2,7 +2,7 @@ import os
 
 import jinja2
 from jinja2 import Environment, FileSystemLoader
-from proton.api import Session
+from .proton_session_wrapper import ProtonSessionWrapper
 
 from .. import exceptions
 from ..constants import (
@@ -27,7 +27,7 @@ class CertificateManager(ConnectionStateManager):
 
         Args:
             protocol (ProtocolEnum): ProtocolEnum.TCP, ProtocolEnum.UDP ...
-            session (proton.api.Session): the current user session
+            session (ProtonSessionWrapper): the current user session
             servername (string): servername [PT#1]
             ip_list (list): the ips for the selected server
             cached_cert (string): path to where a certificate is to be cached
@@ -51,10 +51,12 @@ class CertificateManager(ConnectionStateManager):
             )
             raise TypeError(err_msg)
 
-        if not isinstance(session, Session):
+        if not isinstance(session, ProtonSessionWrapper):
             err_msg = "Incorrect object type, "\
                 "{} is expected "\
-                "but got {} instead".format(type(Session), type(protocol))
+                "but got {} instead".format(
+                    type(ProtonSessionWrapper), type(protocol)
+                )
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
             )

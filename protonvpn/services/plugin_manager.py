@@ -102,7 +102,7 @@ class PluginManager():
             ProtocolImplementationEnum:
                 protocol implementation type (openvpn/strongswan/wireguard)
         """
-        logger.info("Getting protocol implementationtype")
+        logger.info("Getting protocol implementation type")
         for plugin_name, protocol_types in SUPPORTED_PROTOCOLS.items():
             if vpn_protocol in protocol_types:
                 return plugin_name
