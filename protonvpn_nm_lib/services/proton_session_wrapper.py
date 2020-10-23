@@ -201,17 +201,12 @@ class ProtonSessionWrapper():
         """
         import re
         for class_member in inspect.getmembers(exceptions):
-            if "API" in class_member[0]:
-                excp_name = class_member[0]
-                re_api_status_code = re.compile(
-                    r"^([A-Za-z]+)(\d+)([A-Za-z]+)$"
-                )
-                result = re_api_status_code.search(excp_name)
-                if not result:
-                    continue
-
+            re_api_status_code = re.compile(
+                r"^([A-Za-z]+)(\d+)([A-Za-z]+)$"
+            )
+            result = re_api_status_code.search(class_member[0])
+            if result:
                 err_num = result.groups()[1]
-
                 if err_num in self.API_ERROR_LIST:
                     self.API_EXCEPTION_DICT[err_num] = class_member[1]
                 else:
