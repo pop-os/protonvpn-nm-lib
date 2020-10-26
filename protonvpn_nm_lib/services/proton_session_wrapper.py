@@ -149,7 +149,7 @@ class ProtonSessionWrapper():
             return self.flatten_tuple(_tuple[0]) \
                 + self.flatten_tuple(_tuple[1:])
 
-    def handle_known_status(self, error):
+    def handle_known_status(self, error, *_, **__):
         logger.info("Catched {} error".format(error.code))
         raise self.API_EXCEPTION_DICT[error.code](error.Error)
 
@@ -166,11 +166,6 @@ class ProtonSessionWrapper():
         )
         logger.info("Calling api_request")
         return self.api_request(*args, **kwargs)
-
-    def handle_403(self, error, *args, **kwargs):
-        """Handles for re-authentication due to scopes."""
-        logger.info("Catched 403 error, re-authenticating")
-        raise exceptions.API403Error(error)
 
     def handle_429(self, error, *args, **kwargs):
         logger.info("Catched 429 error")
