@@ -1,11 +1,21 @@
-from proton.api import ProtonError, Session
-from ..logger import logger
-from .. import exceptions
 import inspect
+
+from proton.api import ProtonError, Session
+
+from .. import exceptions
+from ..logger import logger
 
 
 class ProtonSessionWrapper():
-    """Proton-client wrapper for improved error handling."""
+    """Proton-client wrapper for improved error handling.
+
+    If any HTTP status code is to be managed in a specific way,
+    then a method with the prefix "handle_x" has to be created,
+    where "x" represent the HTTP status code that is to be specifically
+    managed. This class also searches for a matching exception in
+    exceptions.py, thus, a matching exception can be created,
+    otherwise UnhandledAPIError is asssigned to that status code.
+    """
     proton_session = False
     API_ERROR_LIST = [
         400, 401, 403, 404, 409,
@@ -38,8 +48,12 @@ class ProtonSessionWrapper():
         except ProtonError as e:
             error = e
         except Exception as e:
-            logger.exception("[!] Unknown exception: {}".format(e))
-            raise Exception("Unknown error: {}".format(e))
+            logger.exception(
+                "[!] ProtonSessionAPIError: {}. Raising exception.".format(e)
+            )
+            raise exceptions.ProtonSessionAPIError(
+                "ProtonSessionAPIError: {}".format(e)
+            )
 
         if not error:
             return api_response
@@ -195,9 +209,10 @@ class ProtonSessionWrapper():
                 self.ERROR_CODE_HANDLER[err_num] = existing_handler_methods[err_num] # noqa
 
     def setup_exception_handling(self):
-        """Setup automatic exception handling
+        """Setup automatic exception handling.
 
-        This will search for exception that start with "API"
+        Searches for exceptions in exceptions.py with matching
+        exception errors via regex.
         """
         import re
         for class_member in inspect.getmembers(exceptions):

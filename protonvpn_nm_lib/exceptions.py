@@ -164,6 +164,10 @@ class API503Error(ProtonSessionWrapperError):
     """Error 503."""
 
 
+class ProtonSessionAPIError(ProtonSessionWrapperError):
+    """Proton session API error."""
+
+
 class UnhandledAPIError(ProtonSessionWrapperError):
     """Unhandled API error."""
 
