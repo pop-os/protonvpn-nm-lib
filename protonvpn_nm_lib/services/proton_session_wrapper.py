@@ -27,7 +27,7 @@ class ProtonSessionWrapper():
     def __init__(
         self, **kwargs
     ):
-        self.setup_error_handling("handle_trivial_status")
+        self.setup_error_handling("handle_known_status")
         self.setup_exception_handling()
         self.user_manager = kwargs.pop("user_manager")
         self.proton_session = Session(**kwargs)
@@ -63,6 +63,9 @@ class ProtonSessionWrapper():
                 error, args, **api_kwargs
             )
         except KeyError as e:
+            logger.exception(
+                "[!] UnhandledAPIError. {}. Raising exception".format(e)
+            )
             raise exceptions.UnhandledAPIError(
                 "Unhandled error: {}".format(e)
             )
@@ -146,14 +149,13 @@ class ProtonSessionWrapper():
             return self.flatten_tuple(_tuple[0]) \
                 + self.flatten_tuple(_tuple[1:])
 
-    def handle_trivial_status(self, error):
+    def handle_known_status(self, error):
         logger.info("Catched {} error".format(error.code))
         raise self.API_EXCEPTION_DICT[error.code](error.Error)
 
     def handle_401(self, error, *args, **kwargs):
         """Handles access token expiration."""
-        logger.info("Catched 401 error")
-        logger.info("Refreshing session data")
+        logger.info("Catched 401 error, refreshing session data")
         self.proton_session.refresh()
         # Store session data
         logger.info("Storing new session data")
@@ -166,7 +168,8 @@ class ProtonSessionWrapper():
         return self.api_request(*args, **kwargs)
 
     def handle_403(self, error, *args, **kwargs):
-        logger.info("Catched 403 error")
+        """Handles for re-authentication due to scopes."""
+        logger.info("Catched 403 error, re-authenticating")
         raise exceptions.API403Error(error)
 
     def handle_429(self, error, *args, **kwargs):
@@ -174,7 +177,7 @@ class ProtonSessionWrapper():
         raise exceptions.API429Error(error)
 
     def handle_503(self, error, *args, **kwargs):
-        logger.info("Catched 504 error")
+        logger.info("Catched 503 error")
         raise exceptions.API503Error(error)
 
     def setup_error_handling(self, generic_handler_method_name):
