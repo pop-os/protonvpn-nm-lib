@@ -19,7 +19,7 @@ setup(
     },
     description="Proton Technologies Core/CLI",
     author="Proton Technologies AG",
-    author_email="contact@protonmail.com",
+    author_email="contact@protonvpn.com",
     long_description=long_description,
     install_requires=[
         "proton-client", "pyxdg", "keyring",
