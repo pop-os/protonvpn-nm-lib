@@ -1,4 +1,5 @@
 import inspect
+import re
 
 from proton.api import ProtonError, Session
 
@@ -79,7 +80,35 @@ class ProtonSessionWrapper():
             username (string): protonvpn username
             password (string): protonvpn password
         """
-        self.proton_session.authenticate(username, password)
+        logger.info("Authenticating user")
+        error = False
+
+        try:
+            self.proton_session.authenticate(username, password)
+        except ProtonError as e:
+            error = e
+        except Exception as e:
+            logger.exception(
+                "[!] ProtonSessionAPIError: {}. Raising exception.".format(e)
+            )
+            raise exceptions.ProtonSessionAPIError(
+                "ProtonSessionAPIError: {}".format(e)
+            )
+
+        if not error:
+            return
+
+        try:
+            self.ERROR_CODE_HANDLER[error.code](
+                error, None, None
+            )
+        except KeyError as e:
+            logger.exception(
+                "[!] UnhandledAPIError. {}. Raising exception".format(e)
+            )
+            raise exceptions.UnhandledAPIError(
+                "Unhandled error: {}".format(e)
+            )
 
     def logout(self):
         """"Proxymethod for proton-client logout."""
@@ -190,25 +219,32 @@ class ProtonSessionWrapper():
             generic_handler_method_name (string):
                 name of the generic handler method
         """
+        logger.info("Setting up error handling")
         existing_handler_methods = {}
         generic_handler_method = None
+        re_api_status_code = re.compile(
+            r"^([A-Za-z_]+)(\d+)$"
+        )
         for class_member in inspect.getmembers(self):
-            if "handle_" in class_member[0]:
-                _, err_num, *_ = class_member[0].split("_")
-                try:
-                    err_num = int(err_num)
-                except ValueError:
-                    if generic_handler_method_name == class_member[0]:
-                        generic_handler_method = class_member[1]
-                else:
-                    if err_num in self.API_ERROR_LIST:
-                        existing_handler_methods[err_num] = class_member[1]
+            result = re_api_status_code.search(class_member[0])
+
+            if (
+                not generic_handler_method
+                and generic_handler_method_name == class_member[0]
+            ):
+                generic_handler_method = class_member[1]
+
+            if result:
+                err_num = int(result.groups()[1])
+                if err_num in self.API_ERROR_LIST:
+                    existing_handler_methods[err_num] = class_member[1]
 
         for err_num in self.API_ERROR_LIST:
             if err_num not in existing_handler_methods:
                 self.ERROR_CODE_HANDLER[err_num] = generic_handler_method
-            else:
-                self.ERROR_CODE_HANDLER[err_num] = existing_handler_methods[err_num] # noqa
+                continue
+
+            self.ERROR_CODE_HANDLER[err_num] = existing_handler_methods[err_num] # noqa
 
     def setup_exception_handling(self):
         """Setup automatic exception handling.
@@ -216,16 +252,13 @@ class ProtonSessionWrapper():
         Searches for exceptions in exceptions.py with matching
         exception errors via regex.
         """
-        import re
+        logger.info("Setting up exception handling")
+        re_api_status_code = re.compile(
+            r"^([A-Za-z]+)(\d+)([A-Za-z]+)$"
+        )
         for class_member in inspect.getmembers(exceptions):
-            re_api_status_code = re.compile(
-                r"^([A-Za-z]+)(\d+)([A-Za-z]+)$"
-            )
             result = re_api_status_code.search(class_member[0])
             if result:
-                err_num = result.groups()[1]
+                err_num = int(result.groups()[1])
                 if err_num in self.API_ERROR_LIST:
                     self.API_EXCEPTION_DICT[err_num] = class_member[1]
-                else:
-                    self.API_EXCEPTION_DICT[err_num] \
-                        = exceptions.UnhandledAPIError
