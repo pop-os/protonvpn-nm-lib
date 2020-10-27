@@ -1,15 +1,15 @@
 import json
 import os
 import shutil
+from unittest.mock import patch
+
 import pytest
 
-from common import (
-    CACHED_OPENVPN_CERTIFICATE, MOCK_DATA_JSON, SERVERS,
-    TEST_CACHED_SERVERFILE, MOCK_SESSIONDATA,
-    CertificateManager, ServerManager, UserManager, ProtonSessionWrapper,
-    exceptions
-)
-
+from common import (CACHED_OPENVPN_CERTIFICATE, MOCK_DATA_JSON,
+                    MOCK_SESSIONDATA, RAW_SERVER_LIST, SERVERS,
+                    TEST_CACHED_SERVERFILE, CertificateManager,
+                    ProtonSessionWrapper, ServerManager, UserManager,
+                    exceptions)
 
 TEST_KEYRING_SERVICE = "TestServerManager"
 TEST_KEYRING_SESSIONDATA = "TestServerManSessionData"
@@ -23,19 +23,16 @@ um = UserManager(
     keyring_proton_user=TEST_KEYRING_PROTON_USER
 )
 session = ProtonSessionWrapper.load(json.loads(MOCK_DATA_JSON), um)
-user = os.environ["vpntest_user"]
-pwd = os.environ["vpntest_pwd"]
-REAL_SESSION = ProtonSessionWrapper(
-    api_url="https://api.protonvpn.ch",
-    user_manager=um
-)
-REAL_SESSION.authenticate(user, pwd)
 
 
 class TestUnitServerManager:
     server_man = ServerManager(
         CertificateManager(),
         um
+    )
+    MOCKED_SESSION = ProtonSessionWrapper(
+        api_url="https://localhost",
+        user_manager=um
     )
 
     @classmethod
@@ -77,33 +74,43 @@ class TestUnitServerManager:
         um.delete_stored_data(TEST_KEYRING_SESSIONDATA, TEST_KEYRING_SERVICE)
         um.delete_stored_data(TEST_KEYRING_USERDATA, TEST_KEYRING_SERVICE)
 
+    @pytest.fixture
+    def mock_api_request(self):
+        mock_get_patcher = patch(
+            "protonvpn.services.proton_session_wrapper."
+            "Session.api_request"
+        )
+        yield mock_get_patcher.start()
+        mock_get_patcher.stop()
+
     def test_none_path_cache_servers(self):
         with pytest.raises(TypeError):
             self.server_man.cache_servers(
-                session=REAL_SESSION, cached_serverlist=None
+                session=self.MOCKED_SESSION, cached_serverlist=None
             )
 
     def test_integer_path_cache_servers(self):
         with pytest.raises(TypeError):
             self.server_man.cache_servers(
-                session=REAL_SESSION, cached_serverlist=5
+                session=self.MOCKED_SESSION, cached_serverlist=5
             )
 
     def test_empty_path_cache_servers(self):
         with pytest.raises(FileNotFoundError):
             self.server_man.cache_servers(
-                session=REAL_SESSION, cached_serverlist=""
+                session=self.MOCKED_SESSION, cached_serverlist=""
             )
 
     def test_root_path_cache_servers(self):
         with pytest.raises(IsADirectoryError):
             self.server_man.cache_servers(
-                session=REAL_SESSION, cached_serverlist="/"
+                session=self.MOCKED_SESSION, cached_serverlist="/"
             )
 
-    def test_correct_path_cache_servers(self):
+    def test_correct_path_cache_servers(self, mock_api_request):
+        mock_api_request.side_effect = [RAW_SERVER_LIST]
         self.server_man.cache_servers(
-            session=REAL_SESSION,
+            session=self.MOCKED_SESSION,
             cached_serverlist=os.path.join(
                 TEST_CACHED_SERVERFILE, "test_cache_serverlist.json"
             )
@@ -115,11 +122,11 @@ class TestUnitServerManager:
             self.server_man.generate_ip_list(servername, SERVERS)
 
     def test_get_correct_generate_ip_list(self):
-        self.server_man.generate_ip_list("test#5", SERVERS)
+        self.server_man.generate_ip_list("TEST#5", SERVERS)
 
     @pytest.fixture
     def empty_server_pool(self):
-        feature = 1
+        feature = 2
         server_pool = [s for s in SERVERS if s["Features"] == feature]
         return server_pool
 
@@ -139,7 +146,7 @@ class TestUnitServerManager:
     @pytest.mark.parametrize(
         "servername",
         [
-            "test#6", "test#5",
+            "TEST#6", "TEST#5",
         ]
     )
     def test_correct_extract_server_value(self, servername):
@@ -237,6 +244,10 @@ class TestIntegrationServerManager:
         CertificateManager(),
         um
     )
+    MOCKED_SESSION = ProtonSessionWrapper(
+        api_url="https://localhost",
+        user_manager=um
+    )
 
     @classmethod
     def setup_class(cls):
@@ -266,13 +277,25 @@ class TestIntegrationServerManager:
 
     @classmethod
     def teardown_class(cls):
-        os.remove(CACHED_OPENVPN_CERTIFICATE)
+        # os.remove(CACHED_OPENVPN_CERTIFICATE)
         um.delete_stored_data(TEST_KEYRING_PROTON_USER, TEST_KEYRING_SERVICE)
         um.delete_stored_data(TEST_KEYRING_SESSIONDATA, TEST_KEYRING_SERVICE)
         um.delete_stored_data(TEST_KEYRING_USERDATA, TEST_KEYRING_SERVICE)
 
-    def test_correct_generate_connect_fastest(self):
-        servername, domain, ip = self.server_man.fastest(REAL_SESSION, "tcp")
+    @pytest.fixture
+    def mock_api_request(self):
+        mock_get_patcher = patch(
+            "protonvpn.services.proton_session_wrapper."
+            "Session.api_request"
+        )
+        yield mock_get_patcher.start()
+        mock_get_patcher.stop()
+
+    def test_correct_generate_connect_fastest(self, mock_api_request):
+        mock_api_request.side_effect = [RAW_SERVER_LIST]
+        servername, domain, ip = self.server_man.fastest(
+            self.MOCKED_SESSION, "tcp"
+        )
         resp = False
         if servername and domain and ip:
             resp = True
@@ -283,7 +306,7 @@ class TestIntegrationServerManager:
         [
             ("", 5), (5, ""), (object, object),
             ([], []), ({}, {}), (None, None),
-            (REAL_SESSION, {}), (REAL_SESSION, None)
+            (MOCKED_SESSION, {}), (MOCKED_SESSION, None)
         ]
     )
     def test_incorrect_generate_connect_fastest(
@@ -293,9 +316,9 @@ class TestIntegrationServerManager:
             self.server_man.fastest(session, proto)
 
     def test_correct_generate_connect_country(self):
-        args = [["cc", "ES"]]
+        args = [["cc", "PT"]]
         servername, domain, ip = self.server_man.country_f(
-            REAL_SESSION, "tcp", *args
+            self.MOCKED_SESSION, "tcp", *args
         )
         resp = False
         if servername and domain and ip:
@@ -309,14 +332,14 @@ class TestIntegrationServerManager:
             (5, "", "", TypeError),
             (object, object, object, TypeError),
             ([], [], [], TypeError),
-            (REAL_SESSION, {}, {}, TypeError),
-            (REAL_SESSION, None, None, TypeError),
-            (REAL_SESSION, "tcp", "test", TypeError),
-            (REAL_SESSION, "tcp", "", IndexError),
-            (REAL_SESSION, "tcp", None, TypeError),
-            (REAL_SESSION, "tcp", [], IndexError),
+            (MOCKED_SESSION, {}, {}, TypeError),
+            (MOCKED_SESSION, None, None, TypeError),
+            (MOCKED_SESSION, "tcp", "test", TypeError),
+            (MOCKED_SESSION, "tcp", "", IndexError),
+            (MOCKED_SESSION, "tcp", None, TypeError),
+            (MOCKED_SESSION, "tcp", [], IndexError),
             (
-                REAL_SESSION, "tcp",
+                MOCKED_SESSION, "tcp",
                 [["test", "ex"]], exceptions.EmptyServerListError
             )
         ]
@@ -327,17 +350,21 @@ class TestIntegrationServerManager:
         with pytest.raises(excp):
             self.server_man.country_f(session, proto, *args)
 
-    def test_correct_generate_connect_direct(self):
-        args = [["servername", "ES#5"]]
-        servername, domain, ip = self.server_man.direct(REAL_SESSION, "tcp", *args)
+    def test_correct_generate_connect_direct(self, mock_api_request):
+        args = [["servername", "TEST#6"]]
+        servername, domain, ip = self.server_man.direct(
+            self.MOCKED_SESSION, "tcp", *args
+        )
         resp = False
         if servername and domain and ip:
             resp = True
         assert os.path.isfile(resp) is True
 
     def test_correct_generate_connect_direct_dialog(self):
-        args = ["ES#6"]
-        servername, domain, ip = self.server_man.direct(REAL_SESSION, "tcp", *args)
+        args = ["TEST#5"]
+        servername, domain, ip = self.server_man.direct(
+            self.MOCKED_SESSION, "tcp", *args
+        )
         resp = False
         if servername and domain and ip:
             resp = True
@@ -351,14 +378,14 @@ class TestIntegrationServerManager:
             (object, object, object, TypeError),
             ([], [], [], TypeError),
             (None, None, None, TypeError),
-            (REAL_SESSION, {}, {}, TypeError),
-            (REAL_SESSION, None, None, TypeError),
-            (REAL_SESSION, "tcp", "test", exceptions.IllegalServername),
-            (REAL_SESSION, "tcp", "", ValueError),
-            (REAL_SESSION, "tcp", None, TypeError),
-            (REAL_SESSION, "tcp", "test", exceptions.IllegalServername),
+            (MOCKED_SESSION, {}, {}, TypeError),
+            (MOCKED_SESSION, None, None, TypeError),
+            (MOCKED_SESSION, "tcp", "test", exceptions.IllegalServername),
+            (MOCKED_SESSION, "tcp", "", ValueError),
+            (MOCKED_SESSION, "tcp", None, TypeError),
+            (MOCKED_SESSION, "tcp", "test", exceptions.IllegalServername),
             (
-                REAL_SESSION, "tcp",
+                MOCKED_SESSION, "tcp",
                 [["test", "ex"]], exceptions.IllegalServername
             )
         ]
@@ -372,7 +399,7 @@ class TestIntegrationServerManager:
     def test_correct_generate_connect_feature(self):
         args = [["sc", True]]
         servername, domain, ip = self.server_man.feature_f(
-            REAL_SESSION, "tcp", *args
+            self.MOCKED_SESSION, "tcp", *args
         )
         resp = False
         if servername and domain and ip:
@@ -386,13 +413,13 @@ class TestIntegrationServerManager:
             (5, "", "", TypeError),
             (object, object, object, TypeError),
             ([], [], [], TypeError),
-            (REAL_SESSION, {}, {}, ValueError),
-            (REAL_SESSION, None, None, TypeError),
-            (REAL_SESSION, "tcp", "test", TypeError),
-            (REAL_SESSION, "tcp", "", ValueError),
-            (REAL_SESSION, "tcp", None, TypeError),
+            (MOCKED_SESSION, {}, {}, ValueError),
+            (MOCKED_SESSION, None, None, TypeError),
+            (MOCKED_SESSION, "tcp", "test", TypeError),
+            (MOCKED_SESSION, "tcp", "", ValueError),
+            (MOCKED_SESSION, "tcp", None, TypeError),
             (
-                REAL_SESSION, "tcp",
+                MOCKED_SESSION, "tcp",
                 [["test", "ex"]], ValueError
             )
         ]
@@ -404,7 +431,9 @@ class TestIntegrationServerManager:
             self.server_man.feature_f(session, "tcp", *args)
 
     def test_correct_generate_connect_random(self):
-        servername, domain, ip = self.server_man.random_c(REAL_SESSION, "tcp")
+        servername, domain, ip = self.server_man.random_c(
+            self.MOCKED_SESSION, "tcp"
+        )
         resp = False
         if servername and domain and ip:
             resp = True
@@ -418,9 +447,9 @@ class TestIntegrationServerManager:
             (object, object, TypeError),
             ([], [], TypeError),
             (None, None, TypeError),
-            (REAL_SESSION, {}, TypeError),
-            (REAL_SESSION, None, TypeError),
-            (REAL_SESSION, "", ValueError)
+            (MOCKED_SESSION, {}, TypeError),
+            (MOCKED_SESSION, None, TypeError),
+            (MOCKED_SESSION, "", ValueError)
         ]
     )
     def test_incorrect_generate_connect_random(
