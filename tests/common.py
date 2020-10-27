@@ -18,7 +18,7 @@ from protonvpn_nm_lib.services.user_session_manager import UserSessionManager
 from protonvpn_nm_lib.services.proton_session_wrapper import ProtonSessionWrapper
 
 MOCK_SESSIONDATA = {
-    "api_url": "https://api.protonvpn_nm_lib.ch/tests/ping",
+    "api_url": "https://localhost",
     "appversion": "4",
     "User-Agent": "CI Test User Agent",
     "cookies": {

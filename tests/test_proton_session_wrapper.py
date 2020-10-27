@@ -30,7 +30,7 @@ class TestProtonSessionWrapper():
     @pytest.fixture
     def mock_api_request(self):
         mock_get_patcher = patch(
-            "protonvpn.services.proton_session_wrapper."
+            "protonvpn_nm_lib.services.proton_session_wrapper."
             "Session.api_request"
         )
         yield mock_get_patcher.start()
