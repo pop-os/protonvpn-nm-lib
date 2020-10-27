@@ -1,9 +1,14 @@
-import os
+from unittest.mock import patch
 
 import pytest
 
-from common import (ClientSuffixEnum, ProtonSessionWrapper, UserManager,
-                    exceptions)
+from common import (MOCK_SESSIONDATA, MOCK_USER_DATA, ClientSuffixEnum,
+                    ProtonSessionWrapper, UserManager, exceptions)
+
+TEST_KEYRING_SERVICE = "TestUserManager"
+TEST_KEYRING_SESSIONDATA = "TestUserManSessionData"
+TEST_KEYRING_USERDATA = "TestUserManUserData"
+TEST_KEYRING_PROTON_USER = "TestUserManUser"
 
 
 class TestUnitUserManager():
@@ -13,65 +18,99 @@ class TestUnitUserManager():
     def setup_class(cls):
         um = UserManager()
         um.store_data(
-            dict(
+            data=MOCK_SESSIONDATA,
+            keyring_username=TEST_KEYRING_SESSIONDATA,
+            keyring_service=TEST_KEYRING_SERVICE,
+            store_user_data=False
+        )
+        um.store_data(
+            data=dict(
                 VPN=dict(
                     Name="test_username",
                     Password="test_password",
                     MaxTier="2",
                 )
             ),
-            "TestUserData",
-            "TestUserManager",
-            True
+            keyring_username=TEST_KEYRING_USERDATA,
+            keyring_service=TEST_KEYRING_SERVICE,
+            store_user_data=True
+        )
+        um.store_data(
+            data={"test_proton_username": "test_server_man_user"},
+            keyring_username=TEST_KEYRING_PROTON_USER,
+            keyring_service=TEST_KEYRING_SERVICE,
+            store_user_data=False
         )
 
     @classmethod
     def teardown_class(cls):
         um = UserManager()
-        um.delete_stored_data(
-            keyring_username="UserData",
-            keyring_service="TestUserManager"
+        um.delete_stored_data(TEST_KEYRING_PROTON_USER, TEST_KEYRING_SERVICE)
+
+    @pytest.fixture
+    def mock_authenticate(self):
+        mock_get_patcher = patch(
+            "protonvpn.services.proton_session_wrapper."
+            "Session.authenticate"
         )
+        yield mock_get_patcher.start()
+        mock_get_patcher.stop()
+
+    @pytest.fixture
+    def mock_api_request(self):
+        mock_get_patcher = patch(
+            "protonvpn.services.proton_session_wrapper."
+            "Session.api_request"
+        )
+        yield mock_get_patcher.start()
+        mock_get_patcher.stop()
 
     @pytest.fixture
     def pvpn_user(self):
-        user = os.environ["vpntest_user"]
-        return user
+        return "test_username"
 
     @pytest.fixture
     def pvpn_pass(self):
-        pwd = os.environ["vpntest_pwd"]
-        return pwd
+        return "test_password"
 
     @pytest.fixture
     def test_keyring_service(self):
-        return "TestUserManager"
+        return TEST_KEYRING_SERVICE
 
     @pytest.fixture
     def test_keyring_username_sessiondata(self):
-        return "TestSessionData"
+        return TEST_KEYRING_SESSIONDATA
 
     @pytest.fixture
     def test_keyring_username_userdata(self):
-        return "TestUserData"
+        return TEST_KEYRING_USERDATA
 
     @pytest.fixture
     def test_keyring_username_proton_username(self):
-        return "TestProtonUsername"
+        return TEST_KEYRING_PROTON_USER
 
     def test_correct_login(
         self,
         pvpn_user, pvpn_pass,
-        test_keyring_service, test_keyring_username_sessiondata
+        test_keyring_service, test_keyring_username_sessiondata,
+        test_keyring_username_userdata,
+        mock_api_request, mock_authenticate
     ):
         self.um.keyring_service = test_keyring_service
         self.um.keyring_sessiondata = test_keyring_username_sessiondata
+        self.um.keyring_userdata = test_keyring_username_userdata
+        mock_authenticate.side_effect = [
+            MOCK_SESSIONDATA,
+        ]
+        mock_api_request.side_effect = [
+            MOCK_USER_DATA
+        ]
         self.um.login(pvpn_user, pvpn_pass)
 
     def test_missing_username_login_cred(
         self,
         pvpn_user, pvpn_pass,
-        test_keyring_service, test_keyring_username_sessiondata
+        test_keyring_service, test_keyring_username_sessiondata,
     ):
         self.um.keyring_service = test_keyring_service
         self.um.keyring_sessiondata = test_keyring_username_sessiondata
@@ -131,15 +170,16 @@ class TestUnitUserManager():
             self.um.load_session()
 
     def test_get_stored_vpn_credentials(
-        self, test_keyring_service, test_keyring_username_userdata
+        self, pvpn_user, pvpn_pass,
+        test_keyring_service, test_keyring_username_userdata
     ):
         self.um.keyring_service = test_keyring_service
         self.um.keyring_userdata = test_keyring_username_userdata
-        user = "test_username"
-        pwd = "test_password"
         (resp_user, resp_pwd) = self.um.get_stored_vpn_credentials()
+        openvn_username = MOCK_USER_DATA["VPN"]["Name"]
+        openvpn_password = MOCK_USER_DATA["VPN"]["Password"]
         assert (resp_user, resp_pwd) == (
-            user + "+" + ClientSuffixEnum.PLATFORM, pwd
+            openvn_username + "+" + ClientSuffixEnum.PLATFORM, openvpn_password
         )
 
     def test_get_incorrect_stored_vpn_credentials(

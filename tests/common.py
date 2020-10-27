@@ -44,6 +44,26 @@ MOCK_SESSIONDATA = {
     }
 }
 
+MOCK_USER_DATA = {
+    'Code': 1000,
+    'VPN': {
+        'ExpirationTime': 0,
+        'Name': 'openvpn_user',
+        'Password': 'openvpn_pwd',
+        'GroupID': 'openvpn_user',
+        'Status': 1,
+        'PlanName': 'free',
+        'MaxTier': 0,
+        'MaxConnect': 2
+    },
+    'Services': 5,
+    'Subscribed': 0,
+    'Delinquent': 0,
+    'HasPaymentMethod': 1,
+    'Credit': 0,
+    'Currency': 'EUR'
+}
+
 SERVERS = [
     {
         "Name": "test#5",
