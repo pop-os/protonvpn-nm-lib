@@ -44,9 +44,29 @@ MOCK_SESSIONDATA = {
     }
 }
 
+MOCK_USER_DATA = {
+    'Code': 1000,
+    'VPN': {
+        'ExpirationTime': 0,
+        'Name': 'openvpn_user',
+        'Password': 'openvpn_pwd',
+        'GroupID': 'openvpn_user',
+        'Status': 1,
+        'PlanName': 'free',
+        'MaxTier': 0,
+        'MaxConnect': 2
+    },
+    'Services': 5,
+    'Subscribed': 0,
+    'Delinquent': 0,
+    'HasPaymentMethod': 1,
+    'Credit': 0,
+    'Currency': 'EUR'
+}
+
 SERVERS = [
     {
-        "Name": "test#5",
+        "Name": "TEST#5",
         "EntryCountry": "PT",
         "ExitCountry": "PT",
         "Domain": "pt-89.webtest.com",
@@ -72,12 +92,37 @@ SERVERS = [
         "Load": 11, "Score": 1.00316551
     },
     {
-        "Name": "test#6",
+        "Name": "TEST#6",
         "EntryCountry": "PT",
         "ExitCountry": "PT",
         "Domain": "pt-99.webtest.com",
-        "Tier": 1, "Features": 0,
-        "Region": "null", "City": "Lisbon",
+        "Tier": 1,
+        "Features": 0,
+        "Region": "null",
+        "City": "Lisbon",
+        "ID": "SOME_ID",
+        "Location": {
+            "Lat": 38.72, "Long": -9.13
+        },
+        "Status": 1,
+        "Servers": [
+            {
+                "EntryIP": "255.255.255.0", "ExitIP": "255.255.255.0",
+                "Domain": "pt-99.webtest.com",
+                "ID": "SOME_ID",
+                "Status": 1
+            }
+        ], "Load": 6, "Score": 1.00283101
+    },
+    {
+        "Name": "TEST#7",
+        "EntryCountry": "PT",
+        "ExitCountry": "PT",
+        "Domain": "pt-99.webtest.com",
+        "Tier": 2,
+        "Features": 1,
+        "Region": "null",
+        "City": "Lisbon",
         "ID": "SOME_ID",
         "Location": {
             "Lat": 38.72, "Long": -9.13
@@ -94,9 +139,13 @@ SERVERS = [
     },
 ]
 
+RAW_SERVER_LIST = {
+    "Code": 1000, "LogicalServers": SERVERS
+}
+
 MOCK_DATA_JSON = json.dumps(MOCK_SESSIONDATA)
 PWD = os.path.dirname(os.path.abspath(__file__))
 CERT_FOLDER = os.path.join(PWD, "certificates/connection_manager")
-TEST_CERTS = os.path.join(PWD, "test_certs")
 PLUGIN_CERT_FOLDER = os.path.join(PWD, "certificates/plugin_manager")
+TEST_CERTS = os.path.join(PWD, "test_certs")
 TEST_CACHED_SERVERFILE = os.path.join(PWD, "test_cached_serverfile")
