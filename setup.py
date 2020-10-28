@@ -5,7 +5,7 @@ from setuptools import find_packages, setup
 from protonvpn_nm_lib.constants import APP_VERSION
 
 long_description = """
-Contains ProtonVPN NetworkManager library code for Linux clients.
+ProtonVPN NetworkManager library for Linux clients.
 """
 
 setup(
