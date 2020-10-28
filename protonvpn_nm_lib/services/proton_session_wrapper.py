@@ -1,5 +1,7 @@
 import inspect
+import random
 import re
+import time
 
 from proton.api import ProtonError, Session
 
@@ -202,7 +204,13 @@ class ProtonSessionWrapper():
 
     def handle_429(self, error, *args, **kwargs):
         logger.info("Catched 429 error")
-        raise exceptions.API429Error(error)
+        hold_request_time = error.headers["Retry-After"]
+        try:
+            hold_request_time = int(hold_request_time)
+        except ValueError:
+            hold_request_time = random.randint(0, 20)
+        time.sleep(hold_request_time)
+        return self.api_request(*args, **kwargs)
 
     def handle_503(self, error, *args, **kwargs):
         logger.info("Catched 503 error")
