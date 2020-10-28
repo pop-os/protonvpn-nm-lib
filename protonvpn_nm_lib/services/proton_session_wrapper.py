@@ -58,6 +58,39 @@ class ProtonSessionWrapper():
         """
         self.proton_session.authenticate(username, password)
 
+    def logout(self):
+        """"Proxymethod for proton-client logout."""
+        logger.info("Authenticating user")
+        error = False
+
+        try:
+            self.proton_session.logout()
+        except ProtonError as e:
+            error = e
+        except Exception as e:
+            logger.exception(
+                "[!] ProtonSessionWrapperError: {}."
+                "Raising exception.".format(e)
+            )
+            raise exceptions.ProtonSessionWrapperError(
+                "ProtonSessionWrapperError: {}".format(e)
+            )
+
+        if not error:
+            return
+
+        try:
+            return self.ERROR_CODE_HANDLER[error.code](
+                error, None, None
+            )
+        except KeyError as e:
+            logger.exception(
+                "[!] UnhandledAPIError. {}. Raising exception".format(e)
+            )
+            raise exceptions.UnhandledAPIError(
+                "Unhandled error: {}".format(e)
+            )
+
     @staticmethod
     def load(dump, user_manager, TLSPinning=True):
         """Wrapper for proton-client load."""
