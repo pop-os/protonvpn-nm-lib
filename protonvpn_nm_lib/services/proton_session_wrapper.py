@@ -259,15 +259,24 @@ class ProtonSessionWrapper():
         """Setup automatic exception handling.
 
         Searches for exceptions in exceptions.py with matching
-        exception errors via regex.
+        exception errors via regex. It either assigns the matching
+        exception or assings a generic exception (UnhandledAPIError).
         """
         logger.info("Setting up exception handling")
+        existing_exceptions = {}
         re_api_status_code = re.compile(
-            r"^([A-Za-z]+)(\d+)([A-Za-z]+)$"
+            r"^([A-Za-z]+)(\d{3,})([A-Za-z]+)$"
         )
         for class_member in inspect.getmembers(exceptions):
             result = re_api_status_code.search(class_member[0])
             if result:
                 err_num = int(result.groups()[1])
                 if err_num in self.API_ERROR_LIST:
-                    self.API_EXCEPTION_DICT[err_num] = class_member[1]
+                    existing_exceptions[err_num] = class_member[1]
+
+        for err_num in self.API_ERROR_LIST:
+            if err_num not in existing_exceptions:
+                self.API_EXCEPTION_DICT[err_num] = exceptions.UnhandledAPIError
+                continue
+
+            self.API_EXCEPTION_DICT[err_num] = existing_exceptions[err_num]

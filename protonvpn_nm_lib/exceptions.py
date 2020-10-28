@@ -124,10 +124,6 @@ class ProtonSessionWrapperError(ProtonVPNBaseException): # noqa
     """Proton session wrapper error."""
 
 
-class API400Error(ProtonSessionWrapperError):
-    """Error 400."""
-
-
 class API401Error(ProtonSessionWrapperError):
     """Error 401."""
 
@@ -136,28 +132,8 @@ class API403Error(ProtonSessionWrapperError):
     """Error 403."""
 
 
-class API404Error(ProtonSessionWrapperError):
-    """Error 404."""
-
-
-class API409Error(ProtonSessionWrapperError):
-    """Error 409."""
-
-
-class API422Error(ProtonSessionWrapperError):
-    """Error 422."""
-
-
 class API429Error(ProtonSessionWrapperError):
     """Error 429."""
-
-
-class API500Error(ProtonSessionWrapperError):
-    """Error 500."""
-
-
-class API501Error(ProtonSessionWrapperError):
-    """Error 501."""
 
 
 class API503Error(ProtonSessionWrapperError):
