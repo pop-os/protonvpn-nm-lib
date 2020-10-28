@@ -203,12 +203,13 @@ class ProtonSessionWrapper():
         raise exceptions.API403Error(error)
 
     def handle_429(self, error, *args, **kwargs):
-        logger.info("Catched 429 error")
+        logger.info("Catched 429 error, will retry")
         hold_request_time = error.headers["Retry-After"]
         try:
             hold_request_time = int(hold_request_time)
         except ValueError:
             hold_request_time = random.randint(0, 20)
+        logger.info("Retrying after {} seconds".format(hold_request_time))
         time.sleep(hold_request_time)
         return self.api_request(*args, **kwargs)
 
