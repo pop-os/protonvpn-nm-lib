@@ -69,7 +69,8 @@ class ProtonSessionWrapper():
             error = e
         except Exception as e:
             logger.exception(
-                "[!] ProtonSessionWrapperError: {}. Raising exception.".format(e)
+                "[!] ProtonSessionWrapperError: {}."
+                "Raising exception.".format(e)
             )
             raise exceptions.ProtonSessionWrapperError(
                 "ProtonSessionWrapperError: {}".format(e)
