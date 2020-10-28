@@ -214,8 +214,8 @@ class ProtonSessionWrapper():
         return self.api_request(*args, **kwargs)
 
     def handle_503(self, error, *args, **kwargs):
-        logger.info("Catched 503 error")
-        raise exceptions.API503Error(error)
+        logger.info("Catched 503 error, retrying new request")
+        return self.api_request(*args, **kwargs)
 
     def setup_error_handling(self, generic_handler_method_name):
         """Setup automatic error handling.
