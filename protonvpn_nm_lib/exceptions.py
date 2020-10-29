@@ -140,6 +140,14 @@ class API503Error(ProtonSessionWrapperError):
     """Error 503."""
 
 
+class API5002Error(ProtonSessionWrapperError):
+    """Error 5002."""
+
+
+class API5003Error(ProtonSessionWrapperError):
+    """Error 5003."""
+
+
 class ProtonSessionAPIError(ProtonSessionWrapperError):
     """Proton session API error."""
 

@@ -198,7 +198,7 @@ class ProtonSessionWrapper():
         logger.info("Calling api_request")
         return self.api_request(*args, **kwargs)
 
-    def handle_403(self, error, *args, **kwargs):
+    def handle_403(self, error, *_, **__):
         logger.info("Catched 403 error, re-authentication needed")
         raise exceptions.API403Error(error)
 
@@ -216,6 +216,14 @@ class ProtonSessionWrapper():
     def handle_503(self, error, *args, **kwargs):
         logger.info("Catched 503 error, retrying new request")
         return self.api_request(*args, **kwargs)
+
+    def handle_5002(self, error, *_, **__):
+        logger.info("Catched 5002 error, invalid version")
+        raise exceptions.API5002Error(error)
+
+    def handle_5003(self, error, *_, **__):
+        logger.info("Catched 5003 error, bad version")
+        raise exceptions.API5003Error(error)
 
     def setup_error_handling(self, generic_handler_method_name):
         """Setup automatic error handling.
