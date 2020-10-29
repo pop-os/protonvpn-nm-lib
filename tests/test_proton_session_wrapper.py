@@ -86,3 +86,20 @@ class TestProtonSessionWrapper():
         ]
         with pytest.raises(exceptions.UnhandledAPIError):
             session.api_request("/vpn")
+
+    def test_expected_api_403(
+        self, mock_api_request,
+        api_tokens
+    ):
+        mock_api_request.side_effect = [
+            ProtonError(
+                {
+                    "Code": 403,
+                    "Error": "Error code 403"
+                }
+            ),
+            api_tokens,
+            "end_mock"
+        ]
+        with pytest.raises(exceptions.API403Error):
+            session.api_request("/vpn")

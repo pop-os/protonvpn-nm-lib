@@ -128,6 +128,22 @@ class API401Error(ProtonSessionWrapperError):
     """Error 401."""
 
 
+class API403Error(ProtonSessionWrapperError):
+    """Error 403."""
+
+
+class API429Error(ProtonSessionWrapperError):
+    """Error 429."""
+
+
+class API503Error(ProtonSessionWrapperError):
+    """Error 503."""
+
+
+class ProtonSessionAPIError(ProtonSessionWrapperError):
+    """Proton session API error."""
+
+
 class UnhandledAPIError(ProtonSessionWrapperError):
     """Unhandled API error."""
 
