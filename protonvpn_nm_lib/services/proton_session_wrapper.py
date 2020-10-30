@@ -23,6 +23,7 @@ class ProtonSessionWrapper():
     API_ERROR_LIST = [
         400, 401, 403, 404, 409,
         422, 429, 500, 501, 503,
+        5002, 5003
     ]
     API_EXCEPTION_DICT = {}
     ERROR_CODE_HANDLER = {}

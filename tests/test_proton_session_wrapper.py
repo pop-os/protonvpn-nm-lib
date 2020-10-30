@@ -25,8 +25,7 @@ session = ProtonSessionWrapper(
 )
 
 
-class TestProtonSessionWrapper():
-
+class TestProtonSessionWrapperAPIRequest():
     @pytest.fixture
     def mock_api_request(self):
         mock_get_patcher = patch(
@@ -103,3 +102,82 @@ class TestProtonSessionWrapper():
         ]
         with pytest.raises(exceptions.API403Error):
             session.api_request("/vpn")
+
+    def test_expected_api_429(
+        self, mock_api_request,
+        api_tokens
+    ):
+        mock_api_request.side_effect = [
+            ProtonError(
+                {
+                    "Code": 429,
+                    "Error": "Error code 403",
+                    "Headers": {"Retry-After": 0.5}
+                },
+            ),
+            ProtonError(
+                {
+                    "Code": 404,
+                    "Error": "Error code 404",
+                },
+            ),
+        ]
+        with pytest.raises(exceptions.UnhandledAPIError):
+            session.api_request("/vpn")
+
+    def test_expected_api_503(
+        self, mock_api_request,
+        api_tokens
+    ):
+        mock_api_request.side_effect = [
+            ProtonError(
+                {
+                    "Code": 503,
+                    "Error": "Error code 503",
+                },
+            ),
+            ProtonError(
+                {
+                    "Code": 404,
+                    "Error": "Error code 404",
+                },
+            ),
+        ]
+        with pytest.raises(exceptions.UnhandledAPIError):
+            session.api_request("/vpn")
+
+    def test_expected_api_5002(
+        self, mock_api_request,
+        api_tokens
+    ):
+        mock_api_request.side_effect = [
+            ProtonError(
+                {
+                    "Code": 5002,
+                    "Error": "Error code 5002",
+                },
+            ),
+        ]
+        with pytest.raises(exceptions.API5002Error):
+            session.api_request("/vpn")
+
+    def test_expected_api_5003(
+        self, mock_api_request,
+        api_tokens
+    ):
+        mock_api_request.side_effect = [
+            ProtonError(
+                {
+                    "Code": 5003,
+                    "Error": "Error code 5003",
+                },
+            ),
+        ]
+        with pytest.raises(exceptions.API5003Error):
+            session.api_request("/vpn")
+
+
+# class TestProtonSessionWrapperAuthenticate():
+
+
+# class TestProtonSessionWrapperLogout():
