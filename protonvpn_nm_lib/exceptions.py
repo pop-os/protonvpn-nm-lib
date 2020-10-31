@@ -152,8 +152,16 @@ class ProtonSessionAPIError(ProtonSessionWrapperError):
     """Proton session API error."""
 
 
+class APIError(ProtonSessionWrapperError):
+    """API error."""
+
+
 class UnhandledAPIError(ProtonSessionWrapperError):
     """Unhandled API error."""
+
+
+class UnhandledAPIMethod(ProtonSessionWrapperError):
+    """Unhandled API method error."""
 
 
 
