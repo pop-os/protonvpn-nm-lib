@@ -2,74 +2,12 @@ import inspect
 import random
 import re
 import time
-from functools import wraps
 
 from proton.api import ProtonError, Session
 
 from .. import exceptions
 from ..enums import ProtonSessionAPIMethodEnum
 from ..logger import logger
-
-
-def api_decorator(orig_method):
-    """API Decorator.
-
-    proton_session.api_request, proton_session.authenticate and
-    proton_session.logout have simillar error handling methods,
-    thus, this decorators wraps all those methods.
-    """
-    @wraps(orig_method)
-    def _impl(self, *args, **api_kwargs):
-        orig_method_name = orig_method.__name__
-        self.check_method_exists(orig_method_name)
-        args = self.flatten_tuple(args)
-
-        api_methods = {
-            ProtonSessionAPIMethodEnum.API_REQUEST: self.proton_session.api_request, # noqa
-            ProtonSessionAPIMethodEnum.AUTHENTICATE: self.proton_session.authenticate, # noqa
-            ProtonSessionAPIMethodEnum.LOGOUT: self.proton_session.logout,
-        }
-        method_index = self.API_METHODS.index(orig_method_name)
-        error = False
-        logger.info(
-            "Method: {} - {}".format(
-                orig_method_name, api_methods[orig_method_name]
-            )
-        )
-
-        try:
-            api_response = api_methods[orig_method_name](
-                *args, **api_kwargs
-            )
-        except ProtonError as e:
-            error = e
-        except Exception as e:
-            logger.exception(
-                "[!] ProtonSessionAPIError: {}. Raising exception.".format(e)
-            )
-            raise exceptions.ProtonSessionAPIError(
-                "ProtonSessionAPIError: {}".format(e)
-            )
-
-        if not error:
-            return api_response
-
-        try:
-            result = self.ERROR_CODE_HANDLER[error.code](
-                error, self.API_METHODS[method_index],
-                args, **api_kwargs
-            )
-        except KeyError as e:
-            logger.exception(
-                "[!] UnhandledAPIError. {}. Raising exception".format(e)
-            )
-            raise exceptions.UnhandledAPIError(
-                "Unhandled error: {}".format(e)
-            )
-        else:
-            return result
-
-    return _impl
 
 
 class ProtonSessionWrapper(object):
@@ -104,7 +42,6 @@ class ProtonSessionWrapper(object):
         self.user_manager = kwargs.pop("user_manager")
         self.proton_session = Session(**kwargs)
 
-    @api_decorator
     def api_request(self, *args, **api_kwargs):
         """Wrapper for proton-client api_request.
 
@@ -112,8 +49,18 @@ class ProtonSessionWrapper(object):
             Takes same arguments as proton-client.
         """
         logger.info("API Call: {} - {}".format(args, api_kwargs))
+        api_response, error = self.call_api_method(
+            ProtonSessionAPIMethodEnum.API_REQUEST,
+            *args,
+            **api_kwargs
+        )
+        if not error:
+            return api_response
 
-    @api_decorator
+        return self.exception_manager(
+            error, ProtonSessionAPIMethodEnum.API_REQUEST, *args, **api_kwargs
+        )
+
     def authenticate(self, username, password):
         """"Proxymethod for proton-client authenticate.
 
@@ -122,11 +69,29 @@ class ProtonSessionWrapper(object):
             password (string): protonvpn password
         """
         logger.info("Authenticating user")
+        api_response, error = self.call_api_method(
+            ProtonSessionAPIMethodEnum.AUTHENTICATE,
+            username, password
+        )
+        if not error:
+            return api_response
 
-    @api_decorator
+        return self.exception_manager(
+            error, ProtonSessionAPIMethodEnum.AUTHENTICATE, username, password
+        )
+
     def logout(self):
         """"Proxymethod for proton-client logout."""
         logger.info("Loggging out user")
+        api_response, error = self.call_api_method(
+            ProtonSessionAPIMethodEnum.LOGOUT
+        )
+        if not error:
+            return api_response
+
+        return self.exception_manager(
+            error, ProtonSessionAPIMethodEnum.LOGOUT
+        )
 
     @staticmethod
     def load(dump, user_manager, TLSPinning=True):
@@ -222,6 +187,67 @@ class ProtonSessionWrapper(object):
                 "The specified method \"{}\""
                 "is unhandled/unknown".format(method)
             )
+
+    def call_api_method(self, method, *args, **api_kwargs):
+        """Calls appropriate API method.
+
+        Args:
+            method (ProtonSessionAPIMethodEnum): object
+        """
+        self.check_method_exists(method)
+        args = self.flatten_tuple(args)
+
+        api_methods = {
+            ProtonSessionAPIMethodEnum.API_REQUEST: self.proton_session.api_request, # noqa
+            ProtonSessionAPIMethodEnum.AUTHENTICATE: self.proton_session.authenticate, # noqa
+            ProtonSessionAPIMethodEnum.LOGOUT: self.proton_session.logout,
+        }
+
+        error = False
+        api_response = False
+        logger.info(
+            "Method: {} - {}".format(
+                method, api_methods[method]
+            )
+        )
+
+        try:
+            api_response = api_methods[method](
+                *args, **api_kwargs
+            )
+        except ProtonError as e:
+            error = e
+        except Exception as e:
+            logger.exception(
+                "[!] ProtonSessionAPIError: {}. Raising exception.".format(e)
+            )
+            raise exceptions.ProtonSessionAPIError(
+                "ProtonSessionAPIError: {}".format(e)
+            )
+
+        return api_response, error
+
+    def exception_manager(self, error, method, *args, **api_kwargs):
+        """Handle exceptions according to error.
+
+        Args:
+            error (tuple): proton.api.ProtonError exception
+            method (ProtonSessionAPIMethodEnum): object
+        """
+        try:
+            result = self.ERROR_CODE_HANDLER[error.code](
+                error, method,
+                args, **api_kwargs
+            )
+        except KeyError as e:
+            logger.exception(
+                "[!] UnhandledAPIError. {}. Raising exception".format(e)
+            )
+            raise exceptions.UnhandledAPIError(
+                "Unhandled error: {}".format(e)
+            )
+        else:
+            return result
 
     def setup_error_handling(self, generic_handler_method_name):
         """Setup automatic error handling.
