@@ -70,6 +70,10 @@ class CacheLogicalServersFallbackError(CacheServersError):
     """Cache logical servers fallback error"""
 
 
+class MissingCacheError(CacheServersError):
+    """Missing cache error."""
+
+
 
 
 class KeyringError(ProtonVPNBaseException):  # noqa
