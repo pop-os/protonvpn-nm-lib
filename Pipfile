@@ -8,6 +8,7 @@ pytest = "*"
 pytest-cov = "*"
 pytest-xdist = "*"
 flake8 = "*"
+dbus-python = "*"
 
 [packages]
 pyxdg = "*"

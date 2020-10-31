@@ -1,8 +1,11 @@
 
-import pytest
-from common import ProtonSessionWrapper, UserManager, exceptions, ProtonSessionAPIMethodEnum
 from unittest.mock import patch
+
+import pytest
 from proton import ProtonError
+
+from common import (ProtonSessionAPIMethodEnum, ProtonSessionWrapper,
+                    UserManager, exceptions)
 
 TEST_KEYRING_SERVICE = "TestServerManager"
 TEST_KEYRING_SESSIONDATA = "TestServerManSessionData"
