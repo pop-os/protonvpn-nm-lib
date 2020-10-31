@@ -7,6 +7,7 @@ from proton.api import ProtonError, Session
 
 from .. import exceptions
 from ..logger import logger
+from ..enums import ProtonSessionAPIMethodEnum
 
 
 class ProtonSessionWrapper():
@@ -24,6 +25,11 @@ class ProtonSessionWrapper():
         400, 401, 403, 404, 409,
         422, 429, 500, 501, 503,
         5002, 5003
+    ]
+    API_METHODS = [
+        ProtonSessionAPIMethodEnum.API_REQUEST,
+        ProtonSessionAPIMethodEnum.AUTHENTICATE,
+        ProtonSessionAPIMethodEnum.LOGOUT
     ]
     API_EXCEPTION_DICT = {}
     ERROR_CODE_HANDLER = {}
@@ -64,7 +70,8 @@ class ProtonSessionWrapper():
 
         try:
             result = self.ERROR_CODE_HANDLER[error.code](
-                error, args, **api_kwargs
+                error, ProtonSessionAPIMethodEnum.API_REQUEST,
+                args, **api_kwargs
             )
         except KeyError as e:
             logger.exception(
@@ -103,7 +110,8 @@ class ProtonSessionWrapper():
 
         try:
             self.ERROR_CODE_HANDLER[error.code](
-                error, None, None
+                error, ProtonSessionAPIMethodEnum.AUTHENTICATE,
+                None, None
             )
         except KeyError as e:
             logger.exception(
@@ -136,7 +144,8 @@ class ProtonSessionWrapper():
 
         try:
             return self.ERROR_CODE_HANDLER[error.code](
-                error, None, None
+                error, ProtonSessionAPIMethodEnum.LOGOUT,
+                None, None
             )
         except KeyError as e:
             logger.exception(
@@ -181,13 +190,15 @@ class ProtonSessionWrapper():
             return self.flatten_tuple(_tuple[0]) \
                 + self.flatten_tuple(_tuple[1:])
 
-    def handle_known_status(self, error, *_, **__):
+    def handle_known_status(self, error, method, *_, **__):
         logger.info("Catched \"{}\" error".format(error))
         raise self.API_EXCEPTION_DICT[error.code](error.error)
 
-    def handle_401(self, error, *args, **kwargs):
+    def handle_401(self, error, method, *args, **kwargs):
         """Handles access token expiration."""
         logger.info("Catched 401 error, refreshing session data")
+        self.check_method_exists(method)
+
         self.proton_session.refresh()
         # Store session data
         logger.info("Storing new session data")
@@ -196,15 +207,13 @@ class ProtonSessionWrapper():
             self.user_manager.keyring_sessiondata,
             self.user_manager.keyring_service
         )
-        logger.info("Calling api_request")
-        return self.api_request(*args, **kwargs)
 
-    def handle_403(self, error, *_, **__):
-        logger.info("Catched 403 error, re-authentication needed")
-        raise exceptions.API403Error(error)
+        return self.get_method(method, args, kwargs)
 
-    def handle_429(self, error, *args, **kwargs):
+    def handle_429(self, error, method, *args, **kwargs):
         logger.info("Catched 429 error, will retry")
+        self.check_method_exists(method)
+
         hold_request_time = error.headers["Retry-After"]
         try:
             hold_request_time = int(hold_request_time)
@@ -212,19 +221,34 @@ class ProtonSessionWrapper():
             hold_request_time = random.randint(0, 20)
         logger.info("Retrying after {} seconds".format(hold_request_time))
         time.sleep(hold_request_time)
-        return self.api_request(*args, **kwargs)
 
-    def handle_503(self, error, *args, **kwargs):
+        return self.get_method(method, args, kwargs)
+
+    def handle_503(self, error, method, *args, **kwargs):
         logger.info("Catched 503 error, retrying new request")
-        return self.api_request(*args, **kwargs)
+        self.check_method_exists(method)
+        return self.get_method(method, args, kwargs)
 
-    def handle_5002(self, error, *_, **__):
-        logger.info("Catched 5002 error, invalid version")
-        raise exceptions.API5002Error(error)
+    def get_method(self, method, *args, **kwargs):
+        logger.info("Calling {}".format(method))
 
-    def handle_5003(self, error, *_, **__):
-        logger.info("Catched 5003 error, bad version")
-        raise exceptions.API5003Error(error)
+        if method == ProtonSessionAPIMethodEnum.API_REQUEST:
+            return self.api_request(*args, **kwargs)
+        elif method == ProtonSessionAPIMethodEnum.AUTHENTICATE:
+            return self.authenticate(*args, **kwargs)
+        elif method == ProtonSessionAPIMethodEnum.LOGOUT:
+            return self.logout()
+
+    def check_method_exists(self, method):
+        if method not in self.API_METHODS:
+            logger.error(
+                "[!] UnhandledAPIMethod: Unknown \"{}\" method. "
+                " Raising exception.".format(method)
+            )
+            raise exceptions.UnhandledAPIMethod(
+                "The specified method \"{}\""
+                "is unhandled/unknown".format(method)
+            )
 
     def setup_error_handling(self, generic_handler_method_name):
         """Setup automatic error handling.
@@ -257,7 +281,9 @@ class ProtonSessionWrapper():
                 if err_num in self.API_ERROR_LIST:
                     existing_handler_methods[err_num] = class_member[1]
 
-        for err_num in self.API_ERROR_LIST:
+        yield_api_error_list = self.yield_api_error_list()
+
+        for err_num in yield_api_error_list:
             if err_num not in existing_handler_methods:
                 self.ERROR_CODE_HANDLER[err_num] = generic_handler_method
                 continue
@@ -269,7 +295,7 @@ class ProtonSessionWrapper():
 
         Searches for exceptions in exceptions.py with matching
         exception errors via regex. It either assigns the matching
-        exception or assings a generic exception (UnhandledAPIError).
+        exception or assings a generic exception (APIError).
         """
         logger.info("Setting up exception handling")
         existing_exceptions = {}
@@ -283,9 +309,15 @@ class ProtonSessionWrapper():
                 if err_num in self.API_ERROR_LIST:
                     existing_exceptions[err_num] = class_member[1]
 
-        for err_num in self.API_ERROR_LIST:
+        yield_api_error_list = self.yield_api_error_list()
+
+        for err_num in yield_api_error_list:
             if err_num not in existing_exceptions:
-                self.API_EXCEPTION_DICT[err_num] = exceptions.UnhandledAPIError
+                self.API_EXCEPTION_DICT[err_num] = exceptions.APIError
                 continue
 
             self.API_EXCEPTION_DICT[err_num] = existing_exceptions[err_num]
+
+    def yield_api_error_list(self):
+        for err_num in self.API_ERROR_LIST:
+            yield err_num
