@@ -74,3 +74,9 @@ class UserSettingConnectionEnum(object):
     SPLIT_TUNNELING = "split_tunneling"
     SPLIT_TUNNELING_STATUS = "status"
     IP_LIST = "ip_list"
+
+
+class ProtonSessionAPIMethodEnum(object):
+    API_REQUEST = "api_request"
+    AUTHENTICATE = "authenticate"
+    LOGOUT = "logout"
