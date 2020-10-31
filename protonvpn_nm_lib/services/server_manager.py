@@ -617,8 +617,14 @@ class ServerManager():
         return filtered_servers
 
     def extract_server_list(self):
-        with open(CACHED_SERVERLIST, "r") as f:
-            server_data = json.load(f)
+        try:
+            with open(CACHED_SERVERLIST, "r") as f:
+                server_data = json.load(f)
+        except FileNotFoundError as e:
+            logger.exception(
+                "[!] MissingCacheError: {}".format(e)
+            )
+            raise exceptions.MissingCacheError("Server cache not found")
 
         return server_data["LogicalServers"]
 
