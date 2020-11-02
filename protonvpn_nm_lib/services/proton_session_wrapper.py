@@ -193,6 +193,8 @@ class ProtonSessionWrapper(object):
 
         Args:
             method (ProtonSessionAPIMethodEnum): object
+        Returns:
+            Tuple with api_reponse and error
         """
         self.check_method_exists(method)
         args = self.flatten_tuple(args)
@@ -233,9 +235,12 @@ class ProtonSessionWrapper(object):
         Args:
             error (tuple): proton.api.ProtonError exception
             method (ProtonSessionAPIMethodEnum): object
+        Returns:
+            Either response of error code in API_ERROR_LIST
+            or raises exception.
         """
         try:
-            result = self.ERROR_CODE_HANDLER[error.code](
+            return self.ERROR_CODE_HANDLER[error.code](
                 error, method,
                 args, **api_kwargs
             )
@@ -246,8 +251,6 @@ class ProtonSessionWrapper(object):
             raise exceptions.UnhandledAPIError(
                 "Unhandled error: {}".format(e)
             )
-        else:
-            return result
 
     def setup_error_handling(self, generic_handler_method_name):
         """Setup automatic error handling.
