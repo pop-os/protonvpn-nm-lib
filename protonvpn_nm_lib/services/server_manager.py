@@ -14,9 +14,10 @@ from ..constants import CACHED_SERVERLIST, PROTON_XDG_CACHE_HOME
 from ..enums import FeatureEnum, UserSettingStatusEnum
 from ..logger import logger
 from . import capture_exception
+from .connection_state_manager import ConnectionStateManager
 
 
-class ServerManager():
+class ServerManager(ConnectionStateManager):
     REFRESH_INTERVAL = 15
     killswitch_status = UserSettingStatusEnum.DISABLED
 
@@ -46,18 +47,9 @@ class ServerManager():
             filtered_servers
         )
 
-        try:
-            entry_IP, exit_IP = self.generate_ip_list(
-                servername, filtered_servers
-            )
-        except IndexError as e:
-            logger.exception("[!] IllegalServername: {}".format(e))
-            raise exceptions.IllegalServername(
-                "\"{}\" is not a valid server".format(servername)
-            )
-        except Exception as e:
-            logger.exception("[!] Unknown exception: {}".format(e))
-            capture_exception(e)
+        entry_IP, exit_IP = self.get_connection_ips(
+            servername, servers, filtered_servers
+        )
 
         try:
             domain = self.get_matching_domain(servers, exit_IP, server_feature)
@@ -135,18 +127,9 @@ class ServerManager():
             filtered_servers
         )
 
-        try:
-            entry_IP, exit_IP = self.generate_ip_list(
-                servername, filtered_servers
-            )
-        except IndexError as e:
-            logger.exception("[!] IllegalServername: {}".format(e))
-            raise exceptions.IllegalServername(
-                "\"{}\" is not a valid server".format(servername)
-            )
-        except Exception as e:
-            logger.exception("[!] Unknown exception: {}".format(e))
-            capture_exception(e)
+        entry_IP, exit_IP = self.get_connection_ips(
+            servername, servers, filtered_servers
+        )
 
         try:
             domain = self.get_matching_domain(servers, exit_IP, server_feature)
@@ -222,18 +205,9 @@ class ServerManager():
             )
             raise exceptions.EmptyServerListError(err_msg)
 
-        try:
-            entry_IP, exit_IP = self.generate_ip_list(
-                servername, filtered_servers
-            )
-        except IndexError as e:
-            logger.exception("[!] IllegalServername: {}".format(e))
-            raise exceptions.IllegalServername(
-                "\"{}\" is not an existing server".format(servername)
-            )
-        except Exception as e:
-            logger.exception("[!] Unknown exception: {}".format(e))
-            capture_exception(e)
+        entry_IP, exit_IP = self.get_connection_ips(
+            servername, servers, filtered_servers
+        )
 
         servername, domain, server_feature = self.get_random_server(
             filtered_servers
@@ -330,18 +304,9 @@ class ServerManager():
             filtered_servers
         )
 
-        try:
-            entry_IP, exit_IP = self.generate_ip_list(
-                servername, servers
-            )
-        except IndexError as e:
-            logger.exception("[!] IllegalServername: {}".format(e))
-            raise exceptions.IllegalServername(
-                "\"{}\" is not a valid server".format(servername)
-            )
-        except Exception as e:
-            logger.exception("[!] Unknown exception: {}".format(e))
-            capture_exception(e)
+        entry_IP, exit_IP = self.get_connection_ips(
+            servername, servers, filtered_servers
+        )
 
         try:
             domain = self.get_matching_domain(servers, exit_IP, server_feature)
@@ -371,6 +336,21 @@ class ServerManager():
             filtered_servers
         )
 
+        entry_IP, exit_IP = self.get_connection_ips(
+            servername, servers, filtered_servers
+        )
+
+        try:
+            domain = self.get_matching_domain(servers, exit_IP, server_feature)
+        except KeyError:
+            pass
+
+        return self.cert_manager.generate_vpn_cert(
+            protocol, session,
+            servername, entry_IP
+        ), domain, entry_IP
+
+    def get_connection_ips(self, servername, servers, filtered_servers):
         try:
             entry_IP, exit_IP = self.generate_ip_list(
                 servername, filtered_servers
@@ -383,16 +363,9 @@ class ServerManager():
         except Exception as e:
             logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
-
-        try:
-            domain = self.get_matching_domain(servers, exit_IP, server_feature)
-        except KeyError:
-            pass
-
-        return self.cert_manager.generate_vpn_cert(
-            protocol, session,
-            servername, entry_IP
-        ), domain, entry_IP
+        else:
+            self.save_server_ip(entry_IP)
+            return entry_IP, exit_IP
 
     def get_matching_domain(self, server_pool, exit_IP, server_feature):
         _list = [FeatureEnum.NORMAL, FeatureEnum.SECURE_CORE]
