@@ -127,6 +127,8 @@ class ConnectionManager(ConnectionStateManager):
         )
 
         main_loop.run()
+        if not os.environ.get(ENV_CI_NAME):
+            delete_cached_cert(filename)
 
     def make_vpn_user_owned(self, connection):
         # returns NM.SettingConnection
@@ -244,6 +246,7 @@ class ConnectionManager(ConnectionStateManager):
         )
 
         main_loop.run()
+        self.save_connected_time()
 
     def stop_connection(self, client=None):
         """Stop ProtonVPN connection.
@@ -304,6 +307,8 @@ class ConnectionManager(ConnectionStateManager):
 
         conn_name = conn[1]
         conn = conn[0]
+        self.stop_daemon_reconnector()
+        self.remove_connection_metadata()
 
         # conn is a NM.RemoteConnection
         # https://lazka.github.io/pgi-docs/NM-1.0/classes/RemoteConnection.html#NM.RemoteConnection
@@ -344,14 +349,11 @@ class ConnectionManager(ConnectionStateManager):
         logger.info("Callback: \"{}\"".format(callback_type))
         main_loop = data.get("main_loop")
         conn_name = data.get("conn_name")
-        delete_cached_cert = data.get("delete_cached_cert")
-        filename = data.get("filename")
 
         try:
             callback_type_dict = dict(
                 remove=dict(
                     finish_function=client.delete_finish,
-                    exception=exceptions.RemoveConnectionFinishError,
                     msg="removed"
                 )
             )
@@ -359,17 +361,14 @@ class ConnectionManager(ConnectionStateManager):
             callback_type_dict = dict(
                 add=dict(
                     finish_function=client.add_connection_finish,
-                    exception=exceptions.AddConnectionFinishError,
                     msg="added"
                 ),
                 start=dict(
                     finish_function=client.activate_connection_finish,
-                    exception=exceptions.StartConnectionFinishError,
                     msg="started"
                 ),
                 stop=dict(
                     finish_function=client.deactivate_connection_finish,
-                    exception=exceptions.StopConnectionFinishError,
                     msg="stopped"
                 )
             )
@@ -382,44 +381,46 @@ class ConnectionManager(ConnectionStateManager):
             )
             logger.info(msg)
         except Exception as e:
-            logger.exception(
-                "[!] {}: {}".format(
-                    callback_type_dict[callback_type]["exception"],
-                    e
-                )
-            )
-            raise (callback_type_dict[callback_type]["exception"])(e)
-
-        if callback_type == "add" and not os.environ.get(ENV_CI_NAME):
-            delete_cached_cert(filename)
-
-        if callback_type != "stop":
-            if callback_type == "start":
-                self.save_connected_time()
-
-            if callback_type == "remove":
-                try:
-                    self.remove_connection_metadata()
-                except FileNotFoundError:
-                    pass
-
-            # try:
-            #     daemon_status = self.check_daemon_reconnector_status()
-            # except Exception as e:
-            #     logger.exception("[!] Exception: {}".format(e))
-            #     print(e)
-            # else:
-            #     logger.info("Daemon status: {}".format(daemon_status))
-            #     if not os.environ.get(ENV_CI_NAME):
-            #         self.daemon_manager(callback_type, daemon_status)
+            logger.exception("[!] Exception: {}".format(e))
 
         main_loop.quit()
 
-    def daemon_manager(self, callback_type, daemon_status):
+    def start_daemon_reconnector(self):
+        """Start daemon reconnector."""
+        try:
+            daemon_status = self.check_daemon_reconnector_status()
+        except Exception as e:
+            logger.exception("[!] Exception: {}".format(e))
+            print(e)
+
+        logger.info("Daemon status: {}".format(daemon_status))
+
+        if daemon_status:
+            return
+
+        if not os.environ.get(ENV_CI_NAME):
+            self.daemon_reconnector_manager("start", daemon_status)
+
+    def stop_daemon_reconnector(self):
+        """Stop daemon reconnector."""
+        try:
+            daemon_status = self.check_daemon_reconnector_status()
+        except Exception as e:
+            logger.exception("[!] Exception: {}".format(e))
+            print(e)
+
+        if not daemon_status:
+            return
+
+        logger.info("Daemon status: {}".format(daemon_status))
+        if not os.environ.get(ENV_CI_NAME):
+            self.daemon_reconnector_manager("stop", daemon_status)
+
+    def daemon_reconnector_manager(self, callback_type, daemon_status):
         """Start/stop daemon reconnector.
 
         Args:
-            callback_type (string): start, stop, remove
+            callback_type (string): start, stop
             daemon_status (int): 1 or 0
         """
         logger.info(
@@ -427,9 +428,9 @@ class ConnectionManager(ConnectionStateManager):
             + "daemon_status -> \"{}\"".format(daemon_status)
         )
         if callback_type == "start" and not daemon_status:
-            self.call_daemon_reconnector("start")
-        elif callback_type == "remove" and daemon_status:
-            self.call_daemon_reconnector("stop")
+            self.call_daemon_reconnector(callback_type)
+        elif callback_type == "stop" and daemon_status:
+            self.call_daemon_reconnector(callback_type)
             try:
                 daemon_status = self.check_daemon_reconnector_status()
             except Exception as e:
@@ -449,23 +450,17 @@ class ConnectionManager(ConnectionStateManager):
         """
         logger.info("Checking daemon reconnector status")
         check_daemon = subprocess.run(
-            ["systemctl", "status", "protonvpn_reconnect"],
+            ["systemctl", "status", "--user", "protonvpn_reconnect"],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         decoded_stdout = check_daemon.stdout.decode()
         if (
             check_daemon.returncode == 3
-        ) and ((
-            "Active: inactive (dead)" in decoded_stdout
-        ) or (
-            "Active: failed" in decoded_stdout
-        )):
+        ):
             # Not running
             return 0
         elif (
             check_daemon.returncode == 0
-        ) and (
-            "Active: active (running)" in decoded_stdout
         ):
             # Already running
             return 1
@@ -489,7 +484,7 @@ class ConnectionManager(ConnectionStateManager):
         """
         logger.info("Calling daemon reconnector")
         call_daemon = subprocess.run(
-            ["systemctl", command, "protonvpn_reconnect"],
+            ["systemctl", command, "--user", "protonvpn_reconnect"],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         decoded_stdout = call_daemon.stdout.decode()
@@ -503,7 +498,6 @@ class ConnectionManager(ConnectionStateManager):
                     decoded_stderr
                 )
             logger.error(msg)
-            print(msg)
 
     def extract_virtual_device_type(self, filename):
         """Extract virtual device type from .ovpn file.
