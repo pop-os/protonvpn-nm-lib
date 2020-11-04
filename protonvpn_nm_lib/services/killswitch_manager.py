@@ -50,7 +50,7 @@ class KillSwitchManager(AbstractInterfaceManager):
             }
         }
         self.disable_connectivity_check()
-        self.update_connection_status()
+        logger.info("Initialized killswitch manager")
 
     def manage(self, action, is_menu=False, server_ip=None):
         """Manage killswitch.
@@ -69,6 +69,7 @@ class KillSwitchManager(AbstractInterfaceManager):
             )
         )
         self.disable_connectivity_check()
+        self.update_connection_status()
 
         if is_menu:
             if int(action) == KillswitchStatusEnum.HARD:
@@ -84,10 +85,20 @@ class KillSwitchManager(AbstractInterfaceManager):
 
             return
 
-        if action == "pre_connection":
+        if (
+            action == "pre_connection"
+        ) and (
+            self.interface_state_tracker[self.ks_conn_name]["is_running"]
+            and not self.interface_state_tracker[self.routed_conn_name]["exists"] # noqa
+        ):
             self.create_routed_connection(server_ip)
             self.deactivate_connection(self.ks_conn_name)
-        elif action == "post_connection":
+        elif (
+            action == "post_connection"
+        ) and (
+            not self.interface_state_tracker[self.ks_conn_name]["is_running"]
+            and self.interface_state_tracker[self.routed_conn_name]["is_running"] # noqa
+        ):
             self.activate_connection(self.ks_conn_name)
             self.delete_connection(self.routed_conn_name)
         elif action == "soft_connection":
@@ -95,10 +106,6 @@ class KillSwitchManager(AbstractInterfaceManager):
             self.manage("post_connection")
         elif action == "disable":
             self.delete_all_connections()
-        else:
-            raise exceptions.KillswitchError(
-                "Incorrect option for killswitch manager"
-            )
 
     def create_killswitch_connection(self):
         """Create killswitch connection/interface."""
@@ -262,6 +269,8 @@ class KillSwitchManager(AbstractInterfaceManager):
                 pass
             else:
                 self.interface_state_tracker[active_conn.get_id()]["is_running"] = True # noqa
+
+        logger.info("Tracker info: {}".format(self.interface_state_tracker))
 
     def run_subprocess(self, exception, exception_msg, *args):
         """Run provided input via subprocess.
