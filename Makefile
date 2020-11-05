@@ -11,20 +11,15 @@ ifeq ($(branch), latest)
 	TAG_IMAGE=latest
 endif
 
+IMAGE_URL ?= $(CI_REGISTRY)/ubuntu:latest            
+ifndef CI_REGISTRY                                   
+	IMAGE_URL = 'ubuntu:latest'                        
+endif  
 
 ## Make remote image form a branch make image branch=<branchName> (master default)
-image: login build tag push
-
-login:
-	docker login -u gitlab-ci-token -p "$(CI_JOB_TOKEN)" "$(CI_REGISTRY)"
-
-build: copy-app
+image: requirements.txt copy-app
 	docker build -t $(NAME_IMAGE):$(TAG_IMAGE) .
-
-push:
 	docker push $(NAME_IMAGE):$(TAG_IMAGE)
-
-tag:
 	docker tag $(NAME_IMAGE):$(TAG_IMAGE) $(NAME_IMAGE):$(TAG_IMAGE)
 
 ## Copy the current app and remove some items we don't need inside the image
