@@ -1,9 +1,20 @@
+# Jobs to build and publish debian packages
+include:
+  - project: 'ProtonVPN/Linux/_gitlab-ci'
+    ref: public-protonvpn-repo
+    file: 'gitlab-ci-build-publish-debian.yml'
+  - project: 'agarroux/publish-github'
+    ref: master
+    file: '/jobs/release.gitlab-ci.yml'
+
 default:
   image: $CI_REGISTRY_IMAGE:branch-$CI_COMMIT_REF_SLUG
 
 stages:
   - image
   - test
+  - build
+  - publish
   - image-latest
   - release
 
@@ -55,11 +66,6 @@ test:
     - python3 -m pytest
 
 ## Jobs to publish commits + tags from master to github
-include:
-  - project: 'agarroux/publish-github'
-    ref: master
-    file: '/jobs/release.gitlab-ci.yml'
-
 release-publish-github:
   stage: release
   variables:

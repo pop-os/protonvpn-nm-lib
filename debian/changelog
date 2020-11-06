@@ -1,0 +1,32 @@
+protonvpn-nm-core (0.0.6-1) unstable; urgency=low
+
+  * Improve sub-process handling
+  * Update display status connection
+  * Disable NM connectivity check (for KS to work as expected)
+  * Handle specific 401, 403, 429 and 503 errors
+  * Handle other trivial HTTP status errors
+  * Mock API calls for tests
+  * Update logout so it attempts to delete the session from the server
+  * Separate CLI from library, thus a new package is created for the CLI
+
+ -- Proton Technologies AG <opensource@proton.me>  Mon, 29 Oct 2020 12:50:27 +0100
+
+protonvpn-nm-core (0.0.5-1) unstable; urgency=low
+
+  * Implement IPv6 leak protection
+  * Implement DNS management 
+  * Implement Killswitchmanagement
+  * Changed OpenVPN default protocol to UDP
+  * Fix crash when attempting to load server for PMTEAM
+  * Ignore TOR and SC when connecting to country fastest
+  * Refactor code to store OpenVPN crendtials and tier in keychain
+  * Fallback to existing server cache if API is unreacheable
+  * Add new configurations menu feature
+
+ -- Proton Technologies AG <opensource@proton.me>  Mon, 19 Oct 2020 19:40:49 +0100
+
+protonvpn-nm-core (0.0.4-1) unstable; urgency=low
+
+  * Initial alpha release
+
+ -- Proton Technologies AG <opensource@proton.me>  Mon, 28 Sep 2020 10:55:25 +0100
