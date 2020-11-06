@@ -9,8 +9,8 @@ from gi.repository import NM
 from common import (CERT_FOLDER, ENV_CI_NAME, MOCK_SESSIONDATA,
                     PLUGIN_CERT_FOLDER, CertificateManager, ConnectionManager,
                     IPv6LeakProtectionManager, KillSwitchManager,
-                    KillswitchStatusEnum, UserManager, UserSettingStatusEnum,
-                    exceptions)
+                    KillswitchStatusEnum, ReconnectorManager, UserManager,
+                    UserSettingStatusEnum, exceptions)
 
 TEST_KEYRING_SERVICE = "TestConnManager"
 TEST_KEYRING_SESSIONDATA = "TestConnManSessionData"
@@ -126,6 +126,10 @@ class TestIntegrationConnectionManager():
         return FakeUserConfigurationManager()
 
     @pytest.fixture
+    def reconnector_manager(self):
+        return ReconnectorManager()
+
+    @pytest.fixture
     def ks_man(self, fake_user_conf_man):
         return KillSwitchManager(
             fake_user_conf_man,
@@ -226,20 +230,24 @@ class TestIntegrationConnectionManager():
             )
 
     def test_remove_correct_connection(
-        self, conn_man, fake_user_conf_man, ks_man, ipv6_lp_man
+        self, conn_man, fake_user_conf_man,
+        ks_man, ipv6_lp_man, reconnector_manager
     ):
         conn_man.remove_connection(
             fake_user_conf_man,
             ks_man,
-            ipv6_lp_man
+            ipv6_lp_man,
+            reconnector_manager
         )
 
     def test_remove_inexistent_connection(
-        self, conn_man, fake_user_conf_man, ks_man, ipv6_lp_man
+        self, conn_man, fake_user_conf_man,
+        ks_man, ipv6_lp_man, reconnector_manager
     ):
         with pytest.raises(exceptions.ConnectionNotFound):
             conn_man.remove_connection(
                 fake_user_conf_man,
                 ks_man,
-                ipv6_lp_man
+                ipv6_lp_man,
+                reconnector_manager
             )
