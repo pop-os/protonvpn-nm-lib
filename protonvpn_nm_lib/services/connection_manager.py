@@ -387,6 +387,7 @@ class ConnectionManager(ConnectionStateManager):
 
     def start_daemon_reconnector(self):
         """Start daemon reconnector."""
+        daemon_status = False
         try:
             daemon_status = self.check_daemon_reconnector_status()
         except Exception as e:
@@ -403,6 +404,7 @@ class ConnectionManager(ConnectionStateManager):
 
     def stop_daemon_reconnector(self):
         """Stop daemon reconnector."""
+        daemon_status = False
         try:
             daemon_status = self.check_daemon_reconnector_status()
         except Exception as e:
