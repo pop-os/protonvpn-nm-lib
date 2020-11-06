@@ -20,6 +20,7 @@ from protonvpn_nm_lib.services.proton_session_wrapper import \
 from protonvpn_nm_lib.services.server_manager import ServerManager
 from protonvpn_nm_lib.services.user_manager import UserManager
 from protonvpn_nm_lib.services.user_session_manager import UserSessionManager
+from protonvpn_nm_lib.services.reconnector_manager import ReconnectorManager
 
 MOCK_SESSIONDATA = {
     "api_url": "https://localhost",

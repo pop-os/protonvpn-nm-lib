@@ -6,21 +6,22 @@
 import os
 
 from xdg import BaseDirectory
+
 XDG_CACHE_HOME = BaseDirectory.xdg_cache_home
 XDG_CONFIG_HOME = BaseDirectory.xdg_config_home
 # XDG_DATA_HOME = BaseDirectory.xdg_data_home
 
-from .enums import (
-    ProtocolImplementationEnum,
-    ProtocolEnum,
-    FeatureEnum,
-    UserSettingEnum,
-    KillswitchStatusEnum,
-    UserSettingStatusEnum,
-    UserSettingConnectionEnum,
-)
+from .enums import (FeatureEnum, KillswitchStatusEnum, ProtocolEnum,
+                    ProtocolImplementationEnum, UserSettingConnectionEnum,
+                    UserSettingEnum, UserSettingStatusEnum)
 
 APP_VERSION = '0.0.6'
+
+XDG_CONFIG_SYSTEMD = os.path.join(XDG_CONFIG_HOME, "systemd")
+XDG_CONFIG_SYSTEMD_USER = os.path.join(XDG_CONFIG_SYSTEMD, "user")
+LOCAL_SERVICE_FILEPATH = os.path.join(
+    XDG_CONFIG_SYSTEMD_USER, "protonvpn_reconnect.service"
+)
 
 IPv6_LEAK_PROTECTION_CONN_NAME = "pvpn-ipv6leak-protection"
 IPv6_LEAK_PROTECTION_IFACE_NAME = "ipv6leakintrf0"
@@ -111,6 +112,19 @@ USER_CONFIG_TEMPLATE = {
     UserSettingEnum.ADVANCED: {},
     UserSettingEnum.TRAY: {},
 }
+
+SERVICE_TEMPLATE = """
+[Unit]
+Description=ProtonVPN Reconnector
+After=network-online.target
+Wants=network-online.target systemd-networkd-wait-online.service
+
+[Service]
+ExecStart=EXEC_START
+
+[Install]
+WantedBy=multi-user.target
+"""
 
 USAGE = """
 ProtonVPN CLI
