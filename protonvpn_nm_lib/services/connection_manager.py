@@ -1,5 +1,4 @@
 import os
-import subprocess
 from getpass import getuser
 
 import gi
@@ -286,7 +285,8 @@ class ConnectionManager(ConnectionStateManager):
         self,
         user_conf_manager,
         ks_manager,
-        ipv6_lp_manager
+        ipv6_lp_manager,
+        reconector_manager
     ):
         """Stop and remove ProtonVPN connection."""
         logger.info("Removing VPN connection")
@@ -307,7 +307,7 @@ class ConnectionManager(ConnectionStateManager):
 
         conn_name = conn[1]
         conn = conn[0]
-        self.stop_daemon_reconnector()
+        reconector_manager.stop_daemon_reconnector()
         self.remove_connection_metadata()
 
         # conn is a NM.RemoteConnection
@@ -384,122 +384,6 @@ class ConnectionManager(ConnectionStateManager):
             logger.exception("[!] Exception: {}".format(e))
 
         main_loop.quit()
-
-    def start_daemon_reconnector(self):
-        """Start daemon reconnector."""
-        daemon_status = False
-        try:
-            daemon_status = self.check_daemon_reconnector_status()
-        except Exception as e:
-            logger.exception("[!] Exception: {}".format(e))
-            print(e)
-
-        logger.info("Daemon status: {}".format(daemon_status))
-
-        if daemon_status:
-            return
-
-        if not os.environ.get(ENV_CI_NAME):
-            self.daemon_reconnector_manager("start", daemon_status)
-
-    def stop_daemon_reconnector(self):
-        """Stop daemon reconnector."""
-        daemon_status = False
-        try:
-            daemon_status = self.check_daemon_reconnector_status()
-        except Exception as e:
-            logger.exception("[!] Exception: {}".format(e))
-            print(e)
-
-        if not daemon_status:
-            return
-
-        logger.info("Daemon status: {}".format(daemon_status))
-        if not os.environ.get(ENV_CI_NAME):
-            self.daemon_reconnector_manager("stop", daemon_status)
-
-    def daemon_reconnector_manager(self, callback_type, daemon_status):
-        """Start/stop daemon reconnector.
-
-        Args:
-            callback_type (string): start, stop
-            daemon_status (int): 1 or 0
-        """
-        logger.info(
-            "Managing daemon: cb_type-> \"{}\"; ".format(callback_type)
-            + "daemon_status -> \"{}\"".format(daemon_status)
-        )
-        if callback_type == "start" and not daemon_status:
-            self.call_daemon_reconnector(callback_type)
-        elif callback_type == "stop" and daemon_status:
-            self.call_daemon_reconnector(callback_type)
-            try:
-                daemon_status = self.check_daemon_reconnector_status()
-            except Exception as e:
-                logger.exception("[!] Exception: {}".format(e))
-                print(e)
-            else:
-                logger.info(
-                    "Daemon status after stopping: {}".format(daemon_status)
-                )
-
-    def check_daemon_reconnector_status(self):
-        """Checks the status of the daemon reconnector and starts the process
-        only if it's not already running.
-
-        Returns:
-            int: indicates the status of the daemon process
-        """
-        logger.info("Checking daemon reconnector status")
-        check_daemon = subprocess.run(
-            ["systemctl", "status", "--user", "protonvpn_reconnect"],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        decoded_stdout = check_daemon.stdout.decode()
-        if (
-            check_daemon.returncode == 3
-        ):
-            # Not running
-            return 0
-        elif (
-            check_daemon.returncode == 0
-        ):
-            # Already running
-            return 1
-        else:
-            # Service threw an exception
-            raise Exception(
-                "[!] An error occurred while checking for ProtonVPN "
-                + "reconnector service: "
-                + "(Return code: {}; Exception: {} {})".format(
-                    check_daemon.returncode, decoded_stdout,
-                    check_daemon.stderr.decode().strip("\n")
-                )
-            )
-
-    def call_daemon_reconnector(self, command=["start", "stop"]):
-        """Makes calls to daemon reconnector to either
-        start or stop the process.
-
-        Args:
-            command (string): to either start or stop the process
-        """
-        logger.info("Calling daemon reconnector")
-        call_daemon = subprocess.run(
-            ["systemctl", command, "--user", "protonvpn_reconnect"],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        decoded_stdout = call_daemon.stdout.decode()
-        decoded_stderr = call_daemon.stderr.decode().strip("\n")
-
-        if not call_daemon.returncode == 0:
-            msg = "[!] An error occurred while {}ing ProtonVPN "\
-                "reconnector service: {} {}".format(
-                    command,
-                    decoded_stdout,
-                    decoded_stderr
-                )
-            logger.error(msg)
 
     def extract_virtual_device_type(self, filename):
         """Extract virtual device type from .ovpn file.
