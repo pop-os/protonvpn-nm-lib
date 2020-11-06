@@ -127,10 +127,10 @@ class KillSwitchManager(AbstractInterfaceManager):
         self.create_connection(
             self.ks_conn_name,
             "Unable to activate {}".format(self.ks_conn_name),
-            subprocess_command
+            subprocess_command, exceptions.CreateBlockingKillswitchError
         )
 
-    def create_routed_connection(self, server_ip):
+    def create_routed_connection(self, server_ip, try_route_addrs=False):
         """Create routed connection/interface.
 
         Args:
@@ -145,13 +145,14 @@ class KillSwitchManager(AbstractInterfaceManager):
 
         route_data = [str(ipv4) for ipv4 in subnet_list]
         route_data_str = ",".join(route_data)
+
         subprocess_command = ""\
             "nmcli c a type dummy ifname {interface_name} "\
             "con-name {conn_name} ipv4.method manual "\
             "ipv4.addresses {ipv4_addrs} "\
             "ipv6.method manual ipv6.addresses {ipv6_addrs} "\
             "ipv6.gateway {ipv6_gateway} "\
-            "ipv4.route-metric 98 ipv6.route-metric 98 "\
+            "ipv4.route-metric 97 ipv6.route-metric 97 "\
             "ipv4.routes {routes}".format(
                 conn_name=self.routed_conn_name,
                 interface_name=self.routed_interface_name,
@@ -161,19 +162,43 @@ class KillSwitchManager(AbstractInterfaceManager):
                 routes=route_data_str
             ).split(" ")
 
-        self.create_connection(
-            self.routed_conn_name,
-            "Unable to activate {}".format(self.routed_conn_name),
-            subprocess_command
-        )
+        if try_route_addrs:
+            subprocess_command = ""\
+                "nmcli c a type dummy ifname {interface_name} "\
+                "con-name {conn_name} ipv4.method manual "\
+                "ipv4.addresses {ipv4_addrs} "\
+                "ipv6.method manual ipv6.addresses {ipv6_addrs} "\
+                "ipv6.gateway {ipv6_gateway} "\
+                "ipv4.route-metric 97 ipv6.route-metric 97".format(
+                    conn_name=self.routed_conn_name,
+                    interface_name=self.routed_interface_name,
+                    ipv4_addrs=route_data_str,
+                    ipv6_addrs=self.ipv6_dummy_addrs,
+                    ipv6_gateway=self.ipv6_dummy_gateway,
+                ).split(" ")
+
+        logger.info(subprocess_command)
+        exception_msg = "Unable to activate {}".format(self.routed_conn_name)
+
+        try:
+            self.create_connection(
+                self.routed_conn_name, exception_msg,
+                subprocess_command, exceptions.CreateRoutedKillswitchError
+            )
+        except exceptions.CreateRoutedKillswitchError as e:
+            if e.additional_context.returncode == 2 and not try_route_addrs:
+                return self.create_routed_connection(server_ip, True)
+            else:
+                raise exceptions.CreateRoutedKillswitchError(exception_msg)
 
     def create_connection(
-        self, conn_name, exception_msg, subprocess_command
+        self, conn_name, exception_msg,
+        subprocess_command, exception
     ):
         self.update_connection_status()
         if not self.interface_state_tracker[conn_name]["exists"]:
             self.run_subprocess(
-                exceptions.CreateKillswitchError,
+                exception,
                 exception_msg,
                 subprocess_command
             )
@@ -300,7 +325,8 @@ class KillSwitchManager(AbstractInterfaceManager):
                 )
             )
             raise exception(
-                exception_msg
+                exception_msg,
+                subprocess_outpout
             )
 
     def disable_connectivity_check(self):
