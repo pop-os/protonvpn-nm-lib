@@ -5,10 +5,11 @@ import gi
 
 gi.require_version("NM", "1.0")
 from gi.repository import NM, GLib
+
 from .. import exceptions
-from ..constants import (ENV_CI_NAME, VIRTUAL_DEVICE_NAME,
-                         CONFIG_STATUSES)
-from ..enums import UserSettingStatusEnum, KillswitchStatusEnum
+from ..constants import CONFIG_STATUSES, ENV_CI_NAME, VIRTUAL_DEVICE_NAME
+from ..enums import (ConnectionMetadataEnum, KillswitchStatusEnum,
+                     UserSettingStatusEnum)
 from ..logger import logger
 from ..services.connection_state_manager import ConnectionStateManager
 from . import capture_exception
@@ -101,8 +102,10 @@ class ConnectionManager(ConnectionStateManager):
             filename
         )
         vpn_settings = connection.get_setting_vpn()
+        conn_settings = connection.get_setting_connection()
 
-        self.make_vpn_user_owned(connection)
+        self.make_vpn_user_owned(conn_settings)
+        self.set_custom_connection_id(conn_settings)
         self.add_vpn_credentials(vpn_settings, username, password)
         self.add_server_certificate_check(vpn_settings, domain)
         self.apply_virtual_device_type(vpn_settings, filename)
@@ -129,16 +132,20 @@ class ConnectionManager(ConnectionStateManager):
         if not os.environ.get(ENV_CI_NAME):
             delete_cached_cert(filename)
 
-    def make_vpn_user_owned(self, connection):
+    def make_vpn_user_owned(self, connection_settings):
         # returns NM.SettingConnection
         # https://lazka.github.io/pgi-docs/NM-1.0/classes/SettingConnection.html#NM.SettingConnection
         logger.info("Making VPN connection be user owned")
-        connection_settings = connection.get_setting_connection()
         connection_settings.add_permission(
             "user",
             getuser(),
             None
         )
+
+    def set_custom_connection_id(self, connection_settings):
+        id_suffix_dict = self.get_connection_metadata()
+        id_suffix = id_suffix_dict[ConnectionMetadataEnum.SERVER]
+        connection_settings.props.id = "ProtonVPN " + id_suffix
 
     def add_vpn_credentials(self, vpn_settings,
                             openvpn_username, openvpn_password):
