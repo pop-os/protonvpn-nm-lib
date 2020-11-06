@@ -3,12 +3,13 @@ import json
 import os
 import time
 
-from ..constants import CONNECTION_STATE_FILEPATH
+from ..constants import CONNECTION_STATE_FILEPATH, LAST_CONNECTION_METADATA
 from ..enums import ConnectionMetadataEnum
 
 
 class ConnectionStateManager():
     FILEPATH = CONNECTION_STATE_FILEPATH
+    LAST_CONN_FILEPATH = LAST_CONNECTION_METADATA
 
     def save_servername(self, servername):
         """Save connected servername metadata.
@@ -30,20 +31,39 @@ class ConnectionStateManager():
         metadata[ConnectionMetadataEnum.PROTOCOL] = protocol
         self.write_to_file(metadata)
 
-    def get_connection_metadata(self):
+    def save_server_ip(self, ip):
+        metadata = {
+            "last_connect_ip": ip
+        }
+        self.write_to_file(metadata, self.LAST_CONN_FILEPATH)
+
+    def get_server_ip(self):
+        return self.get_connection_metadata(self.LAST_CONN_FILEPATH)["last_connect_ip"] # noqa
+
+    def get_connection_metadata(self, fp=None):
         """Get connection state metadata.
 
         Returns:
             dict
         """
-        with open(self.FILEPATH) as f:
+        filepath = self.FILEPATH
+        if fp:
+            filepath = fp
+        with open(filepath) as f:
             return json.load(f)
 
-    def write_to_file(self, metadata):
+    def write_to_file(self, metadata, fp=None):
         """Save metadata to file."""
-        with open(self.FILEPATH, "w") as f:
+        filepath = self.FILEPATH
+        if fp:
+            filepath = fp
+        with open(filepath, "w") as f:
             json.dump(metadata, f)
 
-    def remove_connection_metadata(self):
+    def remove_connection_metadata(self, fp=None):
         """Remove metadata file."""
-        os.remove(self.FILEPATH)
+        filepath = self.FILEPATH
+        if fp:
+            filepath = fp
+        if os.path.isfile(filepath):
+            os.remove(filepath)

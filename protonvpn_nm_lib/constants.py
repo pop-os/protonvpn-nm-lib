@@ -53,6 +53,9 @@ LOGFILE = os.path.join(PROTON_XDG_CACHE_HOME_LOGS, "protonvpn.log")
 CONNECTION_STATE_FILEPATH = os.path.join(
     PROTON_XDG_CACHE_HOME, "connection_metadata.json"
 )
+LAST_CONNECTION_METADATA = os.path.join(
+    PROTON_XDG_CACHE_HOME, "last_connection_metadata.json"
+)
 USER_CONFIGURATIONS_FILEPATH = os.path.join(
     PROTON_XDG_CONFIG_HOME, "user_configurations.json"
 )

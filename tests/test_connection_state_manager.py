@@ -59,6 +59,4 @@ class TestConnectionStateManager:
         self.csm.remove_connection_metadata()
 
     def test_remove_incorrect_connection_metadata(self):
-        self.csm.FILEPATH = "missing/path/file.json"
-        with pytest.raises(FileNotFoundError):
-            self.csm.remove_connection_metadata()
+        self.csm.remove_connection_metadata("missing/path/file.json")

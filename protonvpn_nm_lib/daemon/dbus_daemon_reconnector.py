@@ -34,11 +34,14 @@ import getpass
 import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
-
-from ..constants import VIRTUAL_DEVICE_NAME
-from ..logger import logger
-from ..services.connection_state_manager import ConnectionStateManager
-from ..services.dbus_get_wrapper import DbusGetWrapper
+from protonvpn_nm_lib.constants import VIRTUAL_DEVICE_NAME
+from protonvpn_nm_lib.logger import logger
+from protonvpn_nm_lib.services.connection_state_manager import \
+    ConnectionStateManager
+from protonvpn_nm_lib.services.dbus_get_wrapper import DbusGetWrapper
+from protonvpn_nm_lib.services.killswitch_manager import KillSwitchManager
+from protonvpn_nm_lib.services.user_configuration_manager import \
+    UserConfigurationManager
 
 
 class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
@@ -54,6 +57,8 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
 
     """
     def __init__(self, virtual_device_name, loop, max_attempts=5, delay=5000):
+        self.user_conf_manager = UserConfigurationManager()
+        self.ks_manager = KillSwitchManager(self.user_conf_manager)
         self.virtual_device_name = virtual_device_name
         self.loop = loop
         self.max_attempts = max_attempts
@@ -65,6 +70,7 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
         self.get_network_manager().connect_to_signal(
             "StateChanged", self.on_network_state_changed
         )
+        logger.info("Initialized Dbus daemon manager")
 
     def on_network_state_changed(self, state):
         """Network status signal handler.
@@ -127,6 +133,7 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
                     self.virtual_device_name
                 )
             )
+            self.ks_manager.manage("post_connection")
         elif state == 7 and reason == 2:
             logger.info("ProtonVPN connection was manually disconnected.")
             self.failed_attempts = 0
@@ -148,6 +155,8 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
                 )
             else:
                 logger.info("ProtonVPN connection has been manually removed.")
+                # if killswitch soft then:
+                #   disable killswitch
             finally:
                 loop.quit()
 
@@ -191,12 +200,15 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
     def vpn_monitor(self):
         """Monitor and activate ProtonVPN connections."""
         logger.info(
-            "____Monitoring connection "
-            + "for {}, ".format(self.virtual_device_name)
-            + "reattempting up to {} times with {} ".format(
+            "\n\n---------------------- "
+            "Daemon reconnector monitoring VPN connection"
+            " ----------------------\n"
+            + "-Virtual device being monitored: {},".format(
+                self.virtual_device_name
+            ) + "\n"
+            + "-Reattempting up to {} times with {} ".format(
                 self.max_attempts, self.delay
-            )
-            + "ms between retries____"
+            ) + "ms between retries\n"
         )
         vpn_interface = self.get_vpn_interface()
         active_con = self.get_active_connection()
@@ -220,15 +232,24 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
         else:
             is_protonvpn, state, conn = self.is_protonvpn_being_prepared()
             # Check if connection is being prepared
+            server_ip = self.get_server_ip()
+            server_ip = server_ip[0]
+            logger.info("Reconnecting to server IP \"{}\"".format(server_ip))
             if is_protonvpn and state == 1:
                 logger.info("ProtonVPN connection is being prepared.")
+                self.ks_manager.manage("pre_connection", server_ip=server_ip)
                 self.vpn_signal_handler(conn)
             else:
                 logger.info("User prior creating new connection: {}".format(
                     getpass.getuser())
                 )
                 try:
-                    self.setup_new_protonvpn_conn(active_con, vpn_interface)
+                    self.ks_manager.manage(
+                        "pre_connection", server_ip=server_ip
+                    )
+                    self.setup_new_protonvpn_conn(
+                        self.get_active_connection(), vpn_interface
+                    )
                 except dbus.exceptions.DBusException as e:
                     logger.error(
                         "Unable to start VPN connection: {}.".format(e)

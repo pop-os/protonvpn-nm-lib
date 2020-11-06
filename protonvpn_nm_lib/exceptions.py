@@ -1,6 +1,7 @@
 class ProtonVPNBaseException(BaseException):
-    def __init__(self, message):
+    def __init__(self, message, additional_info=None):
         self.message = message
+        self.additional_context = additional_info
         super(ProtonVPNBaseException, self).__init__(self.message)
 
 
@@ -180,6 +181,14 @@ class KillswitchOptionError(KillswitchError):
 
 class CreateKillswitchError(KillswitchError):
     """Create killswitch error"""
+
+
+class CreateRoutedKillswitchError(CreateKillswitchError):
+    """Create routed killswitch error"""
+
+
+class CreateBlockingKillswitchError(CreateKillswitchError):
+    """Create routed killswitch error"""
 
 
 class DeleteKillswitchError(KillswitchError):
