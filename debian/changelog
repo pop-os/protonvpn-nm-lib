@@ -1,3 +1,9 @@
+protonvpn-nm-core (0.0.6-4) unreleased; urgency=low
+
+  * Display custom error message if perma-ks is enabled and no previous cache is available
+
+ -- Proton Technologies AG <opensource@proton.me>  Mon, 09 Nov 2020 12:44:46 +0000
+
 protonvpn-nm-core (0.0.6-3) unstable; urgency=low
 
   * Remove CLI references
@@ -23,7 +29,7 @@ protonvpn-nm-core (0.0.6-1) unstable; urgency=low
   * Update logout so it attempts to delete the session from the server
   * Separate CLI from library, thus a new package is created for the CLI
 
- -- Proton Technologies AG <opensource@proton.me>  Mon, 29 Oct 2020 12:50:27 +0100
+ -- Proton Technologies AG <opensource@proton.me>  Mon, 29 Oct 2020 12:50:27 +0000
 
 protonvpn-nm-core (0.0.5-1) unstable; urgency=low
 

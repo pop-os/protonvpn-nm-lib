@@ -594,10 +594,17 @@ class ServerManager(ConnectionStateManager):
             with open(CACHED_SERVERLIST, "r") as f:
                 server_data = json.load(f)
         except FileNotFoundError as e:
+            killswitch_msg = ""
+            if not self.killswitch_status == UserSettingStatusEnum.DISABLED:
+                killswitch_msg = "Killswitch is enabled, "\
+                    "please first disable killswitch to cache servers"
+
             logger.exception(
-                "[!] MissingCacheError: {}".format(e)
+                "[!] MissingCacheError: {}. {}".format(e, killswitch_msg)
             )
-            raise exceptions.MissingCacheError("Server cache not found")
+            raise exceptions.MissingCacheError(
+                "Server cache not found. {}".format(killswitch_msg)
+            )
 
         return server_data["LogicalServers"]
 
