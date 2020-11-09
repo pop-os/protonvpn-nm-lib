@@ -2,7 +2,6 @@ import inspect
 import random
 import re
 import time
-import urllib3
 import requests
 from proton.api import ProtonError, Session
 
