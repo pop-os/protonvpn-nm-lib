@@ -2,7 +2,7 @@ protonvpn-nm-core (0.0.6-3) unstable; urgency=low
 
   * Remove CLI references
 
- -- Proton Technologies AG <opensource@proton.me>  Mon, 09 Oct 2020 11:30:54 +0000
+ -- Proton Technologies AG <opensource@proton.me>  Mon, 09 Nov 2020 11:30:54 +0000
 
 protonvpn-nm-core (0.0.6-2) unstable; urgency=low
 
