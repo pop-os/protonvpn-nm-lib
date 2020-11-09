@@ -1,4 +1,4 @@
-protonvpn-nm-core (0.0.6-4) unreleased; urgency=low
+protonvpn-nm-core (0.0.6-4) unstable; urgency=low
 
   * Display custom error message if perma-ks is enabled and no previous cache is available
 
