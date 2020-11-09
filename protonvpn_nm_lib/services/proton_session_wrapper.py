@@ -2,7 +2,7 @@ import inspect
 import random
 import re
 import time
-
+import requests
 from proton.api import ProtonError, Session
 
 from .. import exceptions
@@ -219,6 +219,8 @@ class ProtonSessionWrapper(object):
             )
         except ProtonError as e:
             error = e
+        except requests.exceptions.ConnectTimeout as e:
+            raise exceptions.APITimeoutError(e)
         except Exception as e:
             logger.exception(
                 "[!] ProtonSessionAPIError: {}. Raising exception.".format(e)
