@@ -153,6 +153,10 @@ class API5003Error(ProtonSessionWrapperError):
     """Error 5003."""
 
 
+class APITimeoutError(ProtonSessionWrapperError):
+    """API timeout error."""
+
+
 class ProtonSessionAPIError(ProtonSessionWrapperError):
     """Proton session API error."""
 
