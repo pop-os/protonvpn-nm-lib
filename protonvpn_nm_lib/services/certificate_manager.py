@@ -157,7 +157,6 @@ class CertificateManager(ConnectionStateManager):
             bool
         """
         logger.info("Generating strongswan certificate")
-        print("Generate Strongswan")
         return True
 
     def generate_wireguard_cert(
@@ -174,7 +173,6 @@ class CertificateManager(ConnectionStateManager):
             bool
         """
         logger.info("Generating Wireguard certificate")
-        print("Generate wireguard")
         return True
 
     @staticmethod

@@ -90,8 +90,6 @@ class UserConfigurationManager():
         if status not in CONFIG_STATUSES:
             raise KeyError("Illegal options")
 
-        print("manage split tunneling")
-
     def reset_default_configs(self):
         self.init_configuration_file(True)
 

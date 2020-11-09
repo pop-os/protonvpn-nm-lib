@@ -1,5 +1,5 @@
 #!/bin/sh
-# postinst script for protonvpn-cli
+# postinst script for protonvpn-nm-core
 #
 # see: dh_installdeb(1)
 

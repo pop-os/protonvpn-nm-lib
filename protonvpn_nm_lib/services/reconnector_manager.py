@@ -40,7 +40,6 @@ class ReconnectorManager():
             daemon_status = self.check_daemon_reconnector_status()
         except Exception as e:
             logger.exception("[!] Exception: {}".format(e))
-            print(e)
 
         logger.info("Daemon status: {}".format(daemon_status))
 
@@ -57,7 +56,6 @@ class ReconnectorManager():
             daemon_status = self.check_daemon_reconnector_status()
         except Exception as e:
             logger.exception("[!] Exception: {}".format(e))
-            print(e)
 
         if not daemon_status:
             return
@@ -85,7 +83,6 @@ class ReconnectorManager():
                 daemon_status = self.check_daemon_reconnector_status()
             except Exception as e:
                 logger.exception("[!] Exception: {}".format(e))
-                print(e)
             else:
                 logger.info(
                     "Daemon status after stopping: {}".format(daemon_status)
