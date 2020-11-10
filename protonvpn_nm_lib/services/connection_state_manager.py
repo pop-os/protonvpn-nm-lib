@@ -20,24 +20,24 @@ class ConnectionStateManager():
             servername (string): servername [PT#1]
         """
         metadata = {ConnectionMetadataEnum.SERVER: servername}
-        self.write_to_file(metadata)
+        self.write_connection_metadata(metadata)
 
     def save_connected_time(self):
         """Save connected time metdata."""
         metadata = self.get_connection_metadata()
         metadata[ConnectionMetadataEnum.CONNECTED_TIME] = str(int(time.time()))
-        self.write_to_file(metadata)
+        self.write_connection_metadata(metadata)
 
     def save_protocol(self, protocol):
         metadata = self.get_connection_metadata()
         metadata[ConnectionMetadataEnum.PROTOCOL] = protocol
-        self.write_to_file(metadata)
+        self.write_connection_metadata(metadata)
 
     def save_server_ip(self, ip):
         metadata = {
             "last_connect_ip": ip
         }
-        self.write_to_file(metadata, self.LAST_CONN_METADATA_FP)
+        self.write_connection_metadata(metadata, self.LAST_CONN_METADATA_FP)
 
     def get_server_ip(self):
         return self.get_connection_metadata(self.LAST_CONN_METADATA_FP)["last_connect_ip"] # noqa
@@ -54,7 +54,7 @@ class ConnectionStateManager():
         with open(filepath) as f:
             return json.load(f)
 
-    def write_to_file(self, metadata, fp=None):
+    def write_connection_metadata(self, metadata, fp=None):
         """Save metadata to file."""
         filepath = self.CONN_STATE_FP
         if fp:
