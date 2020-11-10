@@ -121,7 +121,7 @@ CACHE_METADATA_FILEPATH = os.path.join(
 CONNECTION_STATE_FILEPATH = os.path.join(
     PROTON_XDG_CACHE_HOME, "connection_metadata.json"
 )
-LAST_CONNECTION_METADATA = os.path.join(
+LAST_CONNECTION_METADATA_FILEPATH = os.path.join(
     PROTON_XDG_CACHE_HOME, "last_connection_metadata.json"
 )
 USER_CONFIGURATIONS_FILEPATH = os.path.join(
