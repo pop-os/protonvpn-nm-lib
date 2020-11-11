@@ -7,7 +7,8 @@ from protonvpn_nm_lib.enums import (ClientSuffixEnum, KillswitchStatusEnum,
                                     MetadataActionEnum, MetadataEnum,
                                     ProtonSessionAPIMethodEnum,
                                     UserSettingConnectionEnum,
-                                    UserSettingStatusEnum)
+                                    UserSettingStatusEnum,
+                                    ConnectionMetadataEnum)
 from protonvpn_nm_lib.services.certificate_manager import CertificateManager
 from protonvpn_nm_lib.services.connection_manager import ConnectionManager
 from protonvpn_nm_lib.services.connection_state_manager import \
@@ -22,6 +23,7 @@ from protonvpn_nm_lib.services.reconnector_manager import ReconnectorManager
 from protonvpn_nm_lib.services.server_manager import ServerManager
 from protonvpn_nm_lib.services.user_manager import UserManager
 from protonvpn_nm_lib.services.user_session_manager import UserSessionManager
+from protonvpn_nm_lib.services.metadata_manager import MetadataManager
 
 MOCK_SESSIONDATA = {
     "api_url": "https://localhost",
