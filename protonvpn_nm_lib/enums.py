@@ -91,7 +91,13 @@ class ProtonSessionAPIMethodEnum(object):
     LOGOUT = "logout"
 
 
+class MetadataActionEnum(object):
+    GET = "get"
+    WRITE = "write"
+    REMOVE = "remove"
+
+
 class MetadataEnum(object):
     CONNECTION = "connection_metadata"
     LAST_CONNECTION = "last_connection_metadata"
-    CACHE = "cache_metadata"
+    SERVER_CACHE = "cache_metadata"

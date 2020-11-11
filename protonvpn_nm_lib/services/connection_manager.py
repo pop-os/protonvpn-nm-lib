@@ -10,7 +10,7 @@ from gi.repository import NM, GLib
 from .. import exceptions
 from ..constants import CONFIG_STATUSES, ENV_CI_NAME, VIRTUAL_DEVICE_NAME
 from ..enums import (ConnectionMetadataEnum, KillswitchStatusEnum,
-                     UserSettingStatusEnum)
+                     UserSettingStatusEnum, MetadataEnum)
 from ..logger import logger
 from ..services.connection_state_manager import ConnectionStateManager
 from . import capture_exception
@@ -143,7 +143,7 @@ class ConnectionManager(ConnectionStateManager):
         )
 
     def set_custom_connection_id(self, connection_settings):
-        id_suffix_dict = self.get_connection_metadata()
+        id_suffix_dict = self.get_connection_metadata(MetadataEnum.CONNECTION)
         id_suffix = id_suffix_dict[ConnectionMetadataEnum.SERVER]
         connection_settings.props.id = "ProtonVPN " + id_suffix
 
@@ -316,7 +316,7 @@ class ConnectionManager(ConnectionStateManager):
         conn_name = conn[1]
         conn = conn[0]
         reconector_manager.stop_daemon_reconnector()
-        self.remove_connection_metadata()
+        self.remove_connection_metadata(MetadataEnum.CONNECTION)
 
         # conn is a NM.RemoteConnection
         # https://lazka.github.io/pgi-docs/NM-1.0/classes/RemoteConnection.html#NM.RemoteConnection
@@ -343,7 +343,7 @@ class ConnectionManager(ConnectionStateManager):
         if not connection_exists[0]:
             return False
 
-        return self.get_connection_metadata()
+        return self.get_connection_metadata(MetadataEnum.CONNECTION)
 
     def check_internet_connectivity(self, ks_status):
         logger.info("Checking internet connectivity")
