@@ -3,7 +3,9 @@ import os
 
 import pytest
 
-from common import PWD, ConnectionStateManager
+from common import PWD
+from common import ConnectionStateManager
+from common import exceptions
 
 conn_state_filepath = os.path.join(PWD, "test_conn_state_manager.json")
 
@@ -32,31 +34,21 @@ class TestConnectionStateManager:
         assert metadata["test_passed"] is True
 
     @pytest.mark.parametrize(
-        "filepath, e",
+        "metadata_type, e",
         [
-            ("./some/incorrect/path.json", FileNotFoundError),
-            ("", FileNotFoundError),
-            (False, json.decoder.JSONDecodeError),
+            ("random_metadata_type", exceptions.IllegalMetadataTypeError),
+            ("", exceptions.IllegalMetadataTypeError),
+            (False, exceptions.IllegalMetadataTypeError),
             ([], TypeError),
             ({}, TypeError)
         ]
     )
-    def test_get_incorrect_filepath(self, filepath, e):
-        self.csm.FILEPATH = filepath
+    def test_get_incorrect_metadata_type(self, metadata_type, e):
         with pytest.raises(e):
-            self.csm.get_connection_metadata()
+            self.csm.get_connection_metadata(metadata_type)
 
     def test_correct_save_servername(self):
-        self.csm.FILEPATH = conn_state_filepath
         self.csm.save_servername("test_server#100")
 
     def test_correct_save_connected_time(self):
-        self.csm.FILEPATH = conn_state_filepath
         self.csm.save_connected_time()
-
-    def test_remove_correct_connection_metadata(self):
-        self.csm.FILEPATH = conn_state_filepath
-        self.csm.remove_connection_metadata()
-
-    def test_remove_incorrect_connection_metadata(self):
-        self.csm.remove_connection_metadata("missing/path/file.json")
