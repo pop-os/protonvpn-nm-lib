@@ -331,10 +331,18 @@ class KillSwitchManager(AbstractInterfaceManager):
 
     def disable_connectivity_check(self):
         """Disable NetworkManager connectivity check."""
-        logger.info("Conn check available ({}) - Conn check enabled ({})")
+        logger.info("Disabling connectivity check")
+
         client = NM.Client.new(None)
         is_conn_check_available = client.connectivity_check_get_available()
         is_conn_check_enabled = client.connectivity_check_get_enabled()
+
+        logger.info(
+            "Conn check available ({}) - Conn check enabled ({})".format(
+                is_conn_check_available,
+                is_conn_check_enabled
+            )
+        )
 
         if not is_conn_check_enabled:
             return
