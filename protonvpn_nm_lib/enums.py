@@ -89,3 +89,9 @@ class ProtonSessionAPIMethodEnum(object):
     API_REQUEST = "api_request"
     AUTHENTICATE = "authenticate"
     LOGOUT = "logout"
+
+
+class MetadataEnum(object):
+    CONNECTION = "connection_metadata"
+    LAST_CONNECTION = "last_connection_metadata"
+    CACHE = "cache_metadata"
