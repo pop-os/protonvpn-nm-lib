@@ -3,7 +3,8 @@ import os
 
 import pytest
 
-from common import PWD, ConnectionStateManager, exceptions, MetadataEnum, ConnectionMetadataEnum
+from common import (PWD, ConnectionMetadataEnum, ConnectionStateManager,
+                    MetadataEnum, exceptions)
 
 conn_state_filepath = os.path.join(
     PWD, "test_conn_state_manager.json"
