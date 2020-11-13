@@ -377,4 +377,4 @@ class KillSwitchManager(AbstractInterfaceManager):
                     "Can not disable connectivity check for killswitch"
                 )
 
-            logger.info("Check connectivity has been disabled")
+            logger.info("Check connectivity has been 'disabled'")

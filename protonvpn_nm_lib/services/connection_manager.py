@@ -89,7 +89,7 @@ class ConnectionManager(ConnectionStateManager):
                 "[!] NotImplementedError: {}".format(e)
             )
             capture_exception(e)
-            err_msg = "Expects object method, {} was passed".format(
+            err_msg = "Expects object method, {} was not passed".format(
                 delete_cached_cert
             )
             raise NotImplementedError(err_msg)
@@ -123,8 +123,6 @@ class ConnectionManager(ConnectionStateManager):
                 callback_type="add",
                 main_loop=main_loop,
                 conn_name=connection.get_id(),
-                delete_cached_cert=delete_cached_cert,
-                filename=filename
             )
         )
 
@@ -187,7 +185,7 @@ class ConnectionManager(ConnectionStateManager):
         ipv6_config = connection.get_setting_ip6_config()
 
         if dns_status == UserSettingStatusEnum.ENABLED:
-            logger.info("Applying automatic DNS...")
+            logger.info("Applying automatic DNS")
             ipv4_config.props.dns_priority = -50
             ipv6_config.props.dns_priority = -50
         else:
@@ -201,7 +199,7 @@ class ConnectionManager(ConnectionStateManager):
 
                 ipv4_config.props.dns = custom_dns
             else:
-                logger.info("DNS managemenet disallowed...")
+                logger.info("DNS managemenet disallowed")
 
     def add_server_certificate_check(self, vpn_settings, domain):
         logger.info("Adding server certificate check")
@@ -353,7 +351,7 @@ class ConnectionManager(ConnectionStateManager):
             data (dict): optional extra data
         """
         callback_type = data.get("callback_type")
-        logger.info("Callback: \"{}\"".format(callback_type))
+        logger.info("Callback type: \"{}\"".format(callback_type))
         main_loop = data.get("main_loop")
         conn_name = data.get("conn_name")
 
@@ -406,6 +404,7 @@ class ConnectionManager(ConnectionStateManager):
         with open(filename, "r") as f:
             content_list = f.readlines()
             dev_type = [dev.rstrip() for dev in content_list if "dev" in dev]
+
             try:
                 dev_type = dev_type[0].split()[1]
             except IndexError as e:
@@ -416,6 +415,7 @@ class ConnectionManager(ConnectionStateManager):
             except Exception as e:
                 logger.exception("[!] Unknown exception: {}".format(e))
                 capture_exception(e)
+
             try:
                 index = virtual_dev_type_list.index(dev_type)
             except (ValueError, KeyError, TypeError) as e:
