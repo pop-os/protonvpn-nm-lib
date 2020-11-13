@@ -56,11 +56,11 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
         param delay (int): Miliseconds to wait before reconnecting VPN
 
     """
-    def __init__(self, virtual_device_name, loop, max_attempts=5, delay=5000):
+    def __init__(self, virtual_device_name, loop, max_attempts=100, delay=2000): # noqa
         logger.info(
-            "\n------------------------"
+            "\n\n------------------------"
             " Initializing Dbus daemon manager "
-            "------------------------\n\n"
+            "------------------------\n"
         )
         self.user_conf_manager = UserConfigurationManager()
         self.ks_manager = KillSwitchManager(self.user_conf_manager)
@@ -71,7 +71,7 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
         self.failed_attempts = 0
         self.bus = dbus.SystemBus()
         # Auto connect at startup (Listen for StateChanged going forward)
-        self.vpn_monitor()
+        self.vpn_activator()
         self.get_network_manager().connect_to_signal(
             "StateChanged", self.on_network_state_changed
         )
@@ -84,7 +84,7 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
         """
         logger.info("Network state changed: {}".format(state))
         if state == 70:
-            self.vpn_monitor()
+            self.vpn_activator()
 
     def on_vpn_state_changed(self, state, reason):
         """VPN status signal handler.
@@ -159,8 +159,7 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
                 )
             else:
                 logger.info("ProtonVPN connection has been manually removed.")
-                # if killswitch soft then:
-                #   disable killswitch
+                self.ks_manager.delete_all_connections()
             finally:
                 loop.quit()
 
@@ -173,7 +172,7 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
             ):
                 logger.info("[!] Connection failed, attempting to reconnect.")
                 self.failed_attempts += 1
-                GLib.timeout_add(self.delay, self.vpn_monitor)
+                GLib.timeout_add(self.delay, self.vpn_activator)
             else:
                 logger.warning(
                     "[!] Connection failed, exceeded {} max attempts.".format(
@@ -201,24 +200,26 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
             )
         )
 
-    def vpn_monitor(self):
+    def vpn_activator(self):
         """Monitor and activate ProtonVPN connections."""
         logger.info(
-            "\n\n------------ "
-            "Daemon reconnector monitoring VPN connection"
-            " ------------n"
-            + "-Virtual device being monitored: {},".format(
+            "\n\n------- "
+            "VPN Activator"
+            " -------\n"
+            + "Virtual device being monitored: {}; ".format(
                 self.virtual_device_name
-            ) + "\n"
-            + "-Reattempting up to {} times with {} ".format(
-                self.max_attempts, self.delay
-            ) + "ms between retries\n"
+            ) + "Attempt {}/{} with interval of {} ".format(
+                self.failed_attempts, self.max_attempts, self.delay
+            ) + "ms;\n"
         )
         vpn_interface = self.get_vpn_interface()
         active_con = self.get_active_connection()
 
+        logger.info("VPN interface: {}".format(vpn_interface))
+        logger.info("Active connection: {}".format(active_con))
+
         if active_con is None or vpn_interface is None:
-            return
+            return True
 
         is_active_conn_vpn, all_vpn_settings = self.check_active_vpn_conn(
             active_con

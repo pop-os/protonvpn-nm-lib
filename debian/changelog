@@ -1,3 +1,10 @@
+protonvpn-nm-core (0.1.0-2) UNRELEASED; urgency=low
+
+  * Bugfixes
+  * By default DNS protection is enabled
+
+ -- Proton Technologies AG <opensource@proton.me>  Fri, 13 Nov 2020 18:23:04 +0000
+
 protonvpn-nm-core (0.1.0-1) UNRELEASED; urgency=low
 
   * Bugfix
