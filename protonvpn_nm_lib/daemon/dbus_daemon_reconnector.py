@@ -57,6 +57,11 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
 
     """
     def __init__(self, virtual_device_name, loop, max_attempts=5, delay=5000):
+        logger.info(
+            "\n------------------------"
+            " Initializing Dbus daemon manager "
+            "------------------------\n\n"
+        )
         self.user_conf_manager = UserConfigurationManager()
         self.ks_manager = KillSwitchManager(self.user_conf_manager)
         self.virtual_device_name = virtual_device_name
@@ -70,7 +75,6 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
         self.get_network_manager().connect_to_signal(
             "StateChanged", self.on_network_state_changed
         )
-        logger.info("Initialized Dbus daemon manager")
 
     def on_network_state_changed(self, state):
         """Network status signal handler.
@@ -200,9 +204,9 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
     def vpn_monitor(self):
         """Monitor and activate ProtonVPN connections."""
         logger.info(
-            "\n\n---------------------- "
+            "\n\n------------ "
             "Daemon reconnector monitoring VPN connection"
-            " ----------------------\n"
+            " ------------n"
             + "-Virtual device being monitored: {},".format(
                 self.virtual_device_name
             ) + "\n"
