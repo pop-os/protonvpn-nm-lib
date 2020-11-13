@@ -15,7 +15,7 @@ from .enums import (FeatureEnum, KillswitchStatusEnum, ProtocolEnum,
                     ProtocolImplementationEnum, UserSettingConnectionEnum,
                     UserSettingEnum, UserSettingStatusEnum)
 
-APP_VERSION = '0.0.6'
+APP_VERSION = '0.1.0'
 
 XDG_CONFIG_SYSTEMD = os.path.join(XDG_CONFIG_HOME, "systemd")
 XDG_CONFIG_SYSTEMD_USER = os.path.join(XDG_CONFIG_SYSTEMD, "user")
