@@ -100,7 +100,7 @@ USER_CONFIG_TEMPLATE = {
         UserSettingConnectionEnum.DEFAULT_PROTOCOL: ProtocolEnum.UDP,
         UserSettingConnectionEnum.KILLSWITCH: KillswitchStatusEnum.DISABLED,
         UserSettingConnectionEnum.DNS: {
-            UserSettingConnectionEnum.DNS_STATUS: UserSettingStatusEnum.DISABLED, # noqa
+            UserSettingConnectionEnum.DNS_STATUS: UserSettingStatusEnum.ENABLED, # noqa
             UserSettingConnectionEnum.CUSTOM_DNS: []
         },
         UserSettingConnectionEnum.SPLIT_TUNNELING: {
