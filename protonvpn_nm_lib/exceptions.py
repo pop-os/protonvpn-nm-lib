@@ -153,6 +153,14 @@ class API5003Error(ProtonSessionWrapperError):
     """Error 5003."""
 
 
+class API8002Error(ProtonSessionWrapperError):
+    """Error 8002."""
+
+
+class API85032Error(ProtonSessionWrapperError):
+    """Error 85032."""
+
+
 class APITimeoutError(ProtonSessionWrapperError):
     """API timeout error."""
 

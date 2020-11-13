@@ -16,23 +16,26 @@ class ProtonSessionWrapper(object):
     If any HTTP status code is to be managed in a specific way,
     then a method with the prefix "handle_x" has to be created,
     where "x" represent the HTTP status code that is to be specifically
-    managed. This class also searches for a matching exception in
-    exceptions.py, thus, a matching exception can be created,
+    managed. If a HTTP status code is not to be handled in a specific way,
+    then it is enough to provide then status code in the HTTPS_STATUS_CODES.
+    If a custom exception is needed for exception handling then that should be
+    added to the exceptions.py file. This class searches for a matching
+    exception in exceptions.py, thus, a matching exception can be created,
     otherwise UnhandledAPIError is asssigned to that status code.
     """
     proton_session = False
-    API_ERROR_LIST = [
+    HTTPS_STATUS_CODES = [
         400, 401, 403, 404, 409,
         422, 429, 500, 501, 503,
-        5002, 5003
+        5002, 5003, 8002, 85032
     ]
     API_METHODS = [
         ProtonSessionAPIMethodEnum.API_REQUEST,
         ProtonSessionAPIMethodEnum.AUTHENTICATE,
         ProtonSessionAPIMethodEnum.LOGOUT
     ]
-    API_EXCEPTION_DICT = {}
-    ERROR_CODE_HANDLER = {}
+    HTTP_STATUS_EXCEPTIONS = {}
+    HTTP_STATUS_ERROR_HANDLERS = {}
 
     def __init__(
         self, **kwargs
@@ -130,7 +133,11 @@ class ProtonSessionWrapper(object):
 
     def handle_known_status(self, error, method, *_, **__):
         logger.info("Catched \"{}\" error".format(error))
-        raise self.API_EXCEPTION_DICT[error.code](error.error)
+        error_code = error.code
+        if error_code not in self.HTTP_STATUS_EXCEPTIONS:
+            raise exceptions.UnhandledAPIError(error)
+
+        raise self.HTTP_STATUS_EXCEPTIONS[error.code](error.error)
 
     def handle_401(self, error, method, *args, **kwargs):
         """Handles access token expiration."""
@@ -238,21 +245,21 @@ class ProtonSessionWrapper(object):
             error (tuple): proton.api.ProtonError exception
             method (ProtonSessionAPIMethodEnum): object
         Returns:
-            Either response of error code in API_ERROR_LIST
+            Either response of error code in HTTPS_STATUS_CODES
             or raises exception.
         """
-        try:
-            return self.ERROR_CODE_HANDLER[error.code](
-                error, method,
-                args, **api_kwargs
-            )
-        except KeyError as e:
+        if error.code not in self.HTTP_STATUS_ERROR_HANDLERS:
             logger.exception(
-                "[!] UnhandledAPIError. {}. Raising exception".format(e)
+                "[!] UnhandledAPIError: {}. Raising exception".format(error)
             )
             raise exceptions.UnhandledAPIError(
-                "Unhandled error: {}".format(e)
+                "{}".format(error.error)
             )
+
+        return self.HTTP_STATUS_ERROR_HANDLERS[error.code](
+            error, method,
+            args, **api_kwargs
+        )
 
     def setup_error_handling(self, generic_handler_method_name):
         """Setup automatic error handling.
@@ -282,17 +289,17 @@ class ProtonSessionWrapper(object):
 
             if result:
                 err_num = int(result.groups()[1])
-                if err_num in self.API_ERROR_LIST:
+                if err_num in self.HTTPS_STATUS_CODES:
                     existing_handler_methods[err_num] = class_member[1]
 
-        yield_api_error_list = self.yield_api_error_list()
+        yield_https_status_codes = self.yield_https_status_codes()
 
-        for err_num in yield_api_error_list:
+        for err_num in yield_https_status_codes:
             if err_num not in existing_handler_methods:
-                self.ERROR_CODE_HANDLER[err_num] = generic_handler_method
+                self.HTTP_STATUS_ERROR_HANDLERS[err_num] = generic_handler_method # noqa
                 continue
 
-            self.ERROR_CODE_HANDLER[err_num] = existing_handler_methods[err_num] # noqa
+            self.HTTP_STATUS_ERROR_HANDLERS[err_num] = existing_handler_methods[err_num] # noqa
 
     def setup_exception_handling(self):
         """Setup automatic exception handling.
@@ -310,18 +317,18 @@ class ProtonSessionWrapper(object):
             result = re_api_status_code.search(class_member[0])
             if result:
                 err_num = int(result.groups()[1])
-                if err_num in self.API_ERROR_LIST:
+                if err_num in self.HTTPS_STATUS_CODES:
                     existing_exceptions[err_num] = class_member[1]
 
-        yield_api_error_list = self.yield_api_error_list()
+        yield_https_status_codes = self.yield_https_status_codes()
 
-        for err_num in yield_api_error_list:
+        for err_num in yield_https_status_codes:
             if err_num not in existing_exceptions:
-                self.API_EXCEPTION_DICT[err_num] = exceptions.APIError
+                self.HTTP_STATUS_EXCEPTIONS[err_num] = exceptions.APIError
                 continue
 
-            self.API_EXCEPTION_DICT[err_num] = existing_exceptions[err_num]
+            self.HTTP_STATUS_EXCEPTIONS[err_num] = existing_exceptions[err_num] # noqa
 
-    def yield_api_error_list(self):
-        for err_num in self.API_ERROR_LIST:
+    def yield_https_status_codes(self):
+        for err_num in self.HTTPS_STATUS_CODES:
             yield err_num
