@@ -5,7 +5,7 @@ protonvpn-nm-core (0.1.0-1) unstable; urgency=low
 
  -- Proton Technologies AG <opensource@proton.me>  Fri, 13 Nov 2020 15:13:21 +0000
 
-protonvpn-nm-core (0.0.6-7) unstable; urgency=low
+protonvpn-nm-core (0.0.6-6) unstable; urgency=low
 
   * Add support for proton-client v0.0.9-2
 
