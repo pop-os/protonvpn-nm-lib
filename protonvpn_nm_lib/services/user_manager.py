@@ -1,5 +1,5 @@
 import distro
-from .proton_session_wrapper import ProtonError, ProtonSessionWrapper
+from .proton_session_wrapper import ProtonSessionWrapper
 
 from ..constants import (
     APP_VERSION
@@ -63,15 +63,7 @@ class UserManager(UserSessionManager):
             user_agent=self.get_distro_info(),
             user_manager=self
         )
-
-        try:
-            session.authenticate(username, password)
-        except ProtonError as e:
-            logger.exception("[!] API ProtonError: {}".format(e))
-            if e.code == 8002:
-                raise exceptions.IncorrectCredentialsError(e)
-            else:
-                raise exceptions.APIAuthenticationError(e)
+        session.authenticate(username, password)
 
         # fetch user data
         user_data = session.api_request("/vpn")
