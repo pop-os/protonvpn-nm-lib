@@ -2,15 +2,18 @@ import inspect
 import random
 import re
 import time
+
 import requests
 from proton.api import ProtonError, Session
 
 from .. import exceptions
-from ..enums import ProtonSessionAPIMethodEnum
+from ..enums import (MetadataActionEnum, MetadataEnum,
+                     ProtonSessionAPIMethodEnum)
 from ..logger import logger
+from .metadata_manager import MetadataManager
 
 
-class ProtonSessionWrapper(object):
+class ProtonSessionWrapper(MetadataManager):
     """Proton-client wrapper for improved error handling.
 
     If any HTTP status code is to be managed in a specific way,
@@ -83,6 +86,39 @@ class ProtonSessionWrapper(object):
         return self.exception_manager(
             error, ProtonSessionAPIMethodEnum.AUTHENTICATE, username, password
         )
+
+    def cache_servers(self):
+        """"Cache servers."""
+        full_cache_time_expire = 180  # min -> 10800 sec
+        loads_cache_time_expire = 15  # min -> 900 sec
+        if not self.check_metadata_exists(MetadataEnum.SERVER_CACHE):
+            # call full_cache
+            # return
+            pass
+
+        cache_metadata = self.manage_metadata(
+            MetadataActionEnum.GET, MetadataEnum.SERVER_CACHE
+        )
+
+        if cache_metadata["full_cache_timestampt"] >= full_cache_time_expire:
+            # full-cache
+            # pass skip to loads soit does not cache
+            pass
+        elif cache_metadata["loads_cache_timestampt"] >= loads_cache_time_expire: # noqa
+            # loads-cache
+            pass
+
+    def full_cache(self):
+        """Full servers cache."""
+        # fetch from api
+        # write to metadata file
+        pass
+
+    def loads_cache(self):
+        """Partially cache loads."""
+        # fetch from api
+        # write to metadata file
+        pass
 
     def logout(self):
         """"Proxymethod for proton-client logout."""

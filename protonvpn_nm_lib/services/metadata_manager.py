@@ -53,8 +53,17 @@ class MetadataManager():
             os.remove(filepath)
 
     def check_metadata_type(self, metadata_type):
-        """Check for metedata type."""
+        """Check metedata type."""
         if metadata_type not in self.METADATA_DICT:
             raise exceptions.IllegalMetadataTypeError(
                 "Metadata type not found"
             )
+
+    def check_metadata_exists(self, metadata_type):
+        """Check if metadata file exists."""
+        self.check_metadata_type(metadata_type)
+
+        if os.path.isfile(self.METADATA_DICT[metadata_type]):
+            return True
+
+        return False
