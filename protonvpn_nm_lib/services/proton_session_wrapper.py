@@ -1,4 +1,6 @@
+import datetime
 import inspect
+import json
 import random
 import re
 import time
@@ -7,6 +9,7 @@ import requests
 from proton.api import ProtonError, Session
 
 from .. import exceptions
+from ..constants import CACHED_SERVERLIST
 from ..enums import (MetadataActionEnum, MetadataEnum,
                      ProtonSessionAPIMethodEnum)
 from ..logger import logger
@@ -33,10 +36,12 @@ class ProtonSessionWrapper(MetadataManager):
         5002, 5003, 8002, 85032,
         10013
     ]
-    API_METHODS = [
+    API_CALL_TYPES = [
         ProtonSessionAPIMethodEnum.API_REQUEST,
         ProtonSessionAPIMethodEnum.AUTHENTICATE,
-        ProtonSessionAPIMethodEnum.LOGOUT
+        ProtonSessionAPIMethodEnum.LOGOUT,
+        ProtonSessionAPIMethodEnum.FULL_CACHE,
+        ProtonSessionAPIMethodEnum.LOADS_CACHE
     ]
     HTTP_STATUS_EXCEPTIONS = {}
     HTTP_STATUS_ERROR_HANDLERS = {}
@@ -48,6 +53,13 @@ class ProtonSessionWrapper(MetadataManager):
         self.setup_exception_handling()
         self.user_manager = kwargs.pop("user_manager")
         self.proton_session = Session(**kwargs)
+        self.api_methods = {
+            ProtonSessionAPIMethodEnum.API_REQUEST: self.proton_session.api_request, # noqa
+            ProtonSessionAPIMethodEnum.AUTHENTICATE: self.proton_session.authenticate, # noqa
+            ProtonSessionAPIMethodEnum.LOGOUT: self.proton_session.logout,
+            ProtonSessionAPIMethodEnum.FULL_CACHE: self.proton_session.api_request, # noqa
+            ProtonSessionAPIMethodEnum.LOADS_CACHE: self.proton_session.api_request, # noqa
+        }
 
     def api_request(self, *args, **api_kwargs):
         """Wrapper for proton-client api_request.
@@ -89,36 +101,110 @@ class ProtonSessionWrapper(MetadataManager):
 
     def cache_servers(self):
         """"Cache servers."""
-        full_cache_time_expire = 180  # min -> 10800 sec
-        loads_cache_time_expire = 15  # min -> 900 sec
+        full_cache_time_expire = 180
+        loads_cache_time_expire = 15
         if not self.check_metadata_exists(MetadataEnum.SERVER_CACHE):
-            # call full_cache
-            # return
-            pass
+            self.full_cache()
+            return
 
         cache_metadata = self.manage_metadata(
             MetadataActionEnum.GET, MetadataEnum.SERVER_CACHE
         )
 
-        if cache_metadata["full_cache_timestampt"] >= full_cache_time_expire:
-            # full-cache
-            # pass skip to loads soit does not cache
-            pass
-        elif cache_metadata["loads_cache_timestampt"] >= loads_cache_time_expire: # noqa
-            # loads-cache
-            pass
+        full_cache_time = self.convert_time(
+            int(cache_metadata["full_cache_timestamp"])
+        )
+        loads_cache_time = self.convert_time(
+            int(cache_metadata["loads_cache_timestamp"])
+        )
+
+        next_full_cache_time = full_cache_time + datetime.timedelta(
+            minutes=full_cache_time_expire
+        )
+        next_loads_cache_time = loads_cache_time + datetime.timedelta(
+            minutes=loads_cache_time_expire
+        )
+        now_time = self.convert_time(time.time())
+
+        if now_time >= next_full_cache_time:
+            self.full_cache()
+            return
+        elif now_time >= next_loads_cache_time:
+            self.loads_cache()
+            return
 
     def full_cache(self):
         """Full servers cache."""
-        # fetch from api
-        # write to metadata file
-        pass
+        logger.info("Caching full servers")
+        api_response, error = self.call_api_method(
+            ProtonSessionAPIMethodEnum.FULL_CACHE,
+            "/vpn/logicals"
+        )
+        if not error:
+            metadata = {
+                "full_cache_timestamp": str(int(time.time())),
+                "loads_cache_timestamp": str(int(time.time()))
+            }
+            self.manage_metadata(
+                MetadataActionEnum.WRITE,
+                MetadataEnum.SERVER_CACHE,
+                metadata
+            )
+            self.store_server_cache(api_response, full_cache=True)
+            return
+
+        return self.exception_manager(
+            error, ProtonSessionAPIMethodEnum.FULL_CACHE
+        )
 
     def loads_cache(self):
-        """Partially cache loads."""
-        # fetch from api
-        # write to metadata file
-        pass
+        """Cache server loads."""
+        logger.info("Caching server loads")
+        api_response, error = self.call_api_method(
+            ProtonSessionAPIMethodEnum.FULL_CACHE,
+            "/vpn/loads"
+        )
+        if not error:
+            metadata = self.manage_metadata(
+                MetadataActionEnum.GET, MetadataEnum.SERVER_CACHE
+            )
+            metadata["loads_cache_timestamp"] = str(int(time.time()))
+            self.manage_metadata(
+                MetadataActionEnum.WRITE,
+                MetadataEnum.SERVER_CACHE,
+                metadata
+            )
+            self.store_server_cache(api_response)
+            return
+
+        return self.exception_manager(
+            error, ProtonSessionAPIMethodEnum.FULL_CACHE
+        )
+
+    def store_server_cache(
+        self, cache, full_cache=False, cache_path=CACHED_SERVERLIST
+    ):
+        if full_cache:
+            with open(cache_path, "w") as f:
+                json.dump(cache, f)
+            return
+
+        with open(cache_path, "r") as f:
+            servers = json.load(f)
+
+        cache_dict = {v["ID"]: v for v in cache["LogicalServers"]}
+
+        for server in servers["LogicalServers"]:
+            if server["ID"] in cache_dict:
+                new_value = cache_dict.pop(server["ID"])
+                server["Load"] = new_value["Load"]
+                server["Score"] = new_value["Score"]
+
+        self.store_server_cache(servers, full_cache=True)
+
+    def yield_server_list(self, server_list):
+        for server in server_list["LogicalServers"]:
+            yield server
 
     def logout(self):
         """"Proxymethod for proton-client logout."""
@@ -155,6 +241,30 @@ class ProtonSessionWrapper(MetadataManager):
     def dump(self):
         """Proxymethod for proton-client dump."""
         return self.proton_session.dump()
+
+    def convert_time(self, epoch_time, return_full_date=True):
+        """Convert time from epoch to 24h.
+
+        Args:
+            epoch_time (string): time in seconds since epoch
+            return_full_date: whether to return full date and time
+
+        Returns:
+            string: YYYY-MM-dd hh:mm:ss (when) | hh:mm:ss (time since)
+        """
+        if return_full_date:
+            return datetime.datetime.fromtimestamp(epoch_time)
+
+        time_since = (
+            time.time()
+            - int(epoch_time)
+        )
+
+        return str(
+            datetime.timedelta(
+                seconds=time_since
+            )
+        ).split(".")[0]
 
     def flatten_tuple(self, _tuple):
         """Recursively flatten tuples."""
@@ -218,7 +328,11 @@ class ProtonSessionWrapper(MetadataManager):
     def get_method(self, method, *args, **kwargs):
         logger.info("Calling {}".format(method))
 
-        if method == ProtonSessionAPIMethodEnum.API_REQUEST:
+        if (
+            method == ProtonSessionAPIMethodEnum.API_REQUEST
+            or method == ProtonSessionAPIMethodEnum.FULL_CACHE
+            or method == ProtonSessionAPIMethodEnum.LOADS_CACHE
+        ):
             return self.api_request(*args, **kwargs)
         elif method == ProtonSessionAPIMethodEnum.AUTHENTICATE:
             return self.authenticate(*args, **kwargs)
@@ -226,7 +340,7 @@ class ProtonSessionWrapper(MetadataManager):
             return self.logout()
 
     def check_method_exists(self, method):
-        if method not in self.API_METHODS:
+        if method not in self.API_CALL_TYPES:
             logger.error(
                 "[!] UnhandledAPIMethod: Unknown \"{}\" method. "
                 " Raising exception.".format(method)
@@ -247,22 +361,16 @@ class ProtonSessionWrapper(MetadataManager):
         self.check_method_exists(method)
         args = self.flatten_tuple(args)
 
-        api_methods = {
-            ProtonSessionAPIMethodEnum.API_REQUEST: self.proton_session.api_request, # noqa
-            ProtonSessionAPIMethodEnum.AUTHENTICATE: self.proton_session.authenticate, # noqa
-            ProtonSessionAPIMethodEnum.LOGOUT: self.proton_session.logout,
-        }
-
         error = False
         api_response = False
         logger.info(
             "Method: {} - {}".format(
-                method, api_methods[method]
+                method, self.api_methods[method]
             )
         )
 
         try:
-            api_response = api_methods[method](
+            api_response = self.api_methods[method](
                 *args, **api_kwargs
             )
         except ProtonError as e:

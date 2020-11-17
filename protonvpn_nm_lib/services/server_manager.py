@@ -1,20 +1,14 @@
-import datetime
 import json
-import os
 import random
 import re
 
-import requests
-from proton.api import ProtonError
-from .proton_session_wrapper import ProtonSessionWrapper
-
-
 from .. import exceptions
-from ..constants import CACHED_SERVERLIST, PROTON_XDG_CACHE_HOME
-from ..enums import FeatureEnum, UserSettingStatusEnum
+from ..constants import CACHED_SERVERLIST
+from ..enums import FeatureEnum, UserSettingStatusEnum, KillswitchStatusEnum
 from ..logger import logger
 from . import capture_exception
 from .connection_state_manager import ConnectionStateManager
+from .proton_session_wrapper import ProtonSessionWrapper
 
 
 class ServerManager(ConnectionStateManager):
@@ -34,8 +28,11 @@ class ServerManager(ConnectionStateManager):
         Returns:
             string: path to certificate file that is to be imported into nm
         """
+        logger.info("Generating data for fastest connect")
         self.validate_session_protocol(session, protocol)
-        self.cache_servers(session)
+        if not self.killswitch_status == KillswitchStatusEnum:
+            session.cache_servers()
+
         servers = self.extract_server_list()
         excluded_features = [
             FeatureEnum.SECURE_CORE, FeatureEnum.TOR, FeatureEnum.P2P
@@ -100,7 +97,8 @@ class ServerManager(ConnectionStateManager):
             logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
 
-        self.cache_servers(session)
+        if not self.killswitch_status == KillswitchStatusEnum.HARD:
+            session.cache_servers()
         servers = self.extract_server_list()
         excluded_features = [
             FeatureEnum.TOR, FeatureEnum.SECURE_CORE
@@ -186,7 +184,8 @@ class ServerManager(ConnectionStateManager):
             )
             raise exceptions.IllegalServername(err_msg)
 
-        self.cache_servers(session)
+        if not self.killswitch_status == KillswitchStatusEnum.HARD:
+            session.cache_servers()
         servers = self.extract_server_list()
         filtered_servers = self.filter_servers(
             session,
@@ -276,7 +275,8 @@ class ServerManager(ConnectionStateManager):
             logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
 
-        self.cache_servers(session)
+        if not self.killswitch_status == KillswitchStatusEnum.HARD:
+            session.cache_servers()
         servers = self.extract_server_list()
         filtered_servers = self.filter_servers(
             session,
@@ -328,7 +328,8 @@ class ServerManager(ConnectionStateManager):
             string: path to certificate file that is to be imported into nm
         """
         self.validate_session_protocol(session, protocol)
-        self.cache_servers(session)
+        if not self.killswitch_status == KillswitchStatusEnum.HARD:
+            session.cache_servers()
         servers = self.extract_server_list()
         filtered_servers = self.filter_servers(session, servers)
 
@@ -390,7 +391,7 @@ class ServerManager(ConnectionStateManager):
             err_msg = "Incorrect object type, "\
                 "{} is expected "\
                 "but got {} instead".format(
-                    type(ProtonSessionWrapper), type(session)
+                    ProtonSessionWrapper, session
                 )
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(
@@ -416,93 +417,6 @@ class ServerManager(ConnectionStateManager):
                 )
             )
             raise ValueError(err_msg)
-
-    def cache_servers(
-        self, session,
-        force=False, cached_serverlist=CACHED_SERVERLIST
-    ):
-        """Cache server data from API.
-
-        Args:
-            session (proton.api.Session): current user session
-            cached_serverlist (string): path to cached server list
-            force (bool): wether refresh interval shuld be ignored or not
-        """
-        logger.info("Caching servers")
-        was_previously_cached = False
-
-        if not isinstance(cached_serverlist, str):
-            err_msg = "Incorrect object type, "\
-                "str is expected but got {} instead".format(
-                    type(cached_serverlist)
-                )
-            logger.error(
-                "[!] TypeError: {}. Raising exception".format(err_msg)
-            )
-            raise TypeError(err_msg)
-
-        if isinstance(cached_serverlist, str) and len(cached_serverlist) == 0:
-            logger.error(
-                "[!] FileNotFoundError: \"{}\"".format(cached_serverlist)
-            )
-            raise FileNotFoundError("No such file exists")
-
-        if os.path.isdir(cached_serverlist):
-            logger.error(
-                "[!] IsADirectoryError: \"{}\"".format(cached_serverlist)
-            )
-            raise IsADirectoryError(
-                "Provided file path is a directory, while file path expected"
-            )
-
-        if not os.path.isdir(PROTON_XDG_CACHE_HOME):
-            os.mkdir(PROTON_XDG_CACHE_HOME)
-
-        try:
-            last_modified_time = datetime.datetime.fromtimestamp(
-                os.path.getmtime(cached_serverlist)
-            )
-        except FileNotFoundError:
-            last_modified_time = datetime.datetime.now()
-        except Exception as e:
-            logger.exception("[!] Unknown exception: {}".format(e))
-            capture_exception(e)
-        else:
-            was_previously_cached = True
-
-        now_time = datetime.datetime.now()
-        time_ago = now_time - datetime.timedelta(minutes=self.REFRESH_INTERVAL)
-
-        if (
-            not os.path.isfile(cached_serverlist)
-        ) or (
-            time_ago > last_modified_time or force
-        ):
-            if not self.killswitch_status:
-                try:
-                    data = session.api_request("/vpn/logicals")
-                except (
-                    ProtonError,
-                    requests.exceptions.ConnectionError
-                ) as e:
-                    if not was_previously_cached:
-                        logger.exception(
-                            "[!] CacheLogicalServersError: {}.".format(e)
-                            + "Raising exception."
-                        )
-                        raise exceptions.CacheLogicalServersError(
-                            "Unable to reach API to cache servers."
-                        )
-
-                    logger.info(
-                        "Unable to reach API to cache servers, falling back "
-                        + "to existing cache. Exception: {}".format(e)
-                    )
-                else:
-                    with open(cached_serverlist, "w") as f:
-                        json.dump(data, f)
-            else:
-                logger.info("Killswitch enabled, falling-back to local cache.")
 
     def generate_ip_list(
         self, servername, servers,
