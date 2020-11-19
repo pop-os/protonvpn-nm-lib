@@ -2,6 +2,7 @@ import os
 from getpass import getuser
 
 import gi
+import requests
 
 gi.require_version("NM", "1.0")
 from gi.repository import NM, GLib
@@ -341,6 +342,35 @@ class ConnectionManager(ConnectionStateManager):
             return False
 
         return self.get_connection_metadata()
+
+    def check_internet_connectivity(self, ks_status):
+        logger.info("Checking internet connectivity")
+        if ks_status == KillswitchStatusEnum.HARD:
+            return
+
+        try:
+            requests.get(
+                "http://protonstatus.com/",
+                timeout=5,
+            )
+        except requests.exceptions.Timeout as e:
+            logger.exception("[!] InternetConnectionError: {}".format(e))
+            raise exceptions.InternetConnectionError(
+                "No internet connection"
+            )
+        except Exception as e:
+            logger.exception("[!] InternetConnectionError: {}".format(e))
+            raise exceptions.InternetConnectionError(
+                "No internet connection"
+            )
+
+        try:
+            requests.get(
+                "https://api.protonvpn.ch/tests/ping", timeout=10
+            )
+        except Exception as e:
+            logger.exception("[!] UnreacheableAPIError: {}".format(e))
+            raise exceptions.UnreacheableAPIError("Unable to reach API")
 
     def dynamic_callback(self, client, result, data):
         """Dynamic callback method.

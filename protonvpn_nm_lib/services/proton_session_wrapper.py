@@ -230,8 +230,10 @@ class ProtonSessionWrapper(object):
                 *args, **api_kwargs
             )
         except ProtonError as e:
+            logger.exception("[!] ProtonError: {}".format(e))
             error = e
-        except requests.exceptions.ConnectTimeout as e:
+        except requests.exceptions.Timeout as e:
+            logger.exception("[!] APITimeoutError: {}".format(e))
             raise exceptions.APITimeoutError(e)
         except Exception as e:
             logger.exception(

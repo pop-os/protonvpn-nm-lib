@@ -185,6 +185,14 @@ class UnhandledAPIMethod(ProtonSessionWrapperError):
     """Unhandled API method error."""
 
 
+class UnreacheableAPIError(ProtonSessionAPIError):
+    """APIBlockError"""
+
+
+class InternetConnectionError(ProtonSessionAPIError):
+    """Internet connection error"""
+
+
 
 
 class KillswitchError(ProtonVPNBaseException): # noqa
