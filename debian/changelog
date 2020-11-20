@@ -1,10 +1,11 @@
-protonvpn-nm-core (0.1.0-4) UNRELEASED; urgency=low
+protonvpn-nm-core (0.1.0-5) UNRELEASED; urgency=low
 
   * Bugfixes
   * By default DNS protection is enabled
   * Bugfix: invalid session, check for internet connection
+  * Add constants and enum for clients
 
- -- Proton Technologies AG <opensource@proton.me>  Thu, 19 Nov 2020 12:12:48 +0000
+ -- Proton Technologies AG <opensource@proton.me>  Fri, 20 Nov 2020 14:37:54 +0000
 
 protonvpn-nm-core (0.1.0-1) UNRELEASED; urgency=low
 
