@@ -38,6 +38,8 @@ from protonvpn_nm_lib.logger import logger
 from protonvpn_nm_lib.services.connection_state_manager import \
     ConnectionStateManager
 from protonvpn_nm_lib.services.dbus_get_wrapper import DbusGetWrapper
+from protonvpn_nm_lib.services.ipv6_leak_protection_manager import \
+    IPv6LeakProtectionManager
 from protonvpn_nm_lib.services.killswitch_manager import KillSwitchManager
 from protonvpn_nm_lib.services.user_configuration_manager import \
     UserConfigurationManager
@@ -63,6 +65,7 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
         )
         self.user_conf_manager = UserConfigurationManager()
         self.ks_manager = KillSwitchManager(self.user_conf_manager)
+        self.ipv6_leak_manager = IPv6LeakProtectionManager()
         self.virtual_device_name = virtual_device_name
         self.loop = loop
         self.max_attempts = max_attempts
@@ -139,6 +142,8 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
                     self.virtual_device_name
                 )
             )
+            if self.ipv6_leak_manager.enable_ipv6_leak_protection:
+                self.ipv6_leak_manager.manage("enable")
             if (
                 self.user_conf_manager.killswitch
                 != KillswitchStatusEnum.DISABLED
@@ -170,6 +175,8 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
                 )
             else:
                 logger.info("ProtonVPN connection has been manually removed.")
+                if not self.ipv6_leak_manager.enable_ipv6_leak_protection:
+                    self.ipv6_leak_manager.manage("disable")
                 if (
                     self.user_conf_manager.killswitch
                     != KillswitchStatusEnum.HARD
