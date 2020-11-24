@@ -49,8 +49,9 @@ class KillSwitchManager(AbstractInterfaceManager):
                 "is_running": False
             }
         }
-        self.disable_connectivity_check()
+
         logger.info("Initialized killswitch manager")
+        self.connectivity_check()
 
     def manage(self, action, is_menu=False, server_ip=None):
         """Manage killswitch.
@@ -68,7 +69,7 @@ class KillSwitchManager(AbstractInterfaceManager):
                 self.user_conf_manager.killswitch
             )
         )
-        self.disable_connectivity_check()
+        self.connectivity_check()
         self.update_connection_status()
 
         if is_menu:
@@ -329,20 +330,12 @@ class KillSwitchManager(AbstractInterfaceManager):
                 subprocess_outpout
             )
 
-    def disable_connectivity_check(self):
-        """Disable NetworkManager connectivity check."""
-        logger.info("Disabling connectivity check")
-
-        client = NM.Client.new(None)
-        is_conn_check_available = client.connectivity_check_get_available()
-        is_conn_check_enabled = client.connectivity_check_get_enabled()
-
-        logger.info(
-            "Conn check available ({}) - Conn check enabled ({})".format(
-                is_conn_check_available,
-                is_conn_check_enabled
-            )
-        )
+    def connectivity_check(self):
+        (
+            is_conn_check_available,
+            is_conn_check_enabled,
+            client
+        ) = self.check_status_connectivity_check()
 
         if not is_conn_check_enabled:
             return
@@ -357,7 +350,31 @@ class KillSwitchManager(AbstractInterfaceManager):
                 "Unable to change connectivity check for killswitch"
             )
 
+        self.disable_connectivity_check(
+            client, is_conn_check_available, is_conn_check_enabled
+        )
+
+    def check_status_connectivity_check(self):
+        """Check status of NM connectivity check."""
+        client = NM.Client.new(None)
+        is_conn_check_available = client.connectivity_check_get_available()
+        is_conn_check_enabled = client.connectivity_check_get_enabled()
+
+        logger.info(
+            "Conn check available ({}) - Conn check enabled ({})".format(
+                is_conn_check_available,
+                is_conn_check_enabled
+            )
+        )
+
+        return is_conn_check_available, is_conn_check_enabled, client
+
+    def disable_connectivity_check(
+        self, client, is_conn_check_available, is_conn_check_enabled
+    ):
+        """Disable NetworkManager connectivity check."""
         if is_conn_check_enabled:
+            logger.info("Disabling connectivity check")
             # client.dbus_set_property(
             #     "/org/freedesktop/NetworkManager",
             #     "org.freedesktop.NetworkManager",
