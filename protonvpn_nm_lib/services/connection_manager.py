@@ -197,8 +197,9 @@ class ConnectionManager(ConnectionStateManager):
                 logger.info("Applying custom DNS: {}".format(custom_dns))
                 ipv4_config.props.dns_priority = -50
                 ipv6_config.props.dns_priority = -50
-
-                ipv4_config.props.dns = custom_dns
+                split_custom_dns = custom_dns[0].split()
+                logger.info("After split: {}".format(split_custom_dns))
+                ipv4_config.props.dns = split_custom_dns
             else:
                 logger.info("DNS managemenet disallowed")
 
