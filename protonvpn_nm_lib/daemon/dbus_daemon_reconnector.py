@@ -142,8 +142,10 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
                     self.virtual_device_name
                 )
             )
+
             if self.ipv6_leak_manager.enable_ipv6_leak_protection:
                 self.ipv6_leak_manager.manage("enable")
+
             if (
                 self.user_conf_manager.killswitch
                 != KillswitchStatusEnum.DISABLED
@@ -175,8 +177,9 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
                 )
             else:
                 logger.info("ProtonVPN connection has been manually removed.")
-                if not self.ipv6_leak_manager.enable_ipv6_leak_protection:
-                    self.ipv6_leak_manager.manage("disable")
+
+                self.ipv6_leak_manager.manage("disable")
+
                 if (
                     self.user_conf_manager.killswitch
                     != KillswitchStatusEnum.HARD

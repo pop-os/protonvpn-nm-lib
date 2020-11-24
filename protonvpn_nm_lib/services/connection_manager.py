@@ -320,8 +320,7 @@ class ConnectionManager(ConnectionStateManager):
 
         # conn is a NM.RemoteConnection
         # https://lazka.github.io/pgi-docs/NM-1.0/classes/RemoteConnection.html#NM.RemoteConnection
-        if not ipv6_lp_manager.enable_ipv6_leak_protection:
-            ipv6_lp_manager.manage("disable")
+        ipv6_lp_manager.manage("disable")
 
         if user_conf_manager.killswitch == KillswitchStatusEnum.SOFT: # noqa
             ks_manager.manage("disable")
