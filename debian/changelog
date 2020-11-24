@@ -1,4 +1,4 @@
-protonvpn-nm-core (0.1.0-8) UNRELEASED; urgency=low
+protonvpn-nm-core (0.1.0-9) UNRELEASED; urgency=low
 
   * Bugfixes
   * By default DNS protection is enabled
@@ -8,7 +8,7 @@ protonvpn-nm-core (0.1.0-8) UNRELEASED; urgency=low
   * Update add custom DNS if multiple are provided
   * Improve IPv6 leak manager logic detection
 
- -- Proton Technologies AG <opensource@proton.me>  Tue, 24 Nov 2020 15:08:19 +0000
+ -- Proton Technologies AG <opensource@proton.me>  Tue, 24 Nov 2020 15:45:52 +0000
 
 protonvpn-nm-core (0.1.0-1) UNRELEASED; urgency=low
 
