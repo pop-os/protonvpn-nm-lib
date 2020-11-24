@@ -25,6 +25,15 @@ class FeatureEnum(object):
     IPv6 = 16
 
 
+class ServerTierEnum(object):
+    FREE = 0
+    BASIC = 1
+    PLUS = 2
+    VISIONARY = 2
+    PLUS_VISIONARY = 2
+    PM = 3
+
+
 class ConnectionMetadataEnum(object):
     SERVER = "connected_server"
     CONNECTED_TIME = "connected_time"

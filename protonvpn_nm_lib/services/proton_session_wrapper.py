@@ -27,7 +27,8 @@ class ProtonSessionWrapper(object):
     HTTPS_STATUS_CODES = [
         400, 401, 403, 404, 409,
         422, 429, 500, 501, 503,
-        5002, 5003, 8002, 85032
+        5002, 5003, 8002, 85032,
+        10013
     ]
     API_METHODS = [
         ProtonSessionAPIMethodEnum.API_REQUEST,
@@ -144,7 +145,11 @@ class ProtonSessionWrapper(object):
         logger.info("Catched 401 error, refreshing session data")
         self.check_method_exists(method)
 
-        self.proton_session.refresh()
+        try:
+            self.proton_session.refresh()
+        except Exception as e:
+            return self.handle_known_status(e, method, args, kwargs)
+
         # Store session data
         logger.info("Storing new session data")
         self.user_manager.store_data(
@@ -225,8 +230,10 @@ class ProtonSessionWrapper(object):
                 *args, **api_kwargs
             )
         except ProtonError as e:
+            logger.exception("[!] ProtonError: {}".format(e))
             error = e
-        except requests.exceptions.ConnectTimeout as e:
+        except requests.exceptions.Timeout as e:
+            logger.exception("[!] APITimeoutError: {}".format(e))
             raise exceptions.APITimeoutError(e)
         except Exception as e:
             logger.exception(

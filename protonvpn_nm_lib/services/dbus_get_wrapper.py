@@ -181,6 +181,8 @@ class DbusGetWrapper():
                 )
                 return active_conn
 
+        return None
+
     def get_all_conn_settings(self, conn, return_iface=False):
         """Get all settings of a connection.
 

@@ -34,6 +34,7 @@ class IPv6LeakProtectionManager(AbstractInterfaceManager):
                 "is_running": False
             }
         }
+        logger.info("Intialized IPv6 leak protection manager")
 
     def manage(self, action):
         """Manage IPv6 leak protection.
@@ -41,6 +42,7 @@ class IPv6LeakProtectionManager(AbstractInterfaceManager):
         Args:
             action (string): either enable or disable
         """
+        logger.info("Manage IPV6: {}".format(action))
         self.update_connection_status()
 
         if action == "enable" and self.enable_ipv6_leak_protection:
@@ -54,7 +56,7 @@ class IPv6LeakProtectionManager(AbstractInterfaceManager):
 
     def add_leak_protection(self):
         """Add leak protection connection/interface."""
-        self.manage("disable")
+        logger.info("Removing IPv6 leak protection")
         subprocess_command = ""\
             "nmcli c a type dummy ifname {iface} "\
             "con-name {conn} ipv6.method manual "\
@@ -67,6 +69,7 @@ class IPv6LeakProtectionManager(AbstractInterfaceManager):
             ).split(" ")
 
         if not self.interface_state_tracker[self.conn_name]["exists"]:
+            self.manage("disable")
             self.run_subprocess(
                 exceptions.EnableIPv6LeakProtectionError,
                 "Unable to add IPv6 leak protection connection/interface",
@@ -75,6 +78,7 @@ class IPv6LeakProtectionManager(AbstractInterfaceManager):
 
     def remove_leak_protection(self):
         """Remove leak protection connection/interface."""
+        logger.info("Removing IPv6 leak protection")
         subprocess_command = "nmcli c delete {}".format(
             IPv6_LEAK_PROTECTION_CONN_NAME
         ).split(" ")
@@ -140,3 +144,5 @@ class IPv6LeakProtectionManager(AbstractInterfaceManager):
                 pass
             else:
                 self.interface_state_tracker[active_conn.get_id()]["is_running"] = True # noqa
+
+        logger.info("IPv6 status: {}".format(self.interface_state_tracker))

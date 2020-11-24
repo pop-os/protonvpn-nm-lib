@@ -2,6 +2,7 @@ import os
 from getpass import getuser
 
 import gi
+import requests
 
 gi.require_version("NM", "1.0")
 from gi.repository import NM, GLib
@@ -110,7 +111,8 @@ class ConnectionManager(ConnectionStateManager):
         self.add_server_certificate_check(vpn_settings, domain)
         self.apply_virtual_device_type(vpn_settings, filename)
         self.dns_manager(connection, user_conf_manager.dns)
-        ipv6_lp_manager.manage("enable")
+        if ipv6_lp_manager.enable_ipv6_leak_protection:
+            ipv6_lp_manager.manage("enable")
         if user_conf_manager.killswitch == KillswitchStatusEnum.HARD: # noqa
             ks_manager.manage("pre_connection", server_ip=entry_ip)
 
@@ -196,8 +198,9 @@ class ConnectionManager(ConnectionStateManager):
                 logger.info("Applying custom DNS: {}".format(custom_dns))
                 ipv4_config.props.dns_priority = -50
                 ipv6_config.props.dns_priority = -50
-
-                ipv4_config.props.dns = custom_dns
+                split_custom_dns = custom_dns[0].split()
+                logger.info("After split: {}".format(split_custom_dns))
+                ipv4_config.props.dns = split_custom_dns
             else:
                 logger.info("DNS managemenet disallowed")
 
@@ -341,6 +344,35 @@ class ConnectionManager(ConnectionStateManager):
             return False
 
         return self.get_connection_metadata()
+
+    def check_internet_connectivity(self, ks_status):
+        logger.info("Checking internet connectivity")
+        if ks_status == KillswitchStatusEnum.HARD:
+            return
+
+        try:
+            requests.get(
+                "http://protonstatus.com/",
+                timeout=5,
+            )
+        except requests.exceptions.Timeout as e:
+            logger.exception("[!] InternetConnectionError: {}".format(e))
+            raise exceptions.InternetConnectionError(
+                "No internet connection"
+            )
+        except Exception as e:
+            logger.exception("[!] InternetConnectionError: {}".format(e))
+            raise exceptions.InternetConnectionError(
+                "No internet connection"
+            )
+
+        try:
+            requests.get(
+                "https://api.protonvpn.ch/tests/ping", timeout=10
+            )
+        except Exception as e:
+            logger.exception("[!] UnreacheableAPIError: {}".format(e))
+            raise exceptions.UnreacheableAPIError("Unable to reach API")
 
     def dynamic_callback(self, client, result, data):
         """Dynamic callback method.

@@ -161,6 +161,10 @@ class API85032Error(ProtonSessionWrapperError):
     """Error 85032."""
 
 
+class API10013Error(ProtonSessionWrapperError):
+    """Error 85032."""
+
+
 class APITimeoutError(ProtonSessionWrapperError):
     """API timeout error."""
 
@@ -179,6 +183,14 @@ class UnhandledAPIError(ProtonSessionWrapperError):
 
 class UnhandledAPIMethod(ProtonSessionWrapperError):
     """Unhandled API method error."""
+
+
+class UnreacheableAPIError(ProtonSessionAPIError):
+    """APIBlockError"""
+
+
+class InternetConnectionError(ProtonSessionAPIError):
+    """Internet connection error"""
 
 
 

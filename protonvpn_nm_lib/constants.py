@@ -13,7 +13,7 @@ XDG_CONFIG_HOME = BaseDirectory.xdg_config_home
 
 from .enums import (FeatureEnum, KillswitchStatusEnum, ProtocolEnum,
                     ProtocolImplementationEnum, UserSettingConnectionEnum,
-                    UserSettingEnum, UserSettingStatusEnum)
+                    UserSettingEnum, UserSettingStatusEnum, ServerTierEnum)
 
 APP_VERSION = '0.1.0'
 
@@ -70,6 +70,13 @@ SUPPORTED_PROTOCOLS = {
     # ProtocolImplementationEnum.WIREGUARD: [ProtocolEnum.WIREGUARD],
 }
 
+SERVER_TIERS = {
+    ServerTierEnum.FREE: "Free",
+    ServerTierEnum.BASIC: "Basic",
+    ServerTierEnum.PLUS_VISIONARY: "Plus/Visionary",
+    ServerTierEnum.PM: "PMTEAM"
+}
+
 FLAT_SUPPORTED_PROTOCOLS = [
     proto for proto_list
     in [v for k, v in SUPPORTED_PROTOCOLS.items()]
@@ -77,7 +84,7 @@ FLAT_SUPPORTED_PROTOCOLS = [
 ]
 
 SUPPORTED_FEATURES = {
-    FeatureEnum.NORMAL: "Normal",
+    FeatureEnum.NORMAL: "",
     FeatureEnum.SECURE_CORE: "Secure-Core",
     FeatureEnum.TOR: "Tor",
     FeatureEnum.P2P: "P2P",
@@ -100,7 +107,7 @@ USER_CONFIG_TEMPLATE = {
         UserSettingConnectionEnum.DEFAULT_PROTOCOL: ProtocolEnum.UDP,
         UserSettingConnectionEnum.KILLSWITCH: KillswitchStatusEnum.DISABLED,
         UserSettingConnectionEnum.DNS: {
-            UserSettingConnectionEnum.DNS_STATUS: UserSettingStatusEnum.DISABLED, # noqa
+            UserSettingConnectionEnum.DNS_STATUS: UserSettingStatusEnum.ENABLED, # noqa
             UserSettingConnectionEnum.CUSTOM_DNS: []
         },
         UserSettingConnectionEnum.SPLIT_TUNNELING: {
@@ -111,6 +118,12 @@ USER_CONFIG_TEMPLATE = {
     UserSettingEnum.GENERAL: {},
     UserSettingEnum.ADVANCED: {},
     UserSettingEnum.TRAY: {},
+}
+
+KILLSWITCH_STATUS_TEXT = {
+    KillswitchStatusEnum.HARD: "Always-on",
+    KillswitchStatusEnum.SOFT: "On",
+    KillswitchStatusEnum.DISABLED: "Off",
 }
 
 SERVICE_TEMPLATE = """

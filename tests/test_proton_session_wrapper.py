@@ -130,7 +130,7 @@ class TestProtonSessionWrapperAPIRequest():
             missing_api_tokens,
             "end_mock"
         ]
-        with pytest.raises(KeyError):
+        with pytest.raises(AttributeError):
             session.api_request("/vpn")
 
     def test_expected_api_403(
