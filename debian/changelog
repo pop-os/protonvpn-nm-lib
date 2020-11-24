@@ -6,7 +6,7 @@ protonvpn-nm-core (0.1.0-6) UNRELEASED; urgency=low
   * Add constants and enum for clients
   * Update reconnector logic
 
- -- Proton Technologies AG <opensource@proton.me>  Tue, 23 Nov 2020 11:57:13 +0000
+ -- Proton Technologies AG <opensource@proton.me>  Tue, 24 Nov 2020 11:57:13 +0000
 
 protonvpn-nm-core (0.1.0-1) UNRELEASED; urgency=low
 
