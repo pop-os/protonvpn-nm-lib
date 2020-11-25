@@ -9,6 +9,10 @@ pytest-cov = "*"
 pytest-xdist = "*"
 flake8 = "*"
 dbus-python = "*"
+requests = "*"
+bcrypt = "*"
+python-gnupg = "*"
+pyopenssl = "*"
 
 [packages]
 pyxdg = "*"
