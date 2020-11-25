@@ -5,11 +5,11 @@ from unittest.mock import patch
 
 import pytest
 
-from common import (CACHED_OPENVPN_CERTIFICATE, MOCK_DATA_JSON,
+from common import (PWD, CACHED_OPENVPN_CERTIFICATE, MOCK_DATA_JSON,
                     MOCK_SESSIONDATA, RAW_SERVER_LIST, SERVERS,
                     TEST_CACHED_SERVERFILE, CertificateManager,
                     ProtonSessionWrapper, ServerManager, UserManager,
-                    exceptions)
+                    MetadataEnum, exceptions)
 
 TEST_KEYRING_SERVICE = "TestServerManager"
 TEST_KEYRING_SESSIONDATA = "TestServerManSessionData"
@@ -23,6 +23,21 @@ um = UserManager(
     keyring_proton_user=TEST_KEYRING_PROTON_USER
 )
 session = ProtonSessionWrapper.load(json.loads(MOCK_DATA_JSON), um)
+
+conn_state_filepath = os.path.join(
+    PWD, "test_server_manager.json"
+)
+last_conn_state_filepath = os.path.join(
+    PWD, "test_server_manager.json"
+)
+remove_test_filepath = os.path.join(
+    PWD, "remove_server_manager.json"
+)
+session.METADATA_DICT = {
+    MetadataEnum.CONNECTION: conn_state_filepath,
+    MetadataEnum.LAST_CONNECTION: last_conn_state_filepath,
+    MetadataEnum.SERVER_CACHE: remove_test_filepath
+}
 
 
 class TestUnitServerManager:
@@ -82,39 +97,6 @@ class TestUnitServerManager:
         )
         yield mock_get_patcher.start()
         mock_get_patcher.stop()
-
-    def test_none_path_cache_servers(self):
-        with pytest.raises(TypeError):
-            self.server_man.cache_servers(
-                session=self.MOCKED_SESSION, cached_serverlist=None
-            )
-
-    def test_integer_path_cache_servers(self):
-        with pytest.raises(TypeError):
-            self.server_man.cache_servers(
-                session=self.MOCKED_SESSION, cached_serverlist=5
-            )
-
-    def test_empty_path_cache_servers(self):
-        with pytest.raises(FileNotFoundError):
-            self.server_man.cache_servers(
-                session=self.MOCKED_SESSION, cached_serverlist=""
-            )
-
-    def test_root_path_cache_servers(self):
-        with pytest.raises(IsADirectoryError):
-            self.server_man.cache_servers(
-                session=self.MOCKED_SESSION, cached_serverlist="/"
-            )
-
-    def test_correct_path_cache_servers(self, mock_api_request):
-        mock_api_request.side_effect = [RAW_SERVER_LIST]
-        self.server_man.cache_servers(
-            session=self.MOCKED_SESSION,
-            cached_serverlist=os.path.join(
-                TEST_CACHED_SERVERFILE, "test_cache_serverlist.json"
-            )
-        )
 
     @pytest.mark.parametrize("servername", ["#", "", 5, None, {}, []])
     def test_get_incorrect_generate_ip_list(self, servername):
