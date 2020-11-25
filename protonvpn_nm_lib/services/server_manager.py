@@ -8,7 +8,6 @@ from ..enums import FeatureEnum, UserSettingStatusEnum, KillswitchStatusEnum
 from ..logger import logger
 from . import capture_exception
 from .connection_state_manager import ConnectionStateManager
-from .proton_session_wrapper import ProtonSessionWrapper
 
 
 class ServerManager(ConnectionStateManager):

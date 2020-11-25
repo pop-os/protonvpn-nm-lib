@@ -53,13 +53,7 @@ class ProtonSessionWrapper(MetadataManager):
         self.setup_exception_handling()
         self.user_manager = kwargs.pop("user_manager")
         self.proton_session = Session(**kwargs)
-        self.api_methods = {
-            ProtonSessionAPIMethodEnum.API_REQUEST: self.proton_session.api_request, # noqa
-            ProtonSessionAPIMethodEnum.AUTHENTICATE: self.proton_session.authenticate, # noqa
-            ProtonSessionAPIMethodEnum.LOGOUT: self.proton_session.logout,
-            ProtonSessionAPIMethodEnum.FULL_CACHE: self.proton_session.api_request, # noqa
-            ProtonSessionAPIMethodEnum.LOADS_CACHE: self.proton_session.api_request, # noqa
-        }
+
 
     def api_request(self, *args, **api_kwargs):
         """Wrapper for proton-client api_request.
@@ -128,10 +122,8 @@ class ProtonSessionWrapper(MetadataManager):
 
         if now_time >= next_full_cache_time:
             self.full_cache()
-            return
         elif now_time >= next_loads_cache_time:
             self.loads_cache()
-            return
 
     def full_cache(self):
         """Full servers cache."""
@@ -360,6 +352,14 @@ class ProtonSessionWrapper(MetadataManager):
         """
         self.check_method_exists(method)
         args = self.flatten_tuple(args)
+
+        self.api_methods = {
+            ProtonSessionAPIMethodEnum.API_REQUEST: self.proton_session.api_request, # noqa
+            ProtonSessionAPIMethodEnum.AUTHENTICATE: self.proton_session.authenticate, # noqa
+            ProtonSessionAPIMethodEnum.LOGOUT: self.proton_session.logout,
+            ProtonSessionAPIMethodEnum.FULL_CACHE: self.proton_session.api_request, # noqa
+            ProtonSessionAPIMethodEnum.LOADS_CACHE: self.proton_session.api_request, # noqa
+        }
 
         error = False
         api_response = False
