@@ -4,7 +4,7 @@ import json
 import random
 import re
 import time
-
+import os
 import requests
 from proton.api import ProtonError, Session
 
@@ -45,6 +45,9 @@ class ProtonSessionWrapper(MetadataManager):
     ]
     HTTP_STATUS_EXCEPTIONS = {}
     HTTP_STATUS_ERROR_HANDLERS = {}
+    FULL_CACHE_TIME_EXPIRE = 180
+    LOADS_CACHE_TIME_EXPIRE = 15
+    CACHED_SERVERLIST = CACHED_SERVERLIST
 
     def __init__(
         self, **kwargs
@@ -53,7 +56,6 @@ class ProtonSessionWrapper(MetadataManager):
         self.setup_exception_handling()
         self.user_manager = kwargs.pop("user_manager")
         self.proton_session = Session(**kwargs)
-
 
     def api_request(self, *args, **api_kwargs):
         """Wrapper for proton-client api_request.
@@ -95,9 +97,10 @@ class ProtonSessionWrapper(MetadataManager):
 
     def cache_servers(self):
         """"Cache servers."""
-        full_cache_time_expire = 180
-        loads_cache_time_expire = 15
-        if not self.check_metadata_exists(MetadataEnum.SERVER_CACHE):
+        if (
+            not self.check_metadata_exists(MetadataEnum.SERVER_CACHE)
+            or not os.path.isfile(self.CACHED_SERVERLIST)
+        ):
             self.full_cache()
             return
 
@@ -113,10 +116,10 @@ class ProtonSessionWrapper(MetadataManager):
         )
 
         next_full_cache_time = full_cache_time + datetime.timedelta(
-            minutes=full_cache_time_expire
+            minutes=self.FULL_CACHE_TIME_EXPIRE
         )
         next_loads_cache_time = loads_cache_time + datetime.timedelta(
-            minutes=loads_cache_time_expire
+            minutes=self.LOADS_CACHE_TIME_EXPIRE
         )
         now_time = self.convert_time(time.time())
 
@@ -142,7 +145,11 @@ class ProtonSessionWrapper(MetadataManager):
                 MetadataEnum.SERVER_CACHE,
                 metadata
             )
-            self.store_server_cache(api_response, full_cache=True)
+            self.store_server_cache(
+                api_response,
+                full_cache=True,
+                cache_path=self.CACHED_SERVERLIST
+            )
             return
 
         return self.exception_manager(
@@ -166,7 +173,10 @@ class ProtonSessionWrapper(MetadataManager):
                 MetadataEnum.SERVER_CACHE,
                 metadata
             )
-            self.store_server_cache(api_response)
+            self.store_server_cache(
+                api_response,
+                cache_path=self.CACHED_SERVERLIST
+            )
             return
 
         return self.exception_manager(
@@ -174,8 +184,11 @@ class ProtonSessionWrapper(MetadataManager):
         )
 
     def store_server_cache(
-        self, cache, full_cache=False, cache_path=CACHED_SERVERLIST
+        self, cache, full_cache=False, cache_path=None
     ):
+        if cache_path is None:
+            raise Exception("Invalid server cache path")
+
         if full_cache:
             with open(cache_path, "w") as f:
                 json.dump(cache, f)
@@ -192,7 +205,11 @@ class ProtonSessionWrapper(MetadataManager):
                 server["Load"] = new_value["Load"]
                 server["Score"] = new_value["Score"]
 
-        self.store_server_cache(servers, full_cache=True)
+        self.store_server_cache(
+            servers,
+            full_cache=True,
+            cache_path=cache_path
+        )
 
     def yield_server_list(self, server_list):
         for server in server_list["LogicalServers"]:
