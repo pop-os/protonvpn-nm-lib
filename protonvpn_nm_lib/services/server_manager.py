@@ -30,7 +30,7 @@ class ServerManager(ConnectionStateManager):
         """
         logger.info("Generating data for fastest connect")
         self.validate_session_protocol(session, protocol)
-        if not self.killswitch_status == KillswitchStatusEnum:
+        if not self.killswitch_status == KillswitchStatusEnum.HARD:
             session.cache_servers()
 
         servers = self.extract_server_list()
