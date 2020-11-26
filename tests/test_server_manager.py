@@ -15,15 +15,9 @@ TEST_KEYRING_SERVICE = "TestServerManager"
 TEST_KEYRING_SESSIONDATA = "TestServerManSessionData"
 TEST_KEYRING_USERDATA = "TestServerManUserData"
 TEST_KEYRING_PROTON_USER = "TestServerManUser"
-
-um = UserManager(
-    keyring_service=TEST_KEYRING_SERVICE,
-    keyring_sessiondata=TEST_KEYRING_SESSIONDATA,
-    keyring_userdata=TEST_KEYRING_USERDATA,
-    keyring_proton_user=TEST_KEYRING_PROTON_USER
+TEST_CACHED_SERVERLIST = os.path.join(
+    PWD, "test_server_manager_server_cache.json"
 )
-session = ProtonSessionWrapper.load(json.loads(MOCK_DATA_JSON), um)
-
 conn_state_filepath = os.path.join(
     PWD, "test_server_manager.json"
 )
@@ -33,11 +27,27 @@ last_conn_state_filepath = os.path.join(
 remove_test_filepath = os.path.join(
     PWD, "remove_server_manager.json"
 )
+
+um = UserManager(
+    keyring_service=TEST_KEYRING_SERVICE,
+    keyring_sessiondata=TEST_KEYRING_SESSIONDATA,
+    keyring_userdata=TEST_KEYRING_USERDATA,
+    keyring_proton_user=TEST_KEYRING_PROTON_USER
+)
+session = ProtonSessionWrapper.load(json.loads(MOCK_DATA_JSON), um)
+
+session.CACHED_SERVERLIST = TEST_CACHED_SERVERLIST
 session.METADATA_DICT = {
     MetadataEnum.CONNECTION: conn_state_filepath,
     MetadataEnum.LAST_CONNECTION: last_conn_state_filepath,
     MetadataEnum.SERVER_CACHE: remove_test_filepath
 }
+session.FULL_CACHE_TIME_EXPIRE = 1 / 120
+session.LOADS_CACHE_TIME_EXPIRE = 1 / 120
+session.FULL_CACHE_MAX_NEGATIVE_TIME_VARIATION = 0
+session.FULL_CACHE_MAX_POSTIVE_TIME_VARIATION = 0
+session.LOADS_CACHE_MAX_NEGATIVE_TIME_VARIATION = 0
+session.LOADS_CACHE_MAX_POSTIVE_TIME_VARIATION = 0
 
 
 class TestUnitServerManager:
@@ -226,6 +236,7 @@ class TestIntegrationServerManager:
         CertificateManager(),
         um
     )
+    server_man.CACHED_SERVERLIST = TEST_CACHED_SERVERLIST
     MOCKED_SESSION = ProtonSessionWrapper(
         api_url="https://localhost",
         user_manager=um
@@ -256,13 +267,16 @@ class TestIntegrationServerManager:
             keyring_service=TEST_KEYRING_SERVICE,
             store_user_data=False
         )
+        with open(TEST_CACHED_SERVERLIST, "w") as c:
+            json.dump(RAW_SERVER_LIST, c)
 
     @classmethod
     def teardown_class(cls):
-        # os.remove(CACHED_OPENVPN_CERTIFICATE)
+        os.remove(CACHED_OPENVPN_CERTIFICATE)
         um.delete_stored_data(TEST_KEYRING_PROTON_USER, TEST_KEYRING_SERVICE)
         um.delete_stored_data(TEST_KEYRING_SESSIONDATA, TEST_KEYRING_SERVICE)
         um.delete_stored_data(TEST_KEYRING_USERDATA, TEST_KEYRING_SERVICE)
+        os.remove(TEST_CACHED_SERVERLIST)
 
     @pytest.fixture
     def mock_api_request(self):
@@ -333,24 +347,18 @@ class TestIntegrationServerManager:
             self.server_man.country_f(session, proto, *args)
 
     def test_correct_generate_connect_direct(self, mock_api_request):
-        args = [["servername", "TEST#6"]]
+        mock_api_request.side_effect = [RAW_SERVER_LIST]
+        args = ["TEST#6"]
         servername, domain, ip = self.server_man.direct(
             self.MOCKED_SESSION, "tcp", *args
         )
-        resp = False
-        if servername and domain and ip:
-            resp = True
-        assert os.path.isfile(resp) is True
 
-    def test_correct_generate_connect_direct_dialog(self):
+    def test_correct_generate_connect_direct_dialog(self, mock_api_request):
+        mock_api_request.side_effect = [RAW_SERVER_LIST]
         args = ["TEST#5"]
         servername, domain, ip = self.server_man.direct(
             self.MOCKED_SESSION, "tcp", *args
         )
-        resp = False
-        if servername and domain and ip:
-            resp = True
-        assert os.path.isfile(resp) is True
 
     @pytest.mark.parametrize(
         "session,proto,args,excp",

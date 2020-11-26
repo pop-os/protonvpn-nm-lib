@@ -14,6 +14,7 @@ from .proton_session_wrapper import ProtonSessionWrapper
 class ServerManager(ConnectionStateManager):
     REFRESH_INTERVAL = 15
     killswitch_status = UserSettingStatusEnum.DISABLED
+    CACHED_SERVERLIST = CACHED_SERVERLIST
 
     def __init__(self, cert_manager, user_manager):
         self.cert_manager = cert_manager
@@ -505,7 +506,7 @@ class ServerManager(ConnectionStateManager):
 
     def extract_server_list(self):
         try:
-            with open(CACHED_SERVERLIST, "r") as f:
+            with open(self.CACHED_SERVERLIST, "r") as f:
                 server_data = json.load(f)
         except FileNotFoundError as e:
             killswitch_msg = ""

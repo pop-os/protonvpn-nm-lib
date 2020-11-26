@@ -45,8 +45,14 @@ class ProtonSessionWrapper(MetadataManager):
     ]
     HTTP_STATUS_EXCEPTIONS = {}
     HTTP_STATUS_ERROR_HANDLERS = {}
+
     FULL_CACHE_TIME_EXPIRE = 180
     LOADS_CACHE_TIME_EXPIRE = 15
+    FULL_CACHE_MAX_NEGATIVE_TIME_VARIATION = 0
+    FULL_CACHE_MAX_POSTIVE_TIME_VARIATION = 0
+    LOADS_CACHE_MAX_NEGATIVE_TIME_VARIATION = -5
+    LOADS_CACHE_MAX_POSTIVE_TIME_VARIATION = 5
+
     CACHED_SERVERLIST = CACHED_SERVERLIST
 
     def __init__(
@@ -108,18 +114,35 @@ class ProtonSessionWrapper(MetadataManager):
             MetadataActionEnum.GET, MetadataEnum.SERVER_CACHE
         )
 
-        full_cache_time = self.convert_time(
+        last_full_cache_time = self.convert_time(
             int(cache_metadata["full_cache_timestamp"])
         )
-        loads_cache_time = self.convert_time(
+        last_loads_cache_time = self.convert_time(
             int(cache_metadata["loads_cache_timestamp"])
         )
 
-        next_full_cache_time = full_cache_time + datetime.timedelta(
-            minutes=self.FULL_CACHE_TIME_EXPIRE
+        full_cache_time_expire = self.FULL_CACHE_TIME_EXPIRE + (
+            random.randint(
+                self.FULL_CACHE_MAX_NEGATIVE_TIME_VARIATION,
+                self.FULL_CACHE_MAX_POSTIVE_TIME_VARIATION
+            )
         )
-        next_loads_cache_time = loads_cache_time + datetime.timedelta(
-            minutes=self.LOADS_CACHE_TIME_EXPIRE
+
+        loads_cache_time_expire = self.LOADS_CACHE_TIME_EXPIRE + (
+            random.randint(
+                self.LOADS_CACHE_MAX_NEGATIVE_TIME_VARIATION,
+                self.LOADS_CACHE_MAX_POSTIVE_TIME_VARIATION
+            )
+        )
+
+        print("Full cache: ", full_cache_time_expire)
+        print("Loads cache: ", loads_cache_time_expire)
+
+        next_full_cache_time = last_full_cache_time + datetime.timedelta(
+            minutes=full_cache_time_expire
+        )
+        next_loads_cache_time = last_loads_cache_time + datetime.timedelta(
+            minutes=loads_cache_time_expire
         )
         now_time = self.convert_time(time.time())
 
