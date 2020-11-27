@@ -48,10 +48,7 @@ class ProtonSessionWrapper(MetadataManager):
 
     FULL_CACHE_TIME_EXPIRE = 180
     LOADS_CACHE_TIME_EXPIRE = 15
-    FULL_CACHE_MAX_NEGATIVE_TIME_VARIATION = 0
-    FULL_CACHE_MAX_POSTIVE_TIME_VARIATION = 0
-    LOADS_CACHE_MAX_NEGATIVE_TIME_VARIATION = -5
-    LOADS_CACHE_MAX_POSTIVE_TIME_VARIATION = 5
+    TIME_DEVIATION = 0.22
 
     CACHED_SERVERLIST = CACHED_SERVERLIST
 
@@ -115,40 +112,17 @@ class ProtonSessionWrapper(MetadataManager):
         )
 
         last_full_cache_time = self.convert_time(
-            int(cache_metadata["full_cache_timestamp"])
+            float(cache_metadata["full_cache_timestamp"])
         )
         last_loads_cache_time = self.convert_time(
-            int(cache_metadata["loads_cache_timestamp"])
+            float(cache_metadata["loads_cache_timestamp"])
         )
 
-        full_cache_time_expire = self.FULL_CACHE_TIME_EXPIRE + (
-            random.randint(
-                self.FULL_CACHE_MAX_NEGATIVE_TIME_VARIATION,
-                self.FULL_CACHE_MAX_POSTIVE_TIME_VARIATION
-            )
-        )
-
-        loads_cache_time_expire = self.LOADS_CACHE_TIME_EXPIRE + (
-            random.randint(
-                self.LOADS_CACHE_MAX_NEGATIVE_TIME_VARIATION,
-                self.LOADS_CACHE_MAX_POSTIVE_TIME_VARIATION
-            )
-        )
-
-        print("Full cache: ", full_cache_time_expire)
-        print("Loads cache: ", loads_cache_time_expire)
-
-        next_full_cache_time = last_full_cache_time + datetime.timedelta(
-            minutes=full_cache_time_expire
-        )
-        next_loads_cache_time = last_loads_cache_time + datetime.timedelta(
-            minutes=loads_cache_time_expire
-        )
         now_time = self.convert_time(time.time())
 
-        if now_time >= next_full_cache_time:
+        if now_time >= last_full_cache_time:
             self.full_cache()
-        elif now_time >= next_loads_cache_time:
+        elif now_time >= last_loads_cache_time:
             self.loads_cache()
 
     def full_cache(self):
@@ -159,9 +133,10 @@ class ProtonSessionWrapper(MetadataManager):
             "/vpn/logicals"
         )
         if not error:
+
             metadata = {
-                "full_cache_timestamp": str(int(time.time())),
-                "loads_cache_timestamp": str(int(time.time()))
+                "full_cache_timestamp": str(self.calculate_next_full_cache()),
+                "loads_cache_timestamp": str(self.calculate_next_loads_cache())
             }
             self.manage_metadata(
                 MetadataActionEnum.WRITE,
@@ -273,6 +248,40 @@ class ProtonSessionWrapper(MetadataManager):
     def dump(self):
         """Proxymethod for proton-client dump."""
         return self.proton_session.dump()
+
+    def calculate_next_full_cache(self):
+        update_interval = self.calculcate_update_interval(
+            self.FULL_CACHE_TIME_EXPIRE
+        )
+        return self.calculat_next_refresh(update_interval)
+
+    def calculate_next_loads_cache(self):
+        update_interval = self.calculcate_update_interval(
+            self.LOADS_CACHE_TIME_EXPIRE
+        )
+        return self.calculat_next_refresh(update_interval)
+
+    def calculat_next_refresh(self, update_interval, since_epoch=True):
+        if since_epoch:
+            return time.time() + update_interval.total_seconds()
+
+        return self.convert_time(
+            time.time() + update_interval.total_seconds()
+        )
+
+    def calculcate_update_interval(self, minutes):
+        interval = datetime.timedelta(
+            minutes=minutes
+        )
+
+        return interval + self.calculate_interval_delta(interval)
+
+    def calculate_interval_delta(self, interval):
+        return datetime.timedelta(
+            seconds=interval.total_seconds() * self.TIME_DEVIATION * (
+                2.0 * random.random() - 1.0
+            )
+        )
 
     def convert_time(self, epoch_time, return_full_date=True):
         """Convert time from epoch to 24h.
