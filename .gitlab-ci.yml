@@ -10,6 +10,9 @@ include:
 default:
   image: $CI_REGISTRY_IMAGE:branch-$CI_COMMIT_REF_SLUG
 
+variables:
+  CI_REGISTRY_IMAGE_PROTON: "$CI_REGISTRY/infra/kubernetes/images"
+
 stages:
   - image
   - test
