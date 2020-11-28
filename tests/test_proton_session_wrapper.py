@@ -1,10 +1,13 @@
 
+import json
+import os
 from unittest.mock import patch
 
 import pytest
 from proton import ProtonError
 
-from common import (ProtonSessionAPIMethodEnum, ProtonSessionWrapper,
+from common import (PWD, RAW_LOADS_LIST, RAW_SERVER_LIST, MetadataEnum,
+                    ProtonSessionAPIMethodEnum, ProtonSessionWrapper,
                     UserManager, exceptions)
 
 TEST_KEYRING_SERVICE = "TestServerManager"
@@ -26,6 +29,26 @@ session = ProtonSessionWrapper(
     TLSPinning=False,
     user_manager=um
 )
+conn_state_filepath = os.path.join(
+    PWD, "test_proton_session_wrapper_conn_state_metadata.json"
+)
+last_conn_state_filepath = os.path.join(
+    PWD, "test_proton_session_wrapper_last_conn_state_metadata.json"
+)
+server_cache_filepath = os.path.join(
+    PWD, "test_proton_session_wrapper_server_cache_metadata.json"
+)
+TEST_CACHED_SERVERLIST = os.path.join(
+    PWD, "test_proton_session_wrapper_server_cache.json"
+)
+session.METADATA_DICT = {
+    MetadataEnum.CONNECTION: conn_state_filepath,
+    MetadataEnum.LAST_CONNECTION: last_conn_state_filepath,
+    MetadataEnum.SERVER_CACHE: server_cache_filepath
+}
+session.CACHED_SERVERLIST = TEST_CACHED_SERVERLIST
+session.FULL_CACHE_TIME_EXPIRE = 1 / 240
+session.LOADS_CACHE_TIME_EXPIRE = 1 / 240
 
 
 class TestProtonSessionWrapperAPIRequest():
@@ -458,7 +481,36 @@ class TestProtonSessionWrapperLogout():
             session.logout()
 
 
-class TestUnits():
+class TestProtonSessionWrapperFullCache():
+
+    @classmethod
+    def setup_class(cls):
+        with open(conn_state_filepath, "w") as a:
+            json.dump({
+                "connected_server": "conn_test",
+                "connected_protocol": "tcp",
+                "connected_time": 0000000
+            }, a)
+
+        with open(last_conn_state_filepath, "w") as f:
+            json.dump({
+                "connected_server": "last_conn_test",
+                "last_connect_ip": "192.168.0.1"
+            }, f)
+
+        with open(server_cache_filepath, "w") as c:
+            json.dump({
+                "full_cache_timestamp": "1606390288",
+                "loads_cache_timestamp": "1606390288"
+            }, c)
+
+    @classmethod
+    def teardown_class(cls):
+        os.remove(conn_state_filepath)
+        os.remove(last_conn_state_filepath)
+        os.remove(server_cache_filepath)
+        os.remove(TEST_CACHED_SERVERLIST)
+
     @pytest.fixture
     def mock_api_request(self):
         mock_get_patcher = patch(
@@ -468,29 +520,114 @@ class TestUnits():
         yield mock_get_patcher.start()
         mock_get_patcher.stop()
 
+    def test_full_cache(self, mock_api_request):
+        mock_api_request.side_effect = [
+            RAW_SERVER_LIST
+        ]
+        session.full_cache()
+        with open(TEST_CACHED_SERVERLIST) as f:
+            file = json.load(f)
+
+            assert file["LogicalServers"][0]["Name"] == "TEST#5"
+
+    @pytest.mark.parametrize(
+        "error", [
+            400, 404, 409, 422, 500, 501
+        ]
+    )
+    def test_expected_unhandled_requests(
+        self, mock_api_request, error
+    ):
+        mock_api_request.side_effect = [
+            ProtonError(
+                {
+                    "Code": error,
+                    "Error": "Error code {}".format(error)
+                }
+            )
+        ]
+        with pytest.raises(exceptions.APIError):
+            session.full_cache()
+
+
+class TestProtonSessionWrapperLoadsCache():
+
+    @classmethod
+    def setup_class(cls):
+        with open(conn_state_filepath, "w") as a:
+            json.dump({
+                "connected_server": "conn_test",
+                "connected_protocol": "tcp",
+                "connected_time": 0000000
+            }, a)
+
+        with open(last_conn_state_filepath, "w") as f:
+            json.dump({
+                "connected_server": "last_conn_test",
+                "last_connect_ip": "192.168.0.1"
+            }, f)
+
+        with open(server_cache_filepath, "w") as c:
+            json.dump({
+                "full_cache_timestamp": "1606390288",
+                "loads_cache_timestamp": "1606390288"
+            }, c)
+
+    @classmethod
+    def teardown_class(cls):
+        os.remove(conn_state_filepath)
+        os.remove(last_conn_state_filepath)
+        os.remove(server_cache_filepath)
+        os.remove(TEST_CACHED_SERVERLIST)
+
     @pytest.fixture
-    def mock_authenticate_request(self):
+    def mock_api_request(self):
         mock_get_patcher = patch(
             "protonvpn_nm_lib.services.proton_session_wrapper."
-            "Session.authenticate"
+            "Session.api_request"
         )
         yield mock_get_patcher.start()
         mock_get_patcher.stop()
 
-    @pytest.fixture
-    def mock_logout_request(self):
-        mock_get_patcher = patch(
-            "protonvpn_nm_lib.services.proton_session_wrapper."
-            "Session.logout"
-        )
-        yield mock_get_patcher.start()
-        mock_get_patcher.stop()
+    def test_loads_cache(self, mock_api_request):
+        mock_api_request.side_effect = [
+            RAW_LOADS_LIST
+        ]
+        session.full_cache()
+        with open(TEST_CACHED_SERVERLIST) as f:
+            file = json.load(f)
+
+            assert file["LogicalServers"][0]["Load"] == "55"
+
+    @pytest.mark.parametrize(
+        "error", [
+            400, 404, 409, 422, 500, 501
+        ]
+    )
+    def test_expected_unhandled_requests(
+        self, mock_api_request, error
+    ):
+        mock_api_request.side_effect = [
+            ProtonError(
+                {
+                    "Code": error,
+                    "Error": "Error code {}".format(error)
+                }
+            )
+        ]
+        with pytest.raises(exceptions.APIError):
+            session.loads_cache()
+
+
+class TestUnits():
 
     @pytest.mark.parametrize(
         "method", [
             ProtonSessionAPIMethodEnum.API_REQUEST,
             ProtonSessionAPIMethodEnum.AUTHENTICATE,
             ProtonSessionAPIMethodEnum.LOGOUT,
+            ProtonSessionAPIMethodEnum.FULL_CACHE,
+            ProtonSessionAPIMethodEnum.LOADS_CACHE,
         ]
     )
     def test_expected_method_exists(self, method):

@@ -1,11 +1,11 @@
-class ProtonVPNBaseException(BaseException):
+class ProtonVPNException(BaseException):
     def __init__(self, message, additional_info=None):
         self.message = message
         self.additional_context = additional_info
-        super(ProtonVPNBaseException, self).__init__(self.message)
+        super(ProtonVPNException, self).__init__(self.message)
 
 
-class FinishError(ProtonVPNBaseException): # noqa
+class FinishError(ProtonVPNException): # noqa
     """Finish async callback error."""
 
 
@@ -27,7 +27,7 @@ class RemoveConnectionFinishError(FinishError):
 
 
 
-class IllegalData(ProtonVPNBaseException): # noqa
+class IllegalData(ProtonVPNException): # noqa
     """Illegal/unexpected data type"""
 
 
@@ -41,7 +41,7 @@ class IllegalUserData(IllegalData):
 
 
 
-class JSONError(ProtonVPNBaseException): # noqa
+class JSONError(ProtonVPNException): # noqa
     """JSON generated errors"""
 
 
@@ -59,7 +59,7 @@ class JSONDataError(JSONError):
 
 
 
-class CacheServersError(ProtonVPNBaseException): # noqa
+class CacheServersError(ProtonVPNException): # noqa
     """Cache servers error"""
 
 
@@ -77,7 +77,7 @@ class MissingCacheError(CacheServersError):
 
 
 
-class KeyringError(ProtonVPNBaseException):  # noqa
+class KeyringError(ProtonVPNException):  # noqa
     """Keyring error"""
 
 
@@ -107,7 +107,7 @@ class StoredProtonUsernameNotFound(KeyringDataNotFound):
 
 
 
-class IPv6LeakProtectionError(ProtonVPNBaseException): # noqa
+class IPv6LeakProtectionError(ProtonVPNException): # noqa
     """IPv6 leak protection error."""
 
 
@@ -125,7 +125,7 @@ class DisableIPv6LeakProtectionError(IPv6LeakProtectionError):
 
 
 
-class ProtonSessionWrapperError(ProtonVPNBaseException): # noqa
+class ProtonSessionWrapperError(ProtonVPNException): # noqa
     """Proton session wrapper error."""
 
 
@@ -195,7 +195,7 @@ class InternetConnectionError(ProtonSessionAPIError):
 
 
 
-class KillswitchError(ProtonVPNBaseException): # noqa
+class KillswitchError(ProtonVPNException): # noqa
     """Killswitch error."""
 
 
@@ -237,57 +237,71 @@ class DisableConnectivityCheckError(KillswitchError):
 
 
 
-class ConfigurationsSelectedOptionError(ProtonVPNBaseException): # noqa
+class MetadataError(ProtonVPNException): # noqa
+    """Metadata error."""
+
+
+class IllegalMetadataActionError(MetadataError):
+    """Illegal/unexpected metadata action error."""
+
+
+class IllegalMetadataTypeError(MetadataError):
+    """Illegal/unexpected metadata type error."""
+
+
+
+
+class ConfigurationsSelectedOptionError(ProtonVPNException): # noqa
     """Selected option error."""
 
 
-class AddConnectionCredentialsError(ProtonVPNBaseException):
+class AddConnectionCredentialsError(ProtonVPNException):
     """Add credentials to connection error."""
 
 
-class AddServerCertificateCheckError(ProtonVPNBaseException):
+class AddServerCertificateCheckError(ProtonVPNException):
     """Add server certificate check error"""
 
 
-class IncorrectCredentialsError(ProtonVPNBaseException):
+class IncorrectCredentialsError(ProtonVPNException):
     """Incorrect credentials error."""
 
 
-class APIAuthenticationError(ProtonVPNBaseException):
-    """Incorrect credentials error."""
+class APIAuthenticationError(ProtonVPNException):
+    """API authentication error."""
 
 
-class ImportConnectionError(ProtonVPNBaseException):
+class ImportConnectionError(ProtonVPNException):
     """Import connection configurations error."""
 
 
-class VirtualDeviceNotFound(ProtonVPNBaseException):
+class VirtualDeviceNotFound(ProtonVPNException):
     """Virtual device could not be found."""
 
 
-class IllegalVirtualDevice(ProtonVPNBaseException):
+class IllegalVirtualDevice(ProtonVPNException):
     """Unexpeced virtual device."""
 
 
-class IllegalVPNProtocol(ProtonVPNBaseException):
+class IllegalVPNProtocol(ProtonVPNException):
     """Unexpexted plugin for specified protocol."""
 
 
-class ProtocolPluginNotFound(ProtonVPNBaseException):
+class ProtocolPluginNotFound(ProtonVPNException):
     """Plugin for specified protocol was not found."""
 
 
-class ConnectionNotFound(ProtonVPNBaseException):
+class ConnectionNotFound(ProtonVPNException):
     """ProtonVPN connection not found."""
 
 
-class ProtocolNotFound(ProtonVPNBaseException):
+class ProtocolNotFound(ProtonVPNException):
     """Protocol not found upon generate certificate."""
 
 
-class IllegalServername(ProtonVPNBaseException):
+class IllegalServername(ProtonVPNException):
     """Unexpected servername."""
 
 
-class EmptyServerListError(ProtonVPNBaseException):
+class EmptyServerListError(ProtonVPNException):
     """Empty server list error."""

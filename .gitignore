@@ -6,6 +6,8 @@ MANIFEST
 .vscode/
 *.lock
 *.json
-*cache*
+*_cache*
+*pycache*
+*cache__*
 .env
 .coverage

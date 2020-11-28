@@ -3,19 +3,47 @@ import os
 
 import pytest
 
-from common import PWD, ConnectionStateManager
+from common import (PWD, ConnectionMetadataEnum, ConnectionStateManager,
+                    MetadataEnum, exceptions)
 
-conn_state_filepath = os.path.join(PWD, "test_conn_state_manager.json")
+conn_state_filepath = os.path.join(
+    PWD, "test_conn_state_manager.json"
+)
+last_conn_state_filepath = os.path.join(
+    PWD, "test_last_conn_state_manager.json"
+)
+remove_test_filepath = os.path.join(
+    PWD, "remove_test.json"
+)
 
 
 class TestConnectionStateManager:
     csm = ConnectionStateManager()
+    csm.METADATA_DICT = {
+        MetadataEnum.CONNECTION: conn_state_filepath,
+        MetadataEnum.LAST_CONNECTION: last_conn_state_filepath,
+        MetadataEnum.SERVER_CACHE: remove_test_filepath
+    }
 
     @classmethod
     def setup_class(cls):
         with open(conn_state_filepath, "w") as f:
             json.dump({
-                "test_passed": True
+                "connected_server": "conn_test",
+                "connected_protocol": "tcp",
+                "connected_time": 0000000
+            }, f)
+
+        with open(last_conn_state_filepath, "w") as f:
+            json.dump({
+                "connected_server": "last_conn_test",
+                "last_connect_ip": "192.168.0.1"
+            }, f)
+
+        with open(remove_test_filepath, "w") as f:
+            json.dump({
+                "connected_server": "last_conn_test",
+                "last_connect_ip": "192.168.0.1"
             }, f)
 
     @classmethod
@@ -25,38 +53,72 @@ class TestConnectionStateManager:
         except FileNotFoundError:
             pass
 
-    def test_get_correct_filepath(self):
-        with open(conn_state_filepath) as f:
-            metadata = json.load(f)
-
-        assert metadata["test_passed"] is True
+        try:
+            os.remove(last_conn_state_filepath)
+        except FileNotFoundError:
+            pass
 
     @pytest.mark.parametrize(
-        "filepath, e",
+        "metadata_type, output",
         [
-            ("./some/incorrect/path.json", FileNotFoundError),
-            ("", FileNotFoundError),
-            (False, json.decoder.JSONDecodeError),
+            (MetadataEnum.CONNECTION, "conn_test"),
+            (MetadataEnum.LAST_CONNECTION, "last_conn_test"),
+        ]
+    )
+    def test_get_correct_metadata(self, metadata_type, output):
+        metadata = self.csm.get_connection_metadata(metadata_type)
+        assert output == metadata[ConnectionMetadataEnum.SERVER]
+
+    @pytest.mark.parametrize(
+        "metadata_type, e",
+        [
+            ("random_metadata_type", exceptions.IllegalMetadataTypeError),
+            ("", exceptions.IllegalMetadataTypeError),
+            (False, exceptions.IllegalMetadataTypeError),
             ([], TypeError),
             ({}, TypeError)
         ]
     )
-    def test_get_incorrect_filepath(self, filepath, e):
-        self.csm.FILEPATH = filepath
+    def test_get_incorrect_metadata_type(self, metadata_type, e):
         with pytest.raises(e):
-            self.csm.get_connection_metadata()
+            self.csm.get_connection_metadata(metadata_type)
 
-    def test_correct_save_servername(self):
-        self.csm.FILEPATH = conn_state_filepath
-        self.csm.save_servername("test_server#100")
+    def test_conn_save_servername(self):
+        servername = "test_servername"
+        self.csm.save_servername(servername)
+        metadata = self.csm.get_connection_metadata(MetadataEnum.CONNECTION)
+        assert servername == metadata[ConnectionMetadataEnum.SERVER]
 
-    def test_correct_save_connected_time(self):
-        self.csm.FILEPATH = conn_state_filepath
+    def test_last_conn_save_servername(self):
+        servername = "test_last_conn_servername"
+        self.csm.save_servername(servername)
+        metadata = self.csm.get_connection_metadata(MetadataEnum.LAST_CONNECTION) # noqa
+        assert servername == metadata[ConnectionMetadataEnum.SERVER]
+
+    def test_conn_save_timestamp(self):
         self.csm.save_connected_time()
+        metadata = self.csm.get_connection_metadata(MetadataEnum.CONNECTION)
+        assert isinstance(
+            int(metadata[ConnectionMetadataEnum.CONNECTED_TIME]),
+            int
+        )
 
-    def test_remove_correct_connection_metadata(self):
-        self.csm.FILEPATH = conn_state_filepath
-        self.csm.remove_connection_metadata()
+    def test_conn_save_protocol(self):
+        protocol = "test_protocol"
+        self.csm.save_protocol(protocol)
+        metadata = self.csm.get_connection_metadata(MetadataEnum.CONNECTION)
+        assert protocol == metadata[ConnectionMetadataEnum.PROTOCOL]
 
-    def test_remove_incorrect_connection_metadata(self):
-        self.csm.remove_connection_metadata("missing/path/file.json")
+    def test_conn_save_server_ip(self):
+        ip = "192.168.1.192"
+        self.csm.save_server_ip(ip)
+        metadata = self.csm.get_connection_metadata(MetadataEnum.LAST_CONNECTION) # noqa
+        assert ip == metadata["last_connect_ip"]
+
+    def test_conn_get_server_ip(self):
+        ip = "192.168.1.192"
+        assert ip == self.csm.get_server_ip()
+
+    def test_remove_metadata(self):
+        self.csm.remove_connection_metadata(MetadataEnum.SERVER_CACHE)
+        assert not os.path.isfile(remove_test_filepath)

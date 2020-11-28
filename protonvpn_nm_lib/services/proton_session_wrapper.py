@@ -1,16 +1,22 @@
+import datetime
 import inspect
+import json
 import random
 import re
 import time
+import os
 import requests
 from proton.api import ProtonError, Session
 
 from .. import exceptions
-from ..enums import ProtonSessionAPIMethodEnum
+from ..constants import CACHED_SERVERLIST
+from ..enums import (MetadataActionEnum, MetadataEnum,
+                     ProtonSessionAPIMethodEnum)
 from ..logger import logger
+from .metadata_manager import MetadataManager
 
 
-class ProtonSessionWrapper(object):
+class ProtonSessionWrapper(MetadataManager):
     """Proton-client wrapper for improved error handling.
 
     If any HTTP status code is to be managed in a specific way,
@@ -30,13 +36,21 @@ class ProtonSessionWrapper(object):
         5002, 5003, 8002, 85032,
         10013
     ]
-    API_METHODS = [
+    API_CALL_TYPES = [
         ProtonSessionAPIMethodEnum.API_REQUEST,
         ProtonSessionAPIMethodEnum.AUTHENTICATE,
-        ProtonSessionAPIMethodEnum.LOGOUT
+        ProtonSessionAPIMethodEnum.LOGOUT,
+        ProtonSessionAPIMethodEnum.FULL_CACHE,
+        ProtonSessionAPIMethodEnum.LOADS_CACHE
     ]
     HTTP_STATUS_EXCEPTIONS = {}
     HTTP_STATUS_ERROR_HANDLERS = {}
+
+    FULL_CACHE_TIME_EXPIRE = 180
+    LOADS_CACHE_TIME_EXPIRE = 15
+    TIME_DEVIATION = 0.22
+
+    CACHED_SERVERLIST = CACHED_SERVERLIST
 
     def __init__(
         self, **kwargs
@@ -84,6 +98,123 @@ class ProtonSessionWrapper(object):
             error, ProtonSessionAPIMethodEnum.AUTHENTICATE, username, password
         )
 
+    def cache_servers(self):
+        """"Cache servers."""
+        if (
+            not self.check_metadata_exists(MetadataEnum.SERVER_CACHE)
+            or not os.path.isfile(self.CACHED_SERVERLIST)
+        ):
+            self.full_cache()
+            return
+
+        cache_metadata = self.manage_metadata(
+            MetadataActionEnum.GET, MetadataEnum.SERVER_CACHE
+        )
+
+        last_full_cache_time = self.convert_time(
+            float(cache_metadata["full_cache_timestamp"])
+        )
+        last_loads_cache_time = self.convert_time(
+            float(cache_metadata["loads_cache_timestamp"])
+        )
+
+        now_time = self.convert_time(time.time())
+
+        if now_time >= last_full_cache_time:
+            self.full_cache()
+        elif now_time >= last_loads_cache_time:
+            self.loads_cache()
+
+    def full_cache(self):
+        """Full servers cache."""
+        logger.info("Caching full servers")
+        api_response, error = self.call_api_method(
+            ProtonSessionAPIMethodEnum.FULL_CACHE,
+            "/vpn/logicals"
+        )
+        if not error:
+
+            metadata = {
+                "full_cache_timestamp": str(self.calculate_next_full_cache()),
+                "loads_cache_timestamp": str(self.calculate_next_loads_cache())
+            }
+            self.manage_metadata(
+                MetadataActionEnum.WRITE,
+                MetadataEnum.SERVER_CACHE,
+                metadata
+            )
+            self.store_server_cache(
+                api_response,
+                full_cache=True,
+                cache_path=self.CACHED_SERVERLIST
+            )
+            return
+
+        return self.exception_manager(
+            error, ProtonSessionAPIMethodEnum.FULL_CACHE
+        )
+
+    def loads_cache(self):
+        """Cache server loads."""
+        logger.info("Caching server loads")
+        api_response, error = self.call_api_method(
+            ProtonSessionAPIMethodEnum.FULL_CACHE,
+            "/vpn/loads"
+        )
+        if not error:
+            metadata = self.manage_metadata(
+                MetadataActionEnum.GET, MetadataEnum.SERVER_CACHE
+            )
+            metadata["loads_cache_timestamp"] = str(
+                self.calculate_next_loads_cache()
+            )
+            self.manage_metadata(
+                MetadataActionEnum.WRITE,
+                MetadataEnum.SERVER_CACHE,
+                metadata
+            )
+            self.store_server_cache(
+                api_response,
+                cache_path=self.CACHED_SERVERLIST
+            )
+            return
+
+        return self.exception_manager(
+            error, ProtonSessionAPIMethodEnum.FULL_CACHE
+        )
+
+    def store_server_cache(
+        self, cache, full_cache=False, cache_path=None
+    ):
+        if cache_path is None:
+            raise Exception("Invalid server cache path")
+
+        if full_cache:
+            with open(cache_path, "w") as f:
+                json.dump(cache, f)
+            return
+
+        with open(cache_path, "r") as f:
+            servers = json.load(f)
+
+        cache_dict = {v["ID"]: v for v in cache["LogicalServers"]}
+
+        for server in servers["LogicalServers"]:
+            if server["ID"] in cache_dict:
+                new_value = cache_dict.pop(server["ID"])
+                server["Load"] = new_value["Load"]
+                server["Score"] = new_value["Score"]
+
+        self.store_server_cache(
+            servers,
+            full_cache=True,
+            cache_path=cache_path
+        )
+
+    def yield_server_list(self, server_list):
+        for server in server_list["LogicalServers"]:
+            yield server
+
     def logout(self):
         """"Proxymethod for proton-client logout."""
         logger.info("Loggging out user")
@@ -119,6 +250,65 @@ class ProtonSessionWrapper(object):
     def dump(self):
         """Proxymethod for proton-client dump."""
         return self.proton_session.dump()
+
+    def calculate_next_full_cache(self):
+        update_interval = self.calculcate_update_interval(
+            self.FULL_CACHE_TIME_EXPIRE
+        )
+        return self.calculat_next_refresh(update_interval)
+
+    def calculate_next_loads_cache(self):
+        update_interval = self.calculcate_update_interval(
+            self.LOADS_CACHE_TIME_EXPIRE
+        )
+        return self.calculat_next_refresh(update_interval)
+
+    def calculat_next_refresh(self, update_interval, return_seconds=True):
+        now_time = time.time()
+        if return_seconds:
+            return now_time + update_interval.total_seconds()
+
+        return self.convert_time(
+            now_time + update_interval.total_seconds()
+        )
+
+    def calculcate_update_interval(self, minutes):
+        interval = datetime.timedelta(
+            minutes=minutes
+        )
+
+        return interval + self.calculate_interval_delta(interval)
+
+    def calculate_interval_delta(self, interval):
+        return datetime.timedelta(
+            seconds=interval.total_seconds() * self.TIME_DEVIATION * (
+                2.0 * random.random() - 1.0
+            )
+        )
+
+    def convert_time(self, epoch_time, return_full_date=True):
+        """Convert time from epoch to 24h.
+
+        Args:
+            epoch_time (string): time in seconds since epoch
+            return_full_date: whether to return full date and time
+
+        Returns:
+            string: YYYY-MM-dd hh:mm:ss (when) | hh:mm:ss (time since)
+        """
+        if return_full_date:
+            return datetime.datetime.fromtimestamp(epoch_time)
+
+        time_since = (
+            time.time()
+            - int(epoch_time)
+        )
+
+        return str(
+            datetime.timedelta(
+                seconds=time_since
+            )
+        ).split(".")[0]
 
     def flatten_tuple(self, _tuple):
         """Recursively flatten tuples."""
@@ -182,7 +372,11 @@ class ProtonSessionWrapper(object):
     def get_method(self, method, *args, **kwargs):
         logger.info("Calling {}".format(method))
 
-        if method == ProtonSessionAPIMethodEnum.API_REQUEST:
+        if (
+            method == ProtonSessionAPIMethodEnum.API_REQUEST
+            or method == ProtonSessionAPIMethodEnum.FULL_CACHE
+            or method == ProtonSessionAPIMethodEnum.LOADS_CACHE
+        ):
             return self.api_request(*args, **kwargs)
         elif method == ProtonSessionAPIMethodEnum.AUTHENTICATE:
             return self.authenticate(*args, **kwargs)
@@ -190,7 +384,7 @@ class ProtonSessionWrapper(object):
             return self.logout()
 
     def check_method_exists(self, method):
-        if method not in self.API_METHODS:
+        if method not in self.API_CALL_TYPES:
             logger.error(
                 "[!] UnhandledAPIMethod: Unknown \"{}\" method. "
                 " Raising exception.".format(method)
@@ -211,22 +405,24 @@ class ProtonSessionWrapper(object):
         self.check_method_exists(method)
         args = self.flatten_tuple(args)
 
-        api_methods = {
+        self.api_methods = {
             ProtonSessionAPIMethodEnum.API_REQUEST: self.proton_session.api_request, # noqa
             ProtonSessionAPIMethodEnum.AUTHENTICATE: self.proton_session.authenticate, # noqa
             ProtonSessionAPIMethodEnum.LOGOUT: self.proton_session.logout,
+            ProtonSessionAPIMethodEnum.FULL_CACHE: self.proton_session.api_request, # noqa
+            ProtonSessionAPIMethodEnum.LOADS_CACHE: self.proton_session.api_request, # noqa
         }
 
         error = False
         api_response = False
         logger.info(
             "Method: {} - {}".format(
-                method, api_methods[method]
+                method, self.api_methods[method]
             )
         )
 
         try:
-            api_response = api_methods[method](
+            api_response = self.api_methods[method](
                 *args, **api_kwargs
             )
         except ProtonError as e:

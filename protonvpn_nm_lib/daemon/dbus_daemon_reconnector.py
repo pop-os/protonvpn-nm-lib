@@ -43,6 +43,7 @@ from protonvpn_nm_lib.services.ipv6_leak_protection_manager import \
 from protonvpn_nm_lib.services.killswitch_manager import KillSwitchManager
 from protonvpn_nm_lib.services.user_configuration_manager import \
     UserConfigurationManager
+from protonvpn_nm_lib.enums import MetadataEnum
 
 
 class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
@@ -166,7 +167,7 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
 
             vpn_iface, settings = self.get_vpn_interface(True)
 
-            self.remove_connection_metadata()
+            self.remove_connection_metadata(MetadataEnum.CONNECTION)
 
             try:
                 vpn_iface.Delete()

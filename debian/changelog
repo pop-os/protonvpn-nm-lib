@@ -1,3 +1,11 @@
+protonvpn-nm-core (0.2.0-1) UNRELEASED; urgency=low
+
+  * Introduce new caching system
+  * Introducew new metadata manager
+  * Library will attempt to cache after connecting to VPN if previous cache is unsuccessful
+
+ -- Proton Technologies AG <opensource@proton.me>  Sat, 28 Nov 2020 12:55:04 +0000
+
 protonvpn-nm-core (0.1.0-9) UNRELEASED; urgency=low
 
   * Bugfixes

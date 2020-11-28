@@ -55,9 +55,10 @@ class UserSessionManager:
         try:
             return ProtonSessionWrapper.load(stored_session, self)
         except KeyError as e:
-            logger.exception("[!] Exception: {}".format(e))
+            logger.exception("[!] KeyError: {}".format(e))
             raise Exception(e)
         except Exception as e:
+            logger.exception("[!] Exception: {}".format(e))
             capture_exception(e)
 
     def store_data(
