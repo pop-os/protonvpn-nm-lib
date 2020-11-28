@@ -165,7 +165,9 @@ class ProtonSessionWrapper(MetadataManager):
             metadata = self.manage_metadata(
                 MetadataActionEnum.GET, MetadataEnum.SERVER_CACHE
             )
-            metadata["loads_cache_timestamp"] = str(int(time.time()))
+            metadata["loads_cache_timestamp"] = str(
+                self.calculate_next_loads_cache()
+            )
             self.manage_metadata(
                 MetadataActionEnum.WRITE,
                 MetadataEnum.SERVER_CACHE,
@@ -261,12 +263,13 @@ class ProtonSessionWrapper(MetadataManager):
         )
         return self.calculat_next_refresh(update_interval)
 
-    def calculat_next_refresh(self, update_interval, since_epoch=True):
-        if since_epoch:
-            return time.time() + update_interval.total_seconds()
+    def calculat_next_refresh(self, update_interval, return_seconds=True):
+        now_time = time.time()
+        if return_seconds:
+            return now_time + update_interval.total_seconds()
 
         return self.convert_time(
-            time.time() + update_interval.total_seconds()
+            now_time + update_interval.total_seconds()
         )
 
     def calculcate_update_interval(self, minutes):
