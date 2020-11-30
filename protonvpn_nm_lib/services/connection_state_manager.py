@@ -24,9 +24,18 @@ class ConnectionStateManager(MetadataManager):
         self.write_connection_metadata(MetadataEnum.CONNECTION, metadata)
 
     def save_protocol(self, protocol):
-        metadata = self.get_connection_metadata(MetadataEnum.CONNECTION)
-        metadata[ConnectionMetadataEnum.PROTOCOL] = protocol
-        self.write_connection_metadata(MetadataEnum.CONNECTION, metadata)
+        real_metadata = self.get_connection_metadata(MetadataEnum.CONNECTION)
+        last_metadata = self.get_connection_metadata(
+            MetadataEnum.LAST_CONNECTION
+        )
+
+        real_metadata[ConnectionMetadataEnum.PROTOCOL] = protocol
+        last_metadata[ConnectionMetadataEnum.PROTOCOL] = protocol
+
+        self.write_connection_metadata(MetadataEnum.CONNECTION, real_metadata)
+        self.write_connection_metadata(
+            MetadataEnum.LAST_CONNECTION, last_metadata
+        )
 
     def save_server_ip(self, ip):
         metadata = {
