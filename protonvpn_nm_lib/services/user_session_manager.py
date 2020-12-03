@@ -141,7 +141,9 @@ class UserSessionManager:
                 "Could not fetch from keychain: {}".format(e)
             )
         except Exception as e:
+            logger.exception("[!] KeyringError: {}".format(e))
             capture_exception(e)
+            raise exceptions.KeyringError(e)
 
         try:
             return self.json_session_transform(

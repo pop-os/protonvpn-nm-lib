@@ -1,11 +1,12 @@
-protonvpn-nm-core (0.2.0-2) UNRELEASED; urgency=low
+protonvpn-nm-core (0.2.0-3) UNRELEASED; urgency=low
 
   * Introduce new caching system
   * Introducew new metadata manager
-  * Library will attempt to cache after connecting to VPN if previous cache is unsuccessful
-  * Add support for reconnector feature
+  * Feaure: Library will attempt to cache after connecting to VPN if previous cache is unsuccessful
+  * Feature: Add support for reconnector feature
+  * Bugfix: Raise KeyringError if exception is thrown
 
- -- Proton Technologies AG <opensource@proton.me>  Mon, 30 Nov 2020 16:27:03 +0000
+ -- Proton Technologies AG <opensource@proton.me>  Thu, 03 Dec 2020 11:18:05 +0000
 
 protonvpn-nm-core (0.1.0-9) UNRELEASED; urgency=low
 
