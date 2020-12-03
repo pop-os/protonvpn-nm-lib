@@ -45,7 +45,7 @@ class JSONError(ProtonVPNException): # noqa
     """JSON generated errors"""
 
 
-class JSONSDataEmptyError(JSONError):
+class JSONDataEmptyError(JSONError):
     """JSON SessionData empty error"""
 
 

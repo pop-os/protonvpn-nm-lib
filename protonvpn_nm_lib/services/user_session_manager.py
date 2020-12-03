@@ -151,8 +151,8 @@ class UserSessionManager:
                 "load"
             )
         except json.decoder.JSONDecodeError as e:
-            logger.exception("[!] JSONSDataEmptyError: {}".format(e))
-            raise exceptions.JSONSDataEmptyError(e)
+            logger.exception("[!] JSONDataEmptyError: {}".format(e))
+            raise exceptions.JSONDataEmptyError(e)
         except TypeError as e:
             logger.exception("[!] JSONDataNoneError: {}".format(e))
             raise exceptions.JSONDataNoneError(e)
