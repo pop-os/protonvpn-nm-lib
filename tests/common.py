@@ -8,7 +8,8 @@ from protonvpn_nm_lib.enums import (ClientSuffixEnum, KillswitchStatusEnum,
                                     ProtonSessionAPIMethodEnum,
                                     UserSettingConnectionEnum,
                                     UserSettingStatusEnum,
-                                    ConnectionMetadataEnum)
+                                    ConnectionMetadataEnum,
+                                    ProtocolEnum)
 from protonvpn_nm_lib.services.certificate_manager import CertificateManager
 from protonvpn_nm_lib.services.connection_manager import ConnectionManager
 from protonvpn_nm_lib.services.connection_state_manager import \
