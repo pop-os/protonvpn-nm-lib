@@ -1,3 +1,9 @@
+protonvpn-nm-core (0.3.0-1) UNRELEASED; urgency=low
+
+  * Refactor server_manager
+
+ -- Proton Technologies AG <opensource@proton.me>  Mon, 07 Dec 2020 13:06:24 +0000
+
 protonvpn-nm-core (0.2.0-3) UNRELEASED; urgency=low
 
   * Introduce new caching system
