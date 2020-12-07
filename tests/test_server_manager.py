@@ -9,7 +9,7 @@ from common import (PWD, CACHED_OPENVPN_CERTIFICATE, MOCK_DATA_JSON,
                     MOCK_SESSIONDATA, RAW_SERVER_LIST, SERVERS,
                     TEST_CACHED_SERVERFILE, CertificateManager,
                     ProtonSessionWrapper, ServerManager, UserManager,
-                    MetadataEnum, exceptions)
+                    MetadataEnum, ProtocolEnum)
 
 TEST_KEYRING_SERVICE = "TestServerManager"
 TEST_KEYRING_SESSIONDATA = "TestServerManSessionData"
@@ -285,8 +285,11 @@ class TestIntegrationServerManager:
 
     def test_correct_generate_connect_fastest(self, mock_api_request):
         mock_api_request.side_effect = [RAW_SERVER_LIST]
-        servername, domain, ip = self.server_man.fastest(
-            self.MOCKED_SESSION, "tcp"
+        servername, domain, ip = self.server_man.generate(
+            _method=self.server_man.fastest,
+            command=["fastest", True],
+            session=self.MOCKED_SESSION,
+            protocol=ProtocolEnum.TCP
         )
         resp = False
         if servername and domain and ip:
@@ -294,152 +297,94 @@ class TestIntegrationServerManager:
         assert os.path.isfile(resp) is True
 
     @pytest.mark.parametrize(
-        "session,proto",
+        "session,proto,",
         [
-            ("", 5), (5, ""), (object, object),
-            ([], []), ({}, {}), (None, None),
-            (MOCKED_SESSION, {}), (MOCKED_SESSION, None)
+            ("", 5),
+            (5, ""),
+            (object, object),
+            ([], []),
+            ({}, {}),
+            (None, None),
+            (MOCKED_SESSION, {}),
+            (MOCKED_SESSION, None)
         ]
     )
-    def test_incorrect_generate_connect_fastest(
+    def test_incorrect_generate_session_proto(
         self, session, proto
     ):
         with pytest.raises(TypeError):
-            self.server_man.fastest(session, proto)
+            self.server_man.generate(
+                _method=self.server_man.fastest,
+                command=["fastest", True],
+                session=session,
+                protocol=proto
+            )
+
+    @pytest.mark.parametrize(
+        "method,command,error",
+        [
+            (None, None, TypeError),
+            ("string", "test", TypeError),
+            (object, object, TypeError),
+            ([], [], IndexError),
+            ({}, {}, TypeError),
+            (None, None, TypeError),
+            (MOCKED_SESSION, {}, TypeError),
+            (MOCKED_SESSION, None, TypeError)
+        ]
+    )
+    def test_incorrect_generate_method_command(
+        self, method, command, error
+    ):
+        with pytest.raises(error):
+            self.server_man.generate(
+                _method=method,
+                command=command,
+                session=self.MOCKED_SESSION,
+                protocol=ProtocolEnum.TCP
+            )
 
     def test_correct_generate_connect_country(self):
-        args = [["cc", "PT"]]
-        servername, domain, ip = self.server_man.country_f(
-            self.MOCKED_SESSION, "tcp", *args
+        servername, domain, ip = self.server_man.generate(
+            _method=self.server_man.country_f,
+            command=["cc", "PT"],
+            session=self.MOCKED_SESSION,
+            protocol=ProtocolEnum.TCP
         )
         resp = False
         if servername and domain and ip:
             resp = True
         assert os.path.isfile(resp) is True
-
-    @pytest.mark.parametrize(
-        "session,proto,args,excp",
-        [
-            ("", 5, "", TypeError),
-            (5, "", "", TypeError),
-            (object, object, object, TypeError),
-            ([], [], [], TypeError),
-            (MOCKED_SESSION, {}, {}, TypeError),
-            (MOCKED_SESSION, None, None, TypeError),
-            (MOCKED_SESSION, "tcp", "test", TypeError),
-            (MOCKED_SESSION, "tcp", "", IndexError),
-            (MOCKED_SESSION, "tcp", None, TypeError),
-            (MOCKED_SESSION, "tcp", [], IndexError),
-            (
-                MOCKED_SESSION, "tcp",
-                [["test", "ex"]], exceptions.EmptyServerListError
-            )
-        ]
-    )
-    def test_incorrect_generate_connect_country(
-        self, session, proto, args, excp
-    ):
-        with pytest.raises(excp):
-            self.server_man.country_f(session, proto, *args)
 
     def test_correct_generate_connect_direct(self, mock_api_request):
         mock_api_request.side_effect = [RAW_SERVER_LIST]
-        args = ["TEST#6"]
-        servername, domain, ip = self.server_man.direct(
-            self.MOCKED_SESSION, "tcp", *args
+        servername, domain, ip = self.server_man.generate(
+            _method=self.server_man.direct,
+            command=["servername", "TEST#6"],
+            session=self.MOCKED_SESSION,
+            protocol=ProtocolEnum.TCP
         )
-
-    def test_correct_generate_connect_direct_dialog(self, mock_api_request):
-        mock_api_request.side_effect = [RAW_SERVER_LIST]
-        args = ["TEST#5"]
-        servername, domain, ip = self.server_man.direct(
-            self.MOCKED_SESSION, "tcp", *args
-        )
-
-    @pytest.mark.parametrize(
-        "session,proto,args,excp",
-        [
-            ("", 5, "", TypeError),
-            (5, "", "", TypeError),
-            (object, object, object, TypeError),
-            ([], [], [], TypeError),
-            (None, None, None, TypeError),
-            (MOCKED_SESSION, {}, {}, TypeError),
-            (MOCKED_SESSION, None, None, TypeError),
-            (MOCKED_SESSION, "tcp", "test", exceptions.IllegalServername),
-            (MOCKED_SESSION, "tcp", "", ValueError),
-            (MOCKED_SESSION, "tcp", None, TypeError),
-            (MOCKED_SESSION, "tcp", "test", exceptions.IllegalServername),
-            (
-                MOCKED_SESSION, "tcp",
-                [["test", "ex"]], exceptions.IllegalServername
-            )
-        ]
-    )
-    def test_incorrect_generate_connect_direct(
-        self, session, proto, args, excp
-    ):
-        with pytest.raises(excp):
-            self.server_man.direct(session, proto, *args)
 
     def test_correct_generate_connect_feature(self):
-        args = [["sc", True]]
-        servername, domain, ip = self.server_man.feature_f(
-            self.MOCKED_SESSION, "tcp", *args
+        servername, domain, ip = self.server_man.generate(
+            _method=self.server_man.feature_f,
+            command=["sc", True],
+            session=self.MOCKED_SESSION,
+            protocol=ProtocolEnum.TCP
         )
         resp = False
         if servername and domain and ip:
             resp = True
         assert os.path.isfile(resp) is True
-
-    @pytest.mark.parametrize(
-        "session,proto,args,excp",
-        [
-            ("", 5, "", TypeError),
-            (5, "", "", TypeError),
-            (object, object, object, TypeError),
-            ([], [], [], TypeError),
-            (MOCKED_SESSION, {}, {}, ValueError),
-            (MOCKED_SESSION, None, None, TypeError),
-            (MOCKED_SESSION, "tcp", "test", TypeError),
-            (MOCKED_SESSION, "tcp", "", ValueError),
-            (MOCKED_SESSION, "tcp", None, TypeError),
-            (
-                MOCKED_SESSION, "tcp",
-                [["test", "ex"]], ValueError
-            )
-        ]
-    )
-    def test_incorrect_generate_connect_feature(
-        self, session, proto, args, excp
-    ):
-        with pytest.raises(excp):
-            self.server_man.feature_f(session, "tcp", *args)
 
     def test_correct_generate_connect_random(self):
-        servername, domain, ip = self.server_man.random_c(
-            self.MOCKED_SESSION, "tcp"
+        servername, domain, ip = self.server_man.generate(
+            _method=self.server_man.random_c,
+            command=["random", True],
+            session=self.MOCKED_SESSION,
+            protocol=ProtocolEnum.TCP
         )
         resp = False
         if servername and domain and ip:
             resp = True
         assert os.path.isfile(resp) is True
-
-    @pytest.mark.parametrize(
-        "session,proto,excp",
-        [
-            ("", 5, TypeError),
-            (5, "", TypeError),
-            (object, object, TypeError),
-            ([], [], TypeError),
-            (None, None, TypeError),
-            (MOCKED_SESSION, {}, TypeError),
-            (MOCKED_SESSION, None, TypeError),
-            (MOCKED_SESSION, "", ValueError)
-        ]
-    )
-    def test_incorrect_generate_connect_random(
-        self, session, proto, excp
-    ):
-        with pytest.raises(excp):
-            self.server_man.random_c(session, proto)
