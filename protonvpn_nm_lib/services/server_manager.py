@@ -12,7 +12,6 @@ from .proton_session_wrapper import ProtonSessionWrapper
 
 
 class ServerManager(ConnectionStateManager):
-    REFRESH_INTERVAL = 15
     killswitch_status = UserSettingStatusEnum.DISABLED
     CACHED_SERVERLIST = CACHED_SERVERLIST
 
@@ -20,30 +19,45 @@ class ServerManager(ConnectionStateManager):
         self.cert_manager = cert_manager
         self.user_manager = user_manager
 
-    def fastest(self, session, protocol, *_):
-        """Connect to fastest server.
+    def generate(self, _method, command, session, protocol):
+        """Generate server certificate.
 
         Args:
-            session (proton.api.Session): current user session
-            protocol (ProtocolEnum): ProtocolEnum.TCP, ProtocolEnum.UDP ...
-        Returns:
-            string: path to certificate file that is to be imported into nm
+            _method (ServerManager.method): ServerManager method object
+                ie: fastest, country_f, direct, etc
+            command (list): user selected input
+            session (ProtonSessionWrapper): current user session object
+            protcol (string): selected protocol
         """
-        logger.info("Generating data for fastest connect")
+        if not isinstance(command, list):
+            err_msg = "Incorrect object type, "\
+                "list is expected but got {} "\
+                "instead".format(type(command))
+            logger.error(
+                "[!] TypeError: {}. Raising exception.".format(err_msg)
+            )
+            raise TypeError(err_msg)
+        elif len(command) < 2 and (not command[0] or not command[1]):
+            err_msg = "The provided argument \"command\" is empty"
+            logger.error(
+                "[!] ValueError: {}. Raising exception.".format(err_msg)
+            )
+            raise ValueError(err_msg)
+
         self.validate_session_protocol(session, protocol)
+
         if not self.killswitch_status == KillswitchStatusEnum.HARD:
             session.cache_servers()
 
+        if isinstance(command[1], bool) and command[1] is True:
+            command = [command[::-1]][0]
+
         servers = self.extract_server_list()
-        excluded_features = [
-            FeatureEnum.SECURE_CORE, FeatureEnum.TOR, FeatureEnum.P2P
-        ]
-        filtered_servers = self.filter_servers(
-            session, servers, exclude_features=excluded_features
-        )
-        servername, domain, server_feature = self.get_fastest_server(
-            filtered_servers
-        )
+
+        (
+            servername, domain,
+            server_feature, filtered_servers
+        ) = _method(session, servers, command[1])
 
         entry_IP, exit_IP = self.get_connection_ips(
             servername, servers, filtered_servers
@@ -59,48 +73,45 @@ class ServerManager(ConnectionStateManager):
             servername, entry_IP
         ), domain, entry_IP
 
-    def country_f(self, session, protocol, *args):
-        """Connect to fastest server in a specific country.
+    def fastest(self, session, servers, _):
+        """Generate certificate for fastest server.
 
         Args:
-            session (proton.api.Session): current user session
-            protocol (ProtocolEnum): ProtocolEnum.TCP, ProtocolEnum.UDP ...
-            args (tuple(list)): country code [PT|SE|CH]
+            session (ProtonSessionWrapper): current user session object
+            servers (list): server list
         Returns:
             string: path to certificate file that is to be imported into nm
         """
-        self.validate_session_protocol(session, protocol)
-        if not isinstance(args, tuple):
-            err_msg = "Incorrect object type, "\
-                "tuple is expected but got {} instead".format(type(args))
+        excluded_features = [
+            FeatureEnum.SECURE_CORE, FeatureEnum.TOR, FeatureEnum.P2P
+        ]
+        filtered_servers = self.filter_servers(
+            session, servers, exclude_features=excluded_features
+        )
+        if len(filtered_servers) == 0:
+            err_msg = "No available servers could be found."
             logger.error(
-                "[!] TypeError: {}. Raising exception.".format(err_msg)
+                "[!] EmptyServerListError: {}. Raising exception.".format(
+                    err_msg
+                )
             )
-            raise TypeError(err_msg)
-        elif not isinstance(args[0], list):
-            err_msg = "Incorrect object type, "\
-                "list is expected but got {} instead".format(type(args[0]))
-            logger.error(
-                "[!] TypeError: {}. Raising exception.".format(err_msg)
-            )
-            raise TypeError(err_msg)
+            raise exceptions.EmptyServerListError(err_msg)
 
-        try:
-            country_code = args[0][1].strip().upper()
-        except IndexError as e:
-            logger.exception("[!] IndexError: {}".format(e))
-            raise IndexError(
-                "Incorrect object type, "
-                + "tuple(list) is expected but got {} ".format(args)
-                + "instead"
-            )
-        except Exception as e:
-            logger.exception("[!] Unknown exception: {}".format(e))
-            capture_exception(e)
+        # Add new element to tuple
+        return self.get_fastest_server(
+            filtered_servers
+        ) + (filtered_servers, )
 
-        if not self.killswitch_status == KillswitchStatusEnum.HARD:
-            session.cache_servers()
-        servers = self.extract_server_list()
+    def country_f(self, session, servers, country_code):
+        """Generate certificate for fastest server in a specific country.
+
+        Args:
+            session (ProtonSessionWrapper): current user session object
+            servers (list): server list
+            country_code (string): country code [PT|SE|CH ...]
+        Returns:
+            string: path to certificate file that is to be imported into nm
+        """
         excluded_features = [
             FeatureEnum.TOR, FeatureEnum.SECURE_CORE
         ]
@@ -122,72 +133,35 @@ class ServerManager(ConnectionStateManager):
             )
             raise exceptions.EmptyServerListError(err_msg)
 
-        servername, domain, server_feature = self.get_fastest_server(
+        # Add new element to tuple
+        return self.get_fastest_server(
             filtered_servers
-        )
+        ) + (filtered_servers, )
 
-        entry_IP, exit_IP = self.get_connection_ips(
-            servername, servers, filtered_servers
-        )
-
-        try:
-            domain = self.get_matching_domain(servers, exit_IP, server_feature)
-        except KeyError:
-            pass
-
-        return self.cert_manager.generate_vpn_cert(
-            protocol, session,
-            servername, entry_IP
-        ), domain, entry_IP
-
-    def direct(self, session, protocol, *args):
-        """Connect directly to specified server.
+    def direct(self, session, servers, servername):
+        """Generate certificate to specified server.
 
         Args:
-            session (proton.api.Session): current user session
-            protocol (ProtocolEnum): ProtocolEnum.TCP, ProtocolEnum.UDP ...
-            args (tuple(list)|tuple): servername to connect to
+            session (ProtonSessionWrapper): current user session object
+            servers (list): server list
+            servername (string): servername to connect
         Returns:
             string: path to certificate file that is to be imported into nm
         """
-        self.validate_session_protocol(session, protocol)
-        if not isinstance(args, tuple):
-            err_msg = "Incorrect object type, "\
-                "tuple is expected but got {} "\
-                "instead".format(type(args))
-            logger.error(
-                "[!] TypeError: {}. Raising exception.".format(err_msg)
-            )
-            raise TypeError(err_msg)
-        elif (
-            isinstance(args, tuple) and len(args) == 0
-        ) or (
-            isinstance(args, str) and len(args) == 0
-        ):
-            err_msg = "The provided argument \"args\" is empty"
-            logger.error(
-                "[!] ValueError: {}. Raising exception.".format(err_msg)
-            )
-            raise ValueError(err_msg)
-
-        user_input = args[0]
         # This check is done since when a user uses the dialog
         # the input passed diferently, thus it needs to be checked.
-        if isinstance(user_input, list):
-            user_input = user_input[1]
+        if isinstance(servername, list):
+            servername = servername[1]
 
-        servername = user_input.strip().upper()
+        servername = servername.strip().upper()
 
-        if not self.is_servername_valid(user_input):
-            err_msg = "Invalid servername {}".format(user_input)
+        if not self.is_servername_valid(servername):
+            err_msg = "Invalid servername {}".format(servername)
             logger.error(
                 "[!] IllegalServername: {}. Raising exception.".format(err_msg)
             )
             raise exceptions.IllegalServername(err_msg)
 
-        if not self.killswitch_status == KillswitchStatusEnum.HARD:
-            session.cache_servers()
-        servers = self.extract_server_list()
         filtered_servers = self.filter_servers(
             session,
             servers,
@@ -205,59 +179,21 @@ class ServerManager(ConnectionStateManager):
             )
             raise exceptions.EmptyServerListError(err_msg)
 
-        entry_IP, exit_IP = self.get_connection_ips(
-            servername, servers, filtered_servers
-        )
-
-        servername, domain, server_feature = self.get_random_server(
+        # Add new element to tuple
+        return self.get_random_server(
             filtered_servers
-        )
+        ) + (filtered_servers, )
 
-        try:
-            domain = self.get_matching_domain(servers, exit_IP, server_feature)
-        except KeyError:
-            pass
-
-        return self.cert_manager.generate_vpn_cert(
-            protocol, session,
-            servername, entry_IP
-        ), domain, entry_IP
-
-    def feature_f(self, session, protocol, *args):
-        """Connect to fastest server based on specified feature.
+    def feature_f(self, session, servers, feature):
+        """Generate certificate to fastest server based on specified feature.
 
         Args:
-            session (proton.api.Session): current user session
-            protocol (ProtocolEnum): ProtocolEnum.TCP, ProtocolEnum.UDP ...
-            args (tuple(list)): literal feature [p2p|tor|sc]
+            session (ProtonSessionWrapper): current user session object
+            servers (list): server list
+            feature (string): literal feature [p2p|tor|sc]
         Returns:
             string: path to certificate file that is to be imported into nm
         """
-        self.validate_session_protocol(session, protocol)
-        if not isinstance(args, tuple):
-            err_msg = "Incorrect object type, "\
-                "tuple is expected but got {} "\
-                "instead".format(type(args))
-            logger.error(
-                "[!] TypeError: {}. Raising exception.".format(err_msg)
-            )
-            raise TypeError(err_msg)
-        elif len(args) == 0:
-            err_msg = "The provided argument \"args\" is empty"
-            logger.error(
-                "[!] ValueError: {}. Raising exception.".format(err_msg)
-            )
-            raise ValueError(err_msg)
-        elif not isinstance(args[0], list):
-            err_msg = "Incorrect object type, "\
-                "list is expected but got {} "\
-                "instead".format(type(args))
-            logger.error(
-                "[!] TypeError: {}. Raising exception.".format(err_msg)
-            )
-            raise TypeError(err_msg)
-
-        literal_feature = args[0][0].strip().lower()
         allowed_features = {
             "normal": FeatureEnum.NORMAL,
             "sc": FeatureEnum.SECURE_CORE,
@@ -268,7 +204,7 @@ class ServerManager(ConnectionStateManager):
         }
 
         try:
-            feature = allowed_features[literal_feature]
+            feature = allowed_features[feature]
         except KeyError as e:
             logger.exception("[!] ValueError: {}".format(e))
             raise ValueError("Feature is non-existent")
@@ -276,13 +212,10 @@ class ServerManager(ConnectionStateManager):
             logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
 
-        if not self.killswitch_status == KillswitchStatusEnum.HARD:
-            session.cache_servers()
-        servers = self.extract_server_list()
+        # exclude all other features except the selected one
         filtered_servers = self.filter_servers(
             session,
             servers,
-            # exclude all other features except the selected one
             exclude_features=[
                 v
                 for k, v in allowed_features.items()
@@ -292,7 +225,7 @@ class ServerManager(ConnectionStateManager):
 
         if len(filtered_servers) == 0:
             err_msg = "No servers found with the {} feature".format(
-                literal_feature
+                feature
             )
             logger.error(
                 "[!] EmptyServerListError: {}. Raising exception.".format(
@@ -301,56 +234,25 @@ class ServerManager(ConnectionStateManager):
             )
             raise exceptions.EmptyServerListError(err_msg)
 
-        servername, domain, server_feature = self.get_fastest_server(
+        # Add new element to tuple
+        return self.get_fastest_server(
             filtered_servers
-        )
+        ) + (filtered_servers, )
 
-        entry_IP, exit_IP = self.get_connection_ips(
-            servername, servers, filtered_servers
-        )
-
-        try:
-            domain = self.get_matching_domain(servers, exit_IP, server_feature)
-        except KeyError:
-            pass
-
-        return self.cert_manager.generate_vpn_cert(
-            protocol, session,
-            servername, entry_IP
-        ), domain, entry_IP
-
-    def random_c(self, session, protocol, *_):
-        """Connect to a random server.
+    def random_c(self, session, servers, _):
+        """Generate certificate to connect to random server.
 
         Args:
-            session (proton.api.Session): current user session
-            protocol (ProtocolEnum): ProtocolEnum.TCP, ProtocolEnum.UDP ...
+            session (ProtonSessionWrapper): current user session object
+            servers (list): server list
         Returns:
             string: path to certificate file that is to be imported into nm
         """
-        self.validate_session_protocol(session, protocol)
-        if not self.killswitch_status == KillswitchStatusEnum.HARD:
-            session.cache_servers()
-        servers = self.extract_server_list()
         filtered_servers = self.filter_servers(session, servers)
-
-        servername, domain, server_feature = self.get_random_server(
+        # Add new element to tuple
+        return self.get_random_server(
             filtered_servers
-        )
-
-        entry_IP, exit_IP = self.get_connection_ips(
-            servername, servers, filtered_servers
-        )
-
-        try:
-            domain = self.get_matching_domain(servers, exit_IP, server_feature)
-        except KeyError:
-            pass
-
-        return self.cert_manager.generate_vpn_cert(
-            protocol, session,
-            servername, entry_IP
-        ), domain, entry_IP
+        ) + (filtered_servers, )
 
     def get_connection_ips(self, servername, servers, filtered_servers):
         logger.info("Getting connection IP")
@@ -382,7 +284,7 @@ class ServerManager(ConnectionStateManager):
             raise KeyError("No such server")
 
     def validate_session_protocol(self, session, protocol):
-        """Validates session and protocol
+        """Validates session and protocol.
 
         Args:
             session (proton.api.Session): current user session
@@ -424,7 +326,7 @@ class ServerManager(ConnectionStateManager):
         self, servername, servers,
         server_certificate_check=True
     ):
-        """Exctract IPs from server list, based on servername.
+        """Extract IPs from server list, based on servername.
 
         Args:
             servername (string): servername [PT#1]
@@ -577,7 +479,7 @@ class ServerManager(ConnectionStateManager):
         # is_secure_core = True if random_server["Features"] == 1 else False
         server_feature = random_server["Features"]
 
-        return (fastest_server_name, fastest_server_domain, server_feature)
+        return fastest_server_name, fastest_server_domain, server_feature
 
     def extract_server_value(
         self, servername,
