@@ -16,7 +16,7 @@ TEST_KEYRING_SESSIONDATA = "TestServerManSessionData"
 TEST_KEYRING_USERDATA = "TestServerManUserData"
 TEST_KEYRING_PROTON_USER = "TestServerManUser"
 TEST_CACHED_SERVERLIST = os.path.join(
-    PWD, "test_server_manager_server_cache.json"
+    PWD, "test_server_manager_server_cache2.json"
 )
 conn_state_filepath = os.path.join(
     PWD, "test_server_manager.json"
@@ -105,17 +105,16 @@ class TestUnitServerManager:
         mock_get_patcher.stop()
 
     @pytest.mark.parametrize("servername", ["#", "", 5, None, {}, []])
-    def test_get_incorrect_generate_ip_list(self, servername):
+    def test_get_incorrect_get_pyshical_ip_list(self, servername):
         with pytest.raises(IndexError):
-            self.server_man.generate_ip_list(servername, SERVERS)
+            self.server_man.get_pyshical_ip_list(servername, SERVERS)
 
-    def test_get_correct_generate_ip_list(self):
-        self.server_man.generate_ip_list("TEST#5", SERVERS)
+    def test_get_correct_get_pyshical_ip_list(self):
+        self.server_man.get_pyshical_ip_list("TEST#5", SERVERS)
 
     @pytest.fixture
     def empty_server_pool(self):
-        feature = 2
-        server_pool = [s for s in SERVERS if s["Features"] == feature]
+        server_pool = []
         return server_pool
 
     @pytest.fixture
@@ -193,10 +192,12 @@ class TestUnitServerManager:
             "PT#5",
             "SE-PT#123",
             "CH#18-TOR",
-            "US-CA#999"
+            "US-CA#999",
+            "CH-FI#8",
+            "ch-fi#8",
         ]
     )
-    def test_correct_servernames(self, servername):
+    def test_valid_servername(self, servername):
         resp = self.server_man.is_servername_valid(servername)
         assert resp is True
 
@@ -212,7 +213,7 @@ class TestUnitServerManager:
             "5",
         ]
     )
-    def test_incorrect_servernames(self, servername):
+    def test_invalid_servername(self, servername):
         resp = self.server_man.is_servername_valid(servername)
         assert resp is False
 
@@ -264,11 +265,14 @@ class TestIntegrationServerManager:
             store_user_data=False
         )
         with open(TEST_CACHED_SERVERLIST, "w") as c:
-            json.dump(RAW_SERVER_LIST, c)
+            json.dump(RAW_SERVER_LIST, c, indent=4)
 
     @classmethod
     def teardown_class(cls):
-        os.remove(CACHED_OPENVPN_CERTIFICATE)
+        try:
+            os.remove(CACHED_OPENVPN_CERTIFICATE)
+        except FileNotFoundError:
+            pass
         um.delete_stored_data(TEST_KEYRING_PROTON_USER, TEST_KEYRING_SERVICE)
         um.delete_stored_data(TEST_KEYRING_SESSIONDATA, TEST_KEYRING_SERVICE)
         um.delete_stored_data(TEST_KEYRING_USERDATA, TEST_KEYRING_SERVICE)
@@ -285,106 +289,75 @@ class TestIntegrationServerManager:
 
     def test_correct_generate_connect_fastest(self, mock_api_request):
         mock_api_request.side_effect = [RAW_SERVER_LIST]
-        servername, domain, ip = self.server_man.generate(
-            _method=self.server_man.fastest,
-            command=["fastest", True],
-            session=self.MOCKED_SESSION,
-            protocol=ProtocolEnum.TCP
+        servername, *rest = self.server_man.get_config_for_fastest_server(
+            self.MOCKED_SESSION,
         )
-        resp = False
-        if servername and domain and ip:
-            resp = True
-        assert os.path.isfile(resp) is True
-
-    @pytest.mark.parametrize(
-        "session,proto,",
-        [
-            ("", 5),
-            (5, ""),
-            (object, object),
-            ([], []),
-            ({}, {}),
-            (None, None),
-            (MOCKED_SESSION, {}),
-            (MOCKED_SESSION, None)
-        ]
-    )
-    def test_incorrect_generate_session_proto(
-        self, session, proto
-    ):
-        with pytest.raises(TypeError):
-            self.server_man.generate(
-                _method=self.server_man.fastest,
-                command=["fastest", True],
-                session=session,
-                protocol=proto
-            )
-
-    @pytest.mark.parametrize(
-        "method,command,error",
-        [
-            (None, None, TypeError),
-            ("string", "test", TypeError),
-            (object, object, TypeError),
-            ([], [], IndexError),
-            ({}, {}, TypeError),
-            (None, None, TypeError),
-            (MOCKED_SESSION, {}, TypeError),
-            (MOCKED_SESSION, None, TypeError)
-        ]
-    )
-    def test_incorrect_generate_method_command(
-        self, method, command, error
-    ):
-        with pytest.raises(error):
-            self.server_man.generate(
-                _method=method,
-                command=command,
-                session=self.MOCKED_SESSION,
-                protocol=ProtocolEnum.TCP
-            )
+        assert servername == "TEST_IPV6#11"
 
     def test_correct_generate_connect_country(self):
-        servername, domain, ip = self.server_man.generate(
-            _method=self.server_man.country_f,
-            command=["cc", "PT"],
+        (
+            servername,
+            *rest
+        ) = self.server_man.get_config_for_fastest_server_in_country(
             session=self.MOCKED_SESSION,
-            protocol=ProtocolEnum.TCP
+            country_code="PT",
         )
-        resp = False
-        if servername and domain and ip:
-            resp = True
-        assert os.path.isfile(resp) is True
+        assert servername == "TEST#6"
 
     def test_correct_generate_connect_direct(self, mock_api_request):
         mock_api_request.side_effect = [RAW_SERVER_LIST]
-        servername, domain, ip = self.server_man.generate(
-            _method=self.server_man.direct,
-            command=["servername", "TEST#6"],
+        server = "TEST#6"
+        (
+            servername,
+            *rest
+        ) = self.server_man.get_config_for_specific_server(
             session=self.MOCKED_SESSION,
-            protocol=ProtocolEnum.TCP
+            servername=server,
         )
+        assert servername == server
 
-    def test_correct_generate_connect_feature(self):
-        servername, domain, ip = self.server_man.generate(
-            _method=self.server_man.feature_f,
-            command=["sc", True],
+    @pytest.mark.parametrize(
+        "feature,servername", [
+            ("sc", "TEST_SECURE_CORE#7"),
+            ("tor", "TEST_TOR#8"),
+            ("p2p", "TEST_P2P#9"),
+            ("stream", "TEST_STREAMING#10"),
+            ("ipv6", "TEST_IPV6#11")
+        ]
+    )
+    def test_correct_generate_connect_feature(self, feature, servername):
+        (
+            _servername,
+            *rest
+        ) = self.server_man.get_config_for_fastest_server_with_specific_feature( # noqa
             session=self.MOCKED_SESSION,
-            protocol=ProtocolEnum.TCP
+            feature=feature,
         )
-        resp = False
-        if servername and domain and ip:
-            resp = True
-        assert os.path.isfile(resp) is True
+        assert servername == _servername
 
     def test_correct_generate_connect_random(self):
-        servername, domain, ip = self.server_man.generate(
-            _method=self.server_man.random_c,
-            command=["random", True],
+        servername, *rest = self.server_man.get_config_for_random_server(
             session=self.MOCKED_SESSION,
-            protocol=ProtocolEnum.TCP
         )
-        resp = False
-        if servername and domain and ip:
-            resp = True
-        assert os.path.isfile(resp) is True
+        assert servername in [server["Name"] for server in SERVERS]
+
+    def test_correct_generate_server_certificate(self):
+        (
+            servername,
+            server_domain,
+            server_feature,
+            filtered_servers,
+            servers
+        ) = self.server_man.get_config_for_fastest_server(
+            session=self.MOCKED_SESSION,
+        )
+        (
+            cert_fp,
+            matching_domain,
+            entry_IP
+        ) = self.server_man.generate_server_certificate(
+            servername, server_domain, server_feature,
+            ProtocolEnum.TCP, servers, filtered_servers
+        )
+
+        assert True == (True if os.path.isfile(cert_fp) else False)
