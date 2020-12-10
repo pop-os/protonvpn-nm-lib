@@ -1,3 +1,10 @@
+protonvpn-nm-core (0.3.0-1) UNRELEASED; urgency=low
+
+  * Refactor server_manager
+  * Bugfix: lowercase servername now passes regex (ie: ch-fi#1)
+
+ -- Proton Technologies AG <opensource@proton.me>  Thu, 10 Dec 2020 12:46:19 +0000
+
 protonvpn-nm-core (0.2.0-3) UNRELEASED; urgency=low
 
   * Introduce new caching system
