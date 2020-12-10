@@ -124,7 +124,7 @@ SERVERS = [
         ], "Load": 6, "Score": 1.00283101
     },
     {
-        "Name": "TEST#7",
+        "Name": "TEST_SECURE_CORE#7",
         "EntryCountry": "PT",
         "ExitCountry": "PT",
         "Domain": "pt-99.webtest.com",
@@ -144,7 +144,122 @@ SERVERS = [
                 "ID": "ID7",
                 "Status": 1
             }
-        ], "Load": 6, "Score": 1.00283101
+        ], "Load": 6, "Score": 1.00183101
+    },
+    {
+        "Name": "TEST_TOR#8",
+        "EntryCountry": "CH",
+        "ExitCountry": "CH",
+        "Domain": "ch-99.webtest.com",
+        "Tier": 2,
+        "Features": 2,
+        "Region": "null",
+        "City": "Lisbon",
+        "ID": "ID8",
+        "Location": {
+            "Lat": 38.72, "Long": -9.13
+        },
+        "Status": 1,
+        "Servers": [
+            {
+                "EntryIP": "255.255.255.0", "ExitIP": "255.255.255.0",
+                "Domain": "ch-99.webtest.com",
+                "ID": "ID8",
+                "Status": 1
+            }
+        ], "Load": 6, "Score": 1.00083101
+    },
+    {
+        "Name": "TEST_P2P#9",
+        "EntryCountry": "CH",
+        "ExitCountry": "CH",
+        "Domain": "ch-99.webtest.com",
+        "Tier": 2,
+        "Features": 4,
+        "Region": "null",
+        "City": "Lisbon",
+        "ID": "ID8",
+        "Location": {
+            "Lat": 38.72, "Long": -9.13
+        },
+        "Status": 1,
+        "Servers": [
+            {
+                "EntryIP": "255.255.255.0", "ExitIP": "255.255.255.0",
+                "Domain": "ch-99.webtest.com",
+                "ID": "ID8",
+                "Status": 1
+            }
+        ], "Load": 6, "Score": 1.00073101
+    },
+    {
+        "Name": "TEST_STREAMING#10",
+        "EntryCountry": "CH",
+        "ExitCountry": "CH",
+        "Domain": "ch-99.webtest.com",
+        "Tier": 2,
+        "Features": 8,
+        "Region": "null",
+        "City": "Lisbon",
+        "ID": "ID8",
+        "Location": {
+            "Lat": 38.72, "Long": -9.13
+        },
+        "Status": 1,
+        "Servers": [
+            {
+                "EntryIP": "255.255.255.0", "ExitIP": "255.255.255.0",
+                "Domain": "ch-99.webtest.com",
+                "ID": "ID8",
+                "Status": 1
+            }
+        ], "Load": 6, "Score": 1.00063101
+    },
+    {
+        "Name": "TEST_IPV6#11",
+        "EntryCountry": "CH",
+        "ExitCountry": "CH",
+        "Domain": "ch-99.webtest.com",
+        "Tier": 2,
+        "Features": 16,
+        "Region": "null",
+        "City": "Lisbon",
+        "ID": "ID8",
+        "Location": {
+            "Lat": 38.72, "Long": -9.13
+        },
+        "Status": 1,
+        "Servers": [
+            {
+                "EntryIP": "255.255.255.0", "ExitIP": "255.255.255.0",
+                "Domain": "ch-99.webtest.com",
+                "ID": "ID8",
+                "Status": 1
+            }
+        ], "Load": 6, "Score": 1.00053101
+    },
+    {
+        "Name": "TEST_DISABLED#12",
+        "EntryCountry": "CH",
+        "ExitCountry": "CH",
+        "Domain": "ch-99.webtest.com",
+        "Tier": 0,
+        "Features": 0,
+        "Region": "null",
+        "City": "Lisbon",
+        "ID": "ID8",
+        "Location": {
+            "Lat": 38.72, "Long": -9.13
+        },
+        "Status": 0,
+        "Servers": [
+            {
+                "EntryIP": "255.255.255.0", "ExitIP": "255.255.255.0",
+                "Domain": "ch-99.webtest.com",
+                "ID": "ID8",
+                "Status": 1
+            }
+        ], "Load": 6, "Score": 1.00043101
     },
 ]
 
