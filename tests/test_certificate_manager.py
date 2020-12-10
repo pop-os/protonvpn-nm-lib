@@ -34,27 +34,26 @@ class TestCertificateManager:
         shutil.rmtree(TEST_CERTS)
 
     @pytest.mark.parametrize(
-        "protocol,session,servername,servers,cert_path",
+        "protocol,,servername,servers,cert_path",
         [
             (
-                "tcp", session,
+                "tcp",
                 "test#5", SERVERS,
                 os.path.join(TEST_CERTS, "test#5.ovpn")
             ),
             (
-                "udp", session,
+                "udp",
                 "test#6", SERVERS,
                 os.path.join(TEST_CERTS, "test#6.ovpn")
             ),
         ]
     )
     def test_correct_generate_vpn_cert(
-        self, protocol, session,
+        self, protocol,
         servername, servers, cert_path
     ):
         self.cert_man.generate_vpn_cert(
             protocol,
-            session,
             servername,
             servers,
             cert_path
@@ -76,54 +75,10 @@ class TestCertificateManager:
     def test_incorrect_protocol_generate_vpn_cert(self, protocol, excp):
         with pytest.raises(excp):
             self.cert_man.generate_vpn_cert(
-                protocol, session,
+                protocol,
                 "test#5", SERVERS,
                 os.path.join(TEST_CERTS, "test#5.ovpn"),
             )
-
-    @pytest.mark.parametrize(
-        "session,excp",
-        [
-            ("session", TypeError),
-            ("", TypeError),
-            (2, TypeError),
-            ({}, TypeError),
-            ([], TypeError),
-            (None, TypeError),
-            (False, TypeError),
-        ]
-    )
-    def test_incorrect_session_generate_vpn_cert(self, session, excp):
-        with pytest.raises(excp):
-            self.cert_man.generate_vpn_cert(
-                "tcp", session,
-                "test#6", SERVERS,
-                os.path.join(TEST_CERTS, "test#6.ovpn"),
-            )
-
-    # @pytest.mark.parametrize(
-    #     "servername,excp",
-    #     [
-    #         ("_", exceptions.IllegalServername),
-    #         ("test_server@13", exceptions.IllegalServername),
-    #         ("", exceptions.IllegalServername),
-    #         ("#42", exceptions.IllegalServername),
-    #         ("234#", exceptions.IllegalServername),
-    #         ("hello#", exceptions.IllegalServername),
-    #         (56, TypeError),
-    #         ({}, TypeError),
-    #         ([], TypeError),
-    #         (None, TypeError),
-    #         (False, TypeError),
-    #     ]
-    # )
-    # def test_incorrect_servername_generate_vpn_cert(self, servername, excp):
-    #     with pytest.raises(excp):
-    #         self.cert_man.generate_vpn_cert(
-    #             "tcp", session,
-    #             servername, SERVERS,
-    #             os.path.join(TEST_CERTS, "test#5.ovpn"),
-    #         )
 
     @pytest.mark.parametrize(
         "servers,excp",
@@ -141,7 +96,7 @@ class TestCertificateManager:
     def test_incorrect_servers_generate_vpn_cert(self, servers, excp):
         with pytest.raises(excp):
             self.cert_man.generate_vpn_cert(
-                "tcp", session,
+                "tcp",
                 "test#5", servers,
                 os.path.join(TEST_CERTS, "test#5.ovpn"),
             )
