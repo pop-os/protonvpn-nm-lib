@@ -3,13 +3,12 @@ import os
 
 from protonvpn_nm_lib import exceptions
 from protonvpn_nm_lib.constants import CACHED_OPENVPN_CERTIFICATE, ENV_CI_NAME
-from protonvpn_nm_lib.enums import (ClientSuffixEnum, KillswitchStatusEnum,
-                                    MetadataActionEnum, MetadataEnum,
+from protonvpn_nm_lib.enums import (ClientSuffixEnum, ConnectionMetadataEnum,
+                                    KillswitchStatusEnum, MetadataActionEnum,
+                                    MetadataEnum, ProtocolEnum,
                                     ProtonSessionAPIMethodEnum,
-                                    UserSettingConnectionEnum,
-                                    UserSettingStatusEnum,
-                                    ConnectionMetadataEnum,
-                                    ProtocolEnum)
+                                    UserSettingConnectionEnum, UserSettingEnum,
+                                    UserSettingStatusEnum)
 from protonvpn_nm_lib.services.certificate_manager import CertificateManager
 from protonvpn_nm_lib.services.connection_manager import ConnectionManager
 from protonvpn_nm_lib.services.connection_state_manager import \
@@ -17,14 +16,16 @@ from protonvpn_nm_lib.services.connection_state_manager import \
 from protonvpn_nm_lib.services.ipv6_leak_protection_manager import \
     IPv6LeakProtectionManager
 from protonvpn_nm_lib.services.killswitch_manager import KillSwitchManager
+from protonvpn_nm_lib.services.metadata_manager import MetadataManager
 from protonvpn_nm_lib.services.plugin_manager import PluginManager
 from protonvpn_nm_lib.services.proton_session_wrapper import \
     ProtonSessionWrapper
 from protonvpn_nm_lib.services.reconnector_manager import ReconnectorManager
 from protonvpn_nm_lib.services.server_manager import ServerManager
+from protonvpn_nm_lib.services.user_configuration_manager import \
+    UserConfigurationManager
 from protonvpn_nm_lib.services.user_manager import UserManager
 from protonvpn_nm_lib.services.user_session_manager import UserSessionManager
-from protonvpn_nm_lib.services.metadata_manager import MetadataManager
 
 MOCK_SESSIONDATA = {
     "api_url": "https://localhost",
