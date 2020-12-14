@@ -16,9 +16,14 @@ from ..enums import (
 
 
 class UserConfigurationManager():
-    def __init__(self):
-        if not os.path.isdir(PROTON_XDG_CONFIG_HOME):
-            os.makedirs(PROTON_XDG_CONFIG_HOME)
+    def __init__(
+        self,
+        user_config_dir=PROTON_XDG_CONFIG_HOME,
+        user_config_fp=USER_CONFIGURATIONS_FILEPATH
+    ):
+        self.user_config_filepath = user_config_fp
+        if not os.path.isdir(user_config_dir):
+            os.makedirs(user_config_dir)
         self.init_configuration_file()
 
     @property
@@ -92,18 +97,21 @@ class UserConfigurationManager():
         self.init_configuration_file(True)
 
     def init_configuration_file(self, force_init=False):
-        if not os.path.isfile(USER_CONFIGURATIONS_FILEPATH) or force_init:
+        if not os.path.isfile(self.user_config_filepath) or force_init: # noqa
             self.set_user_configurations(USER_CONFIG_TEMPLATE)
 
     def get_user_configurations(self):
-        with open(USER_CONFIGURATIONS_FILEPATH, "r") as f:
+        with open(self.user_config_filepath, "r") as f:
             return json.load(f)
 
     def set_user_configurations(self, config_dict):
-        with open(USER_CONFIGURATIONS_FILEPATH, "w") as f:
+        with open(self.user_config_filepath, "w") as f:
             json.dump(config_dict, f, indent=4)
 
     def is_valid_ip(self, ipaddr):
+        if not isinstance(ipaddr, str):
+            raise ValueError("Invalid object type")
+
         valid_ip_re = re.compile(
             r'^(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.'
             r'(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.'
