@@ -353,6 +353,7 @@ class ServerManager(ConnectionStateManager):
         ), domain, entry_IP
 
     def get_connection_ips(self, servername, servers, filtered_servers):
+        logger.info("Getting connection IP")
         try:
             entry_IP, exit_IP = self.generate_ip_list(
                 servername, filtered_servers

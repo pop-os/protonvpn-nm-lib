@@ -322,7 +322,11 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
 
         if is_protonvpn and state == 1:
             logger.info("ProtonVPN connection is being prepared.")
-            self.ks_manager.manage("pre_connection", server_ip=server_ip)
+            if (
+                self.user_conf_manager.killswitch
+                != KillswitchStatusEnum.DISABLED
+            ):
+                self.ks_manager.manage("pre_connection", server_ip=server_ip)
             self.vpn_signal_handler(conn)
             return
 
