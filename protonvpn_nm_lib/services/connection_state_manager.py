@@ -1,7 +1,8 @@
 
 import time
 
-from ..enums import ConnectionMetadataEnum, MetadataEnum, MetadataActionEnum
+from ..enums import (ConnectionMetadataEnum, LastConnectionMetadataEnum,
+                     MetadataActionEnum, MetadataEnum)
 from .metadata_manager import MetadataManager
 
 
@@ -13,9 +14,20 @@ class ConnectionStateManager(MetadataManager):
         Args:
             servername (string): servername [PT#1]
         """
-        metadata = {ConnectionMetadataEnum.SERVER: servername}
-        self.write_connection_metadata(MetadataEnum.CONNECTION, metadata)
-        self.write_connection_metadata(MetadataEnum.LAST_CONNECTION, metadata)
+        try:
+            last_metadata = self.get_connection_metadata(
+                MetadataEnum.LAST_CONNECTION
+            )
+        except FileNotFoundError:
+            last_metadata = {ConnectionMetadataEnum.SERVER: servername}
+        else:
+            last_metadata[ConnectionMetadataEnum.SERVER] = servername
+
+        real_metadata = {ConnectionMetadataEnum.SERVER: servername}
+        self.write_connection_metadata(MetadataEnum.CONNECTION, real_metadata)
+        self.write_connection_metadata(
+            MetadataEnum.LAST_CONNECTION, last_metadata
+        )
 
     def save_connected_time(self):
         """Save connected time metdata."""
@@ -24,13 +36,18 @@ class ConnectionStateManager(MetadataManager):
         self.write_connection_metadata(MetadataEnum.CONNECTION, metadata)
 
     def save_protocol(self, protocol):
+        """Save connected protocol.
+
+        Args:
+            protocol (ProtocolEnum): TCP|UDP etc
+        """
         real_metadata = self.get_connection_metadata(MetadataEnum.CONNECTION)
         last_metadata = self.get_connection_metadata(
             MetadataEnum.LAST_CONNECTION
         )
 
         real_metadata[ConnectionMetadataEnum.PROTOCOL] = protocol
-        last_metadata[ConnectionMetadataEnum.PROTOCOL] = protocol
+        last_metadata[LastConnectionMetadataEnum.PROTOCOL] = protocol
 
         self.write_connection_metadata(MetadataEnum.CONNECTION, real_metadata)
         self.write_connection_metadata(
@@ -38,28 +55,43 @@ class ConnectionStateManager(MetadataManager):
         )
 
     def save_server_ip(self, ip):
+        """Save connected server IP.
+
+        Args:
+            IP (list(string)): server IP
+        """
         metadata = {
-            "last_connect_ip": ip
+            LastConnectionMetadataEnum.SERVER_IP: ip
         }
         self.write_connection_metadata(MetadataEnum.LAST_CONNECTION, metadata)
 
     def get_server_ip(self):
+        """Get server IP.
+
+        Returns:
+            list: contains server IPs
+        """
         return self.get_connection_metadata(
             MetadataEnum.LAST_CONNECTION
-        )["last_connect_ip"]
+        )[LastConnectionMetadataEnum.SERVER_IP]
 
     def get_connection_metadata(self, metadata_type):
         """Get connection state metadata.
 
         Returns:
-            dict
+            dict: connection metadata
         """
         return self.manage_metadata(
             MetadataActionEnum.GET, metadata_type
         )
 
     def write_connection_metadata(self, metadata_type, metadata):
-        """Save metadata to file."""
+        """Save metadata to file.
+
+        Args:
+            metadata_type (MetadataEnum): type of metadata to save
+            metadata (dict): metadata content
+        """
         self.manage_metadata(
             MetadataActionEnum.WRITE,
             metadata_type,
@@ -67,7 +99,11 @@ class ConnectionStateManager(MetadataManager):
         )
 
     def remove_connection_metadata(self, metadata_type):
-        """Remove metadata file."""
+        """Remove metadata file.
+
+        Args:
+            metadata_type (MetadataEnum): type of metadata to save
+        """
         self.manage_metadata(
             MetadataActionEnum.REMOVE,
             metadata_type
