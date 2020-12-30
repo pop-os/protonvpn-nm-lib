@@ -40,6 +40,12 @@ class ConnectionMetadataEnum(object):
     PROTOCOL = "connected_protocol"
 
 
+class LastConnectionMetadataEnum(object):
+    SERVER = ConnectionMetadataEnum.SERVER
+    PROTOCOL = ConnectionMetadataEnum.PROTOCOL
+    SERVER_IP = "last_connect_ip"
+
+
 class ClientSuffixEnum(object):
     PLATFORM = "pl"
     NETSHIELD = "f1"
