@@ -6,12 +6,13 @@ from ..constants import (
     CONFIG_STATUSES,
     PROTON_XDG_CONFIG_HOME,
     USER_CONFIG_TEMPLATE,
-    USER_CONFIGURATIONS_FILEPATH
+    USER_CONFIGURATIONS_FILEPATH,
+    NETSHIELD_STATUS_DICT
 )
 from ..enums import (
     ProtocolEnum,
     UserSettingEnum,
-    UserSettingConnectionEnum
+    UserSettingConnectionEnum,
 )
 
 
@@ -57,6 +58,17 @@ class UserConfigurationManager():
             UserSettingEnum.CONNECTION
         ][UserSettingConnectionEnum.KILLSWITCH]
 
+    @property
+    def netshield(self):
+        """Killswitch get property."""
+        user_configs = self.get_user_configurations()
+        try:
+            return user_configs[
+                UserSettingEnum.CONNECTION
+            ][UserSettingConnectionEnum.NETSHIELD]
+        except KeyError:
+            return 0
+
     def update_default_protocol(self, protocol):
         if protocol not in [
             ProtocolEnum.TCP,
@@ -92,6 +104,20 @@ class UserConfigurationManager():
     def update_split_tunneling(self, status, ip_list=None):
         if status not in CONFIG_STATUSES:
             raise KeyError("Illegal options")
+
+    def update_netshield(self, status):
+        status_exists = False
+        for k, v in NETSHIELD_STATUS_DICT.items():
+            if k == status:
+                status_exists = True
+                break
+
+        if not status_exists:
+            raise KeyError("Illegal netshield option")
+
+        user_configs = self.get_user_configurations()
+        user_configs[UserSettingEnum.CONNECTION][UserSettingConnectionEnum.NETSHIELD] = status # noqa
+        self.set_user_configurations(user_configs)
 
     def reset_default_configs(self):
         self.init_configuration_file(True)

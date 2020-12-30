@@ -2,7 +2,7 @@ import distro
 from .proton_session_wrapper import ProtonSessionWrapper
 
 from ..constants import (
-    APP_VERSION
+    APP_VERSION, NETSHIELD_STATUS_DICT
 )
 from ..enums import ClientSuffixEnum, KeyringEnum
 from ..logger import logger
@@ -13,6 +13,7 @@ from .user_session_manager import UserSessionManager
 class UserManager(UserSessionManager):
     def __init__(
         self,
+        user_conf_manager,
         keyring_service=KeyringEnum.DEFAULT_KEYRING_SERVICE,
         keyring_sessiondata=KeyringEnum.DEFAULT_KEYRING_SESSIONDATA,
         keyring_userdata=KeyringEnum.DEFAULT_KEYRING_USERDATA,
@@ -22,6 +23,7 @@ class UserManager(UserSessionManager):
         self.keyring_sessiondata = keyring_sessiondata
         self.keyring_userdata = keyring_userdata
         self.keyring_proton_user = keyring_proton_user
+        self.user_conf_manager = user_conf_manager
 
         logger.info(
 
@@ -163,7 +165,8 @@ class UserManager(UserSessionManager):
     def append_suffix(self, username):
         """Append suffixes to OpenVPN username."""
         suffixes = [
-            ClientSuffixEnum.PLATFORM
+            ClientSuffixEnum.PLATFORM,
+            NETSHIELD_STATUS_DICT[self.user_conf_manager.netshield]
         ]
 
         _username = username + "+" + "+".join(
