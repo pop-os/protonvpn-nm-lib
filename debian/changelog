@@ -1,10 +1,11 @@
-protonvpn-nm-core (0.3.0-2) UNRELEASED; urgency=low
+protonvpn-nm-core (0.3.0-3) UNRELEASED; urgency=low
 
   * Refactor server_manager
   * Bugfix: lowercase servername now passes regex (ie: ch-fi#1)
   * Add automated tests
+  * Bugfix: Keyring AttributeError "kwallet"
 
- -- Proton Technologies AG <opensource@proton.me>  Mon, 14 Dec 2020 14:16:41 +0000
+ -- Proton Technologies AG <opensource@proton.me>  Mon, 30 Dec 2020 17:44:31 +0000
 
 protonvpn-nm-core (0.2.0-4) UNRELEASED; urgency=low
 
