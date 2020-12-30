@@ -3,6 +3,8 @@ import os
 import re
 
 import keyring
+import keyring.backends.kwallet
+import keyring.backends.SecretService
 from .proton_session_wrapper import ProtonSessionWrapper
 
 from .. import exceptions
