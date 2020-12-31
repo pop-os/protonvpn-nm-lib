@@ -8,14 +8,24 @@ from proton import ProtonError
 
 from common import (PWD, RAW_LOADS_LIST, RAW_SERVER_LIST, MetadataEnum,
                     ProtonSessionAPIMethodEnum, ProtonSessionWrapper,
-                    UserManager, exceptions)
+                    UserManager, UserConfigurationManager, exceptions)
 
 TEST_KEYRING_SERVICE = "TestServerManager"
 TEST_KEYRING_SESSIONDATA = "TestServerManSessionData"
 TEST_KEYRING_USERDATA = "TestServerManUserData"
 TEST_KEYRING_PROTON_USER = "TestServerManUser"
 
+test_user_config_dir = os.path.join(PWD, "test_config_protonvpn")
+test_user_config_fp = os.path.join(
+    test_user_config_dir, "test_user_configurations.json"
+)
+ucm = UserConfigurationManager(
+    user_config_dir=test_user_config_dir,
+    user_config_fp=test_user_config_fp
+)
+
 um = UserManager(
+    user_conf_manager=ucm,
     keyring_service=TEST_KEYRING_SERVICE,
     keyring_sessiondata=TEST_KEYRING_SESSIONDATA,
     keyring_userdata=TEST_KEYRING_USERDATA,

@@ -1,5 +1,0 @@
-[run]
-omit =
-    protonvpn_nm_lib/services/__init__.py
-    protonvpn_nm_lib/services/dbus_get_wrapper.py
-    protonvpn_nm_lib/services/abstract_interface_manager.py

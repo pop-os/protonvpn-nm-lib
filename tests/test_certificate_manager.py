@@ -6,10 +6,20 @@ import pytest
 
 from common import (
     MOCK_DATA_JSON, SERVERS, TEST_CERTS,
-    CertificateManager, ProtonSessionWrapper, UserManager, exceptions
+    CertificateManager, UserConfigurationManager,
+    ProtonSessionWrapper, UserManager, exceptions, PWD
 )
 
+test_user_config_dir = os.path.join(PWD, "test_config_protonvpn")
+test_user_config_fp = os.path.join(
+    test_user_config_dir, "test_user_configurations.json"
+)
+ucm = UserConfigurationManager(
+    user_config_dir=test_user_config_dir,
+    user_config_fp=test_user_config_fp
+)
 um = UserManager(
+    user_conf_manager=ucm,
     keyring_service="TestCertitifcateManager",
     keyring_sessiondata="TestCertManSessionData",
     keyring_userdata="TestCertManUserData",
