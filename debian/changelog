@@ -1,4 +1,4 @@
-protonvpn-nm-core (0.3.0-5) UNRELEASED; urgency=low
+protonvpn-nm-core (0.3.0-4) UNRELEASED; urgency=low
 
   * Refactor server_manager
   * Bugfix: lowercase servername now passes regex (ie: ch-fi#1)
