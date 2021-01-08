@@ -51,7 +51,7 @@ class KillSwitchManager(AbstractInterfaceManager):
         }
 
         logger.info("Initialized killswitch manager")
-        self.connectivity_check()
+        _ = self.check_status_connectivity_check()
 
     def manage(self, action, is_menu=False, server_ip=None):
         """Manage killswitch.
@@ -69,7 +69,19 @@ class KillSwitchManager(AbstractInterfaceManager):
                 self.user_conf_manager.killswitch
             )
         )
-        self.connectivity_check()
+
+        (
+            client,
+            conn_check_available,
+            conn_check_enabled
+        ) = self.connectivity_check()
+
+        if client is not None:
+            logger.info("client is not None, will attempt to disable")
+            self.disable_connectivity_check(
+                client, conn_check_available, conn_check_enabled
+            )
+
         self.update_connection_status()
 
         if is_menu:
@@ -338,7 +350,7 @@ class KillSwitchManager(AbstractInterfaceManager):
         ) = self.check_status_connectivity_check()
 
         if not is_conn_check_enabled:
-            return
+            return (None, None, None)
 
         if not is_conn_check_available:
             logger.error(
@@ -350,9 +362,7 @@ class KillSwitchManager(AbstractInterfaceManager):
                 "Unable to change connectivity check for killswitch"
             )
 
-        self.disable_connectivity_check(
-            client, is_conn_check_available, is_conn_check_enabled
-        )
+        return client, is_conn_check_available, is_conn_check_enabled
 
     def check_status_connectivity_check(self):
         """Check status of NM connectivity check."""
