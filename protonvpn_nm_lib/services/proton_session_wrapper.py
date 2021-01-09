@@ -243,7 +243,7 @@ class ProtonSessionWrapper(MetadataManager):
         )
 
         proton_session_wrapper.proton_session = Session.load(
-            dump, TLSPinning=True
+            dump, TLSPinning=TLSPinning
         )
         return proton_session_wrapper
 
