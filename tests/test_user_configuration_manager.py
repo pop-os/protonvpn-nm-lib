@@ -7,7 +7,7 @@ import pytest
 from common import (PWD, KillswitchStatusEnum, ProtocolEnum,
                     UserConfigurationManager, UserSettingConnectionEnum,
                     UserSettingEnum, UserSettingStatusEnum,
-                    NETSHIELD_STATUS_DICT)
+                    NetshieldTranslationEnum, NETSHIELD_STATUS_DICT)
 
 test_user_config_dir = os.path.join(PWD, "test_config_protonvpn")
 test_user_config_fp = os.path.join(
@@ -104,9 +104,9 @@ class TestSetUserConfigurationManager():
     @pytest.mark.parametrize(
         "ns_status",
         [
-            0,  # --off
-            1,  # --malware
-            2,  # --ads-malware
+            NetshieldTranslationEnum.DISABLED,
+            NetshieldTranslationEnum.MALWARE,
+            NetshieldTranslationEnum.ADS_MALWARE,
         ]
     )
     def test_set_correct_netshield(self, ns_status):
