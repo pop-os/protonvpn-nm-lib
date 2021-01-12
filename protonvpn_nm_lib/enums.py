@@ -86,6 +86,12 @@ class NetshieldStatusEnum(object):
     ADS_MALWARE = ClientSuffixEnum.NETSHIELD_ADS_TRACKING
 
 
+class NetshieldTranslationEnum(object):
+    DISABLED = UserSettingStatusEnum.DISABLED
+    MALWARE = UserSettingStatusEnum.ENABLED
+    ADS_MALWARE = UserSettingStatusEnum.CUSTOM
+
+
 class UserSettingConnectionEnum(object):
     DEFAULT_PROTOCOL = "default_protocol"
     KILLSWITCH = "killswitch"
