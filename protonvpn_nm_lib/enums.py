@@ -80,6 +80,18 @@ class KillswitchStatusEnum(object):
     SOFT = 2
 
 
+class NetshieldStatusEnum(object):
+    DISABLED = "f0"
+    MALWARE = ClientSuffixEnum.NETSHIELD
+    ADS_MALWARE = ClientSuffixEnum.NETSHIELD_ADS_TRACKING
+
+
+class NetshieldTranslationEnum(object):
+    DISABLED = UserSettingStatusEnum.DISABLED
+    MALWARE = UserSettingStatusEnum.ENABLED
+    ADS_MALWARE = UserSettingStatusEnum.CUSTOM
+
+
 class UserSettingConnectionEnum(object):
     DEFAULT_PROTOCOL = "default_protocol"
     KILLSWITCH = "killswitch"
@@ -89,6 +101,7 @@ class UserSettingConnectionEnum(object):
     SPLIT_TUNNELING = "split_tunneling"
     SPLIT_TUNNELING_STATUS = "status"
     IP_LIST = "ip_list"
+    NETSHIELD = "netshield"
 
 
 class ProtonSessionAPIMethodEnum(object):

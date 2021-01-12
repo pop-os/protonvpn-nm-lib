@@ -1,22 +1,34 @@
 from unittest.mock import patch
-
+import shutil
 import pytest
+import os
 
-from common import (MOCK_SESSIONDATA, MOCK_USER_DATA, ClientSuffixEnum,
-                    ProtonSessionWrapper, UserManager, exceptions)
+from common import (MOCK_SESSIONDATA, MOCK_USER_DATA, NetshieldStatusEnum,
+                    ClientSuffixEnum, ProtonSessionWrapper,
+                    UserConfigurationManager,
+                    UserManager, PWD, exceptions)
 
 TEST_KEYRING_SERVICE = "TestUserManager"
 TEST_KEYRING_SESSIONDATA = "TestUserManSessionData"
 TEST_KEYRING_USERDATA = "TestUserManUserData"
 TEST_KEYRING_PROTON_USER = "TestUserManUser"
 
+test_user_config_dir = os.path.join(PWD, "test_user_manager_config_protonvpn")
+test_user_config_fp = os.path.join(
+    test_user_config_dir, "test_user_manager_configurations.json"
+)
+ucm = UserConfigurationManager(
+    user_config_dir=test_user_config_dir,
+    user_config_fp=test_user_config_fp
+)
+
 
 class TestUnitUserManager():
-    um = UserManager()
+    um = UserManager(user_conf_manager=ucm)
 
     @classmethod
     def setup_class(cls):
-        um = UserManager()
+        um = UserManager(user_conf_manager=ucm)
         um.store_data(
             data=MOCK_SESSIONDATA,
             keyring_username=TEST_KEYRING_SESSIONDATA,
@@ -44,8 +56,9 @@ class TestUnitUserManager():
 
     @classmethod
     def teardown_class(cls):
-        um = UserManager()
+        um = UserManager(user_conf_manager=ucm)
         um.delete_stored_data(TEST_KEYRING_PROTON_USER, TEST_KEYRING_SERVICE)
+        shutil.rmtree(test_user_config_dir)
 
     @pytest.fixture
     def mock_authenticate(self):
@@ -179,7 +192,10 @@ class TestUnitUserManager():
         openvn_username = MOCK_USER_DATA["VPN"]["Name"]
         openvpn_password = MOCK_USER_DATA["VPN"]["Password"]
         assert (resp_user, resp_pwd) == (
-            openvn_username + "+" + ClientSuffixEnum.PLATFORM, openvpn_password
+            openvn_username
+            + "+" + ClientSuffixEnum.PLATFORM
+            + "+" + NetshieldStatusEnum.DISABLED,
+            openvpn_password
         )
 
     def test_get_incorrect_stored_vpn_credentials(

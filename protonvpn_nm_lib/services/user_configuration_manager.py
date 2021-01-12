@@ -6,12 +6,13 @@ from ..constants import (
     CONFIG_STATUSES,
     PROTON_XDG_CONFIG_HOME,
     USER_CONFIG_TEMPLATE,
-    USER_CONFIGURATIONS_FILEPATH
+    USER_CONFIGURATIONS_FILEPATH,
+    NETSHIELD_STATUS_DICT
 )
 from ..enums import (
     ProtocolEnum,
     UserSettingEnum,
-    UserSettingConnectionEnum
+    UserSettingConnectionEnum,
 )
 
 
@@ -28,7 +29,7 @@ class UserConfigurationManager():
 
     @property
     def default_protocol(self):
-        """Default protocol get property."""
+        """Protocol get property."""
         user_configs = self.get_user_configurations()
         return user_configs[
             UserSettingEnum.CONNECTION
@@ -57,7 +58,23 @@ class UserConfigurationManager():
             UserSettingEnum.CONNECTION
         ][UserSettingConnectionEnum.KILLSWITCH]
 
+    @property
+    def netshield(self):
+        """Netshield get property."""
+        user_configs = self.get_user_configurations()
+        try:
+            return user_configs[
+                UserSettingEnum.CONNECTION
+            ][UserSettingConnectionEnum.NETSHIELD]
+        except KeyError:
+            return 0
+
     def update_default_protocol(self, protocol):
+        """Update default protocol.
+
+        Args:
+            protocol (ProtocolEnum): protocol type
+        """
         if protocol not in [
             ProtocolEnum.TCP,
             ProtocolEnum.UDP,
@@ -71,6 +88,12 @@ class UserConfigurationManager():
         self.set_user_configurations(user_configs)
 
     def update_dns(self, status, custom_dns=None):
+        """Update DNS setting.
+
+        Args:
+            status (UserSettingStatusEnum): DNS status
+            custom_dns (list|None): Either list with IPs or None
+        """
         if status not in CONFIG_STATUSES:
             raise KeyError("Illegal options")
 
@@ -82,6 +105,11 @@ class UserConfigurationManager():
         self.set_user_configurations(user_configs)
 
     def update_killswitch(self, status):
+        """Update Kill Switch setting.
+
+        Args:
+            status (UserSettingStatusEnum): Kill Switch status
+        """
         if status not in CONFIG_STATUSES:
             raise KeyError("Illegal options")
 
@@ -89,22 +117,55 @@ class UserConfigurationManager():
         user_configs[UserSettingEnum.CONNECTION][UserSettingConnectionEnum.KILLSWITCH] = status # noqa
         self.set_user_configurations(user_configs)
 
-    def update_split_tunneling(self, status, ip_list=None):
-        if status not in CONFIG_STATUSES:
-            raise KeyError("Illegal options")
+    def update_netshield(self, status):
+        """Update NetShield setting.
+
+        Args:
+            status (int): matching value for NetShield
+        """
+        status_exists = False
+        for k, v in NETSHIELD_STATUS_DICT.items():
+            if k == status:
+                status_exists = True
+                break
+
+        if not status_exists:
+            raise KeyError("Illegal netshield option")
+
+        user_configs = self.get_user_configurations()
+        user_configs[
+            UserSettingEnum.CONNECTION
+        ][UserSettingConnectionEnum.NETSHIELD] = status
+        self.set_user_configurations(user_configs)
 
     def reset_default_configs(self):
+        """Reset user configurations to default values."""
         self.init_configuration_file(True)
 
     def init_configuration_file(self, force_init=False):
+        """Initialize configurations file.
+
+        Args:
+            force_init (bool): if True then overwrites current configs
+        """
         if not os.path.isfile(self.user_config_filepath) or force_init: # noqa
             self.set_user_configurations(USER_CONFIG_TEMPLATE)
 
     def get_user_configurations(self):
+        """Get user configurations from file. Reads from file.
+
+        Returns:
+            dict(json)
+        """
         with open(self.user_config_filepath, "r") as f:
             return json.load(f)
 
     def set_user_configurations(self, config_dict):
+        """Set user configurations. Writes to file.
+
+        Args:
+            config_dict (dict): user configurations
+        """
         with open(self.user_config_filepath, "w") as f:
             json.dump(config_dict, f, indent=4)
 

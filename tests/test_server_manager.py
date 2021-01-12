@@ -9,7 +9,7 @@ from common import (PWD, CACHED_OPENVPN_CERTIFICATE, MOCK_DATA_JSON,
                     MOCK_SESSIONDATA, RAW_SERVER_LIST, SERVERS,
                     TEST_CACHED_SERVERFILE, CertificateManager,
                     ProtonSessionWrapper, ServerManager, UserManager,
-                    MetadataEnum, ProtocolEnum)
+                    UserConfigurationManager, MetadataEnum, ProtocolEnum)
 
 TEST_KEYRING_SERVICE = "TestServerManager"
 TEST_KEYRING_SESSIONDATA = "TestServerManSessionData"
@@ -28,7 +28,17 @@ remove_test_filepath = os.path.join(
     PWD, "remove_server_manager.json"
 )
 
+test_user_config_dir = os.path.join(PWD, "test_config_protonvpn")
+test_user_config_fp = os.path.join(
+    test_user_config_dir, "test_user_configurations.json"
+)
+ucm = UserConfigurationManager(
+    user_config_dir=test_user_config_dir,
+    user_config_fp=test_user_config_fp
+)
+
 um = UserManager(
+    user_conf_manager=ucm,
     keyring_service=TEST_KEYRING_SERVICE,
     keyring_sessiondata=TEST_KEYRING_SESSIONDATA,
     keyring_userdata=TEST_KEYRING_USERDATA,

@@ -6,9 +6,10 @@ import pytest
 gi.require_version("NM", "1.0")
 from gi.repository import NM
 
-from common import (CERT_FOLDER, ENV_CI_NAME, MOCK_SESSIONDATA,
+from common import (CERT_FOLDER, ENV_CI_NAME, PWD, MOCK_SESSIONDATA,
                     PLUGIN_CERT_FOLDER, CertificateManager, ConnectionManager,
                     IPv6LeakProtectionManager, KillSwitchManager,
+                    UserConfigurationManager,
                     KillswitchStatusEnum, ReconnectorManager, UserManager,
                     UserSettingStatusEnum, exceptions)
 
@@ -35,6 +36,15 @@ USER_CONFIGURATIONS = {
     "tray": {}
 }
 os.environ[ENV_CI_NAME] = "true"
+
+test_user_config_dir = os.path.join(PWD, "test_config_protonvpn")
+test_user_config_fp = os.path.join(
+    test_user_config_dir, "test_user_configurations.json"
+)
+ucm = UserConfigurationManager(
+    user_config_dir=test_user_config_dir,
+    user_config_fp=test_user_config_fp
+)
 
 
 class FakeUserConfigurationManager():
@@ -66,7 +76,7 @@ class TestUnitConnectionManager:
 class TestIntegrationConnectionManager():
     @classmethod
     def setup_class(cls):
-        um = UserManager()
+        um = UserManager(user_conf_manager=ucm)
         um.keyring_service = TEST_KEYRING_SERVICE
         um.keyring_sessiondata = TEST_KEYRING_SESSIONDATA
         um.keyring_userdata = TEST_KEYRING_USERDATA
@@ -98,7 +108,7 @@ class TestIntegrationConnectionManager():
 
     @classmethod
     def teardown_class(cls):
-        um = UserManager()
+        um = UserManager(user_conf_manager=ucm)
         um.keyring_service = TEST_KEYRING_SERVICE
         um.keyring_sessiondata = TEST_KEYRING_SESSIONDATA
         um.keyring_userdata = TEST_KEYRING_USERDATA

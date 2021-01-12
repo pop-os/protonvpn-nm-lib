@@ -6,7 +6,8 @@ import pytest
 
 from common import (PWD, KillswitchStatusEnum, ProtocolEnum,
                     UserConfigurationManager, UserSettingConnectionEnum,
-                    UserSettingEnum, UserSettingStatusEnum)
+                    UserSettingEnum, UserSettingStatusEnum,
+                    NetshieldTranslationEnum, NETSHIELD_STATUS_DICT)
 
 test_user_config_dir = os.path.join(PWD, "test_config_protonvpn")
 test_user_config_fp = os.path.join(
@@ -99,6 +100,47 @@ class TestSetUserConfigurationManager():
     def test_set_incorrect_killswitch(self, ks_status):
         with pytest.raises(KeyError):
             self.ucm.update_killswitch(ks_status)
+
+    @pytest.mark.parametrize(
+        "ns_status",
+        [
+            NetshieldTranslationEnum.DISABLED,
+            NetshieldTranslationEnum.MALWARE,
+            NetshieldTranslationEnum.ADS_MALWARE,
+        ]
+    )
+    def test_set_correct_netshield(self, ns_status):
+        self.ucm.update_netshield(ns_status)
+        with open(test_user_config_fp) as f:
+            json_configs = json.load(f)
+
+        assert json_configs[
+            UserSettingEnum.CONNECTION
+        ][UserSettingConnectionEnum.NETSHIELD] == ns_status
+
+    @pytest.mark.parametrize(
+        "ns_status",
+        [
+            "WrongStatus",
+            "54",
+            21,
+            [],
+            {}
+        ]
+    )
+    def test_set_incorrect_netshield(self, ns_status):
+        with pytest.raises(KeyError):
+            self.ucm.update_netshield(ns_status)
+
+    def test_get_non_existing_netshield(self):
+        with open(test_user_config_fp) as f:
+            json_configs = json.load(f)
+
+        _ = json_configs[UserSettingEnum.CONNECTION].pop(
+            UserSettingConnectionEnum.NETSHIELD
+        )
+        self.ucm.set_user_configurations(json_configs)
+        assert self.ucm.netshield == 0
 
     def test_reset_default_configs(self):
         self.ucm.reset_default_configs()
