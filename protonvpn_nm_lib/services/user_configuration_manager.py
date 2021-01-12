@@ -133,7 +133,9 @@ class UserConfigurationManager():
             raise KeyError("Illegal netshield option")
 
         user_configs = self.get_user_configurations()
-        user_configs[UserSettingEnum.CONNECTION][UserSettingConnectionEnum.NETSHIELD] = status # noqa
+        user_configs[
+            UserSettingEnum.CONNECTION
+        ][UserSettingConnectionEnum.NETSHIELD] = status
         self.set_user_configurations(user_configs)
 
     def reset_default_configs(self):
