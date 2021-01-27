@@ -1,11 +1,17 @@
 FROM IMAGE_URL_ARCH
+ARG git_repo
+ENV git_repo=${git_repo:-GIT_REPO}
+ARG git_branch
+ENV git_branch=${git_branch:-GIT_BRANCH}
 ARG pkgname
 ENV pkgname=${pkgname:-python-protonvpn-nm-lib}
+
 RUN pacman -Syu --noconfirm
 
 RUN pacman -S --noconfirm \
     gcc \
     sudo \
+    git \
     pacman-contrib \
     base-devel \
     networkmanager \
@@ -32,12 +38,21 @@ RUN pacman -S --noconfirm \
     python-jinja \
     python-gobject
 
-RUN python3 -m pip install proton-client && \
-    python3 -m pip install --upgrade sentry-sdk==0.10.2
-
 RUN pacman -S --noconfirm \
     python-pytest \
     python-pytest-cov
+
+RUN python3 -m pip install --upgrade sentry-sdk==0.10.2
+
+RUN pacman -S --noconfirm \
+    python-requests \
+    python-pyopenssl \
+    python-bcrypt \
+    python-gnupg
+
+RUN git clone --single-branch --branch $git_branch $git_repo
+RUN cd proton-python-client && pip3 install -e .
+RUN cd ..
 
 RUN useradd -ms /bin/bash user
 RUN usermod -a -G wheel user

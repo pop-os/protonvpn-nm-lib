@@ -1,4 +1,9 @@
 FROM IMAGE_URL_RPM
+ARG git_repo
+ENV git_repo=${git_repo:-GIT_REPO}
+ARG git_branch
+ENV git_branch=${git_branch:-GIT_BRANCH}
+
 RUN dnf update -y
 
 # Install a few useful packages
@@ -6,6 +11,7 @@ RUN dnf update -y
 RUN dnf install -y net-tools \
     gcc \
     sudo \
+    git \
     rpm-build \
     rpm-devel \
     rpmlint \
@@ -36,12 +42,21 @@ RUN dnf install -y \
     python3-gobject \
     python3-jinja2
 
-RUN python3 -m pip install proton-client && \
-    python3 -m pip install --upgrade sentry-sdk==0.10.2
-
 RUN dnf install -y \
     python3-pytest \
     python3-pytest-cov
+
+RUN dnf install -y \
+    python3-requests \
+    python3-pyOpenSSL \
+    python3-bcrypt \
+    python3-gnupg
+
+RUN python3 -m pip install --upgrade sentry-sdk==0.10.2
+
+RUN git clone --single-branch --branch $git_branch $git_repo
+RUN cd proton-python-client && pip3 install -e .
+RUN cd ..
 
 RUN useradd -ms /bin/bash user
 RUN usermod -a -G wheel user
