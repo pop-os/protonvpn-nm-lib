@@ -1,20 +1,24 @@
 %define unmangled_name protonvpn-nm-lib
 %define version 0.3.0
-%define release 1
+%define release 2
 
-Summary: Official ProtonVPN NetworkManager library
+Prefix: %{_prefix}
+
 Name: python3-protonvpn-nm-lib
 Version: %{version}
 Release: %{release}
-Source0: %{unmangled_name}-%{version}.tar.gz
-License: MIT
-Group: Development/Libraries
-BuildRoot: %{_tmppath}/%{unmangled_name}-%{version}-%{release}-buildroot
-Prefix: %{_prefix}
-BuildArch: noarch
+Summary: Official ProtonVPN NetworkManager library
+
+Group: ProtonVPN
+License: GPLv3
+Url: https://github.com/ProtonVPN/
 Vendor: Proton Technologies AG <opensource@proton.me>
-Url: https://github.com/ProtonMail/proton-python-client
-Requires: gnome-keyring
+Source0: %{unmangled_name}-%{version}.tar.gz
+BuildArch: noarch
+BuildRoot: %{_tmppath}/%{unmangled_name}-%{version}-%{release}-buildroot
+
+BuildRequires: python3-devel
+BuildRequires: python3-setuptools
 Requires: libsecret
 Requires: dbus-x11
 Requires: openvpn
@@ -46,4 +50,10 @@ python3 setup.py install --single-version-externally-managed -O1 --root=$RPM_BUI
 rm -rf $RPM_BUILD_ROOT
 
 %files -f INSTALLED_FILES
+%{python3_sitelib}/protonvpn_nm_lib/
+%{python3_sitelib}/protonvpn_nm_lib-%{version}*.egg-info/
 %defattr(-,root,root)
+
+%changelog
+* Wed Jan 27 2021 Proton Technologies AG <opensource@proton.me> 0.3.0-2
+- Update .spec file for public release

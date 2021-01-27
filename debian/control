@@ -8,8 +8,10 @@ X-Python3-Version: >= 3.5
 
 Package: python3-protonvpn-nm-lib
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}, network-manager, network-manager-openvpn, openvpn, python3-xdg, python3-keyring, python3-jinja2, python3-distro, gir1.2-nm-1.0, libsecret-tools, dbus-x11, gnome-keyring, network-manager-openvpn-gnome, python3-proton-client
-Description: ProtonVPN CLI (Python 3)
+Homepage: https://github.com/ProtonVPN
+Section: net
+Depends: ${python3:Depends}, ${misc:Depends}, network-manager, network-manager-openvpn, openvpn, python3-xdg, python3-keyring, python3-jinja2, python3-distro, gir1.2-nm-1.0, libsecret-tools, dbus-x11, network-manager-openvpn-gnome, python3-proton-client
+Description: ProtonVPN NM library (Python 3)
  Package installs official ProtonVPN NetworkManager library.
  .
  This package installs the library for Python 3.
