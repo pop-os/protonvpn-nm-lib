@@ -1,22 +1,26 @@
 import subprocess
 from ipaddress import ip_network
 
+import dbus
 import gi
 
+from .. import exceptions
 from ..constants import (KILLSWITCH_CONN_NAME, KILLSWITCH_INTERFACE_NAME,
                          ROUTED_CONN_NAME, ROUTED_INTERFACE_NAME,
                          IPv4_DUMMY_ADDRESS, IPv4_DUMMY_GATEWAY,
                          IPv6_DUMMY_ADDRESS, IPv6_DUMMY_GATEWAY)
 from ..enums import KillswitchStatusEnum
 from ..logger import logger
-from .. import exceptions
 from .abstract_interface_manager import AbstractInterfaceManager
+from .dbus_get_wrapper import DbusGetWrapper
 
 gi.require_version("NM", "1.0")
-from gi.repository import NM, GLib # noqa
+from gi.repository import NM, GLib  # noqa
 
 
 class KillSwitchManager(AbstractInterfaceManager):
+    bus = dbus.SystemBus()
+
     """Manages killswitch connection/interfaces."""
     def __init__(
         self,
@@ -39,6 +43,8 @@ class KillSwitchManager(AbstractInterfaceManager):
         self.ipv6_dummy_addrs = ipv6_dummy_addrs
         self.ipv6_dummy_gateway = ipv6_dummy_gateway
         self.user_conf_manager = user_conf_manager
+        self.dbus_get_wrapper = DbusGetWrapper()
+        self.dbus_get_wrapper.bus = self.bus
         self.interface_state_tracker = {
             self.ks_conn_name: {
                 "exists": False,
@@ -373,9 +379,8 @@ class KillSwitchManager(AbstractInterfaceManager):
 
     def update_connection_status(self):
         """Update connection/interface status."""
-        client = NM.Client.new(None)
-        all_conns = client.get_connections()
-        active_conns = client.get_active_connections()
+        all_conns = self.dbus_get_wrapper.get_all_conns()
+        active_conns = self.dbus_get_wrapper.get_all_active_conns()
 
         self.interface_state_tracker[self.ks_conn_name]["exists"] = False # noqa
         self.interface_state_tracker[self.routed_conn_name]["exists"] = False  # noqa
@@ -383,20 +388,20 @@ class KillSwitchManager(AbstractInterfaceManager):
         self.interface_state_tracker[self.routed_conn_name]["is_running"] = False  # noqa
 
         for conn in all_conns:
-            try:
-                self.interface_state_tracker[conn.get_id()]
-            except KeyError:
-                pass
-            else:
-                self.interface_state_tracker[conn.get_id()]["exists"] = True
+            conn_name = str(self.dbus_get_wrapper.get_all_conn_settings(
+                conn
+            )["connection"]["id"])
+
+            if conn_name in self.interface_state_tracker:
+                self.interface_state_tracker[conn_name]["exists"] = True
 
         for active_conn in active_conns:
-            try:
-                self.interface_state_tracker[active_conn.get_id()]
-            except KeyError:
-                pass
-            else:
-                self.interface_state_tracker[active_conn.get_id()]["is_running"] = True # noqa
+            conn_name = str(self.dbus_get_wrapper.get_active_conn_props(
+                active_conn
+            )["Id"])
+
+            if conn_name in self.interface_state_tracker:
+                self.interface_state_tracker[conn_name]["is_running"] = True # noqa
 
         logger.info("Tracker info: {}".format(self.interface_state_tracker))
 
