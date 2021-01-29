@@ -77,7 +77,7 @@ class KillSwitchManager(AbstractInterfaceManager):
         ) = self.connectivity_check()
 
         if client is not None:
-            logger.info("client is not None, will attempt to disable")
+            logger.info("client is not None, will setup_attempt to disable")
             self.disable_connectivity_check(
                 client, conn_check_available, conn_check_enabled
             )
@@ -98,27 +98,117 @@ class KillSwitchManager(AbstractInterfaceManager):
 
             return
 
+        actions_dict = {
+            "pre_connection": self.setup_pre_connection_ks,
+            "post_connection": self.setup_post_connection_ks,
+            "soft_connection": self.setup_soft_connection,
+            "disable": self.delete_all_connections
+
+        }
+
+        actions_dict[action](server_ip)
+
+    def setup_pre_connection_ks(self, server_ip, pre_attempts=0):
+        """Assure pre-connection Kill Switch is setup correctly.
+
+        Args:
+            server_ip (list | string): ProtonVPN server IP
+            pre_attempts (int): number of setup attempts
+        """
+        if pre_attempts >= 3:
+            raise Exception("Unable to setup pre-connection ks.")
+
+        # happy path
         if (
-            action == "pre_connection"
-        ) and (
             self.interface_state_tracker[self.ks_conn_name]["is_running"]
             and not self.interface_state_tracker[self.routed_conn_name]["exists"] # noqa
         ):
             self.create_routed_connection(server_ip)
             self.deactivate_connection(self.ks_conn_name)
-        elif (
-            action == "post_connection"
-        ) and (
+            return
+
+        # check for routed ks and remove if present/running
+        if (
+            self.interface_state_tracker[self.routed_conn_name]["exists"]
+            or self.interface_state_tracker[self.routed_conn_name]["is_running"] # noqa
+        ):
+            self.delete_connection(self.routed_conn_name)
+
+        # check if ks exist start it if it does
+        if (
+            not self.interface_state_tracker[
+                self.ks_conn_name
+            ]["is_running"]
+        ):
+            self.activate_connection(self.ks_conn_name)
+
+        # check if ks does not exist, if not then create and start it
+        if (
+            not self.interface_state_tracker[
+                self.ks_conn_name
+            ]["exists"]
+        ):
+            self.create_killswitch_connection()
+
+        pre_attempts += 1
+        self.update_connection_status()
+        self.setup_pre_connection(server_ip, pre_attempts=pre_attempts)
+
+    def setup_post_connection_ks(
+        self, _, post_attempts=0, activating_soft_connection=False
+    ):
+        """Assure post-connection Kill Switch is setup correctly.
+
+        Args:
+            post_attempts (int): number of setup attempts
+        """
+        if post_attempts >= 3:
+            raise Exception("Unable to setup post-connection ks.")
+
+        # happy path
+        if (
             not self.interface_state_tracker[self.ks_conn_name]["is_running"]
             and self.interface_state_tracker[self.routed_conn_name]["is_running"] # noqa
         ):
             self.activate_connection(self.ks_conn_name)
             self.delete_connection(self.routed_conn_name)
-        elif action == "soft_connection":
-            self.create_killswitch_connection()
-            self.manage("post_connection")
-        elif action == "disable":
-            self.delete_all_connections()
+            return
+        elif (
+            activating_soft_connection
+            and (
+                not self.interface_state_tracker[self.routed_conn_name]["is_running"] # noqa
+                or not self.interface_state_tracker[self.routed_conn_name]["exists"] # noqa
+            )
+        ):
+            self.activate_connection(self.ks_conn_name)
+            return
+
+        # check for ks and disable it if is running
+        if (
+            self.interface_state_tracker[self.ks_conn_name]["is_running"]
+        ):
+            self.deactivate_connection(self.ks_conn_name)
+
+        # check if routed ks exists, if so then activate it
+        # else raise exception
+        if (
+            self.interface_state_tracker[self.routed_conn_name]["exists"] # noqa
+        ):
+            self.activate_connection(self.routed_conn_name)
+        else:
+            raise Exception("Routed connection does not exist")
+
+        post_attempts += 1
+        self.update_connection_status()
+        self.setup_post_connection_ks(
+            _, post_attempts=post_attempts,
+            activating_soft_connection=activating_soft_connection
+        )
+
+    def setup_soft_connection(self, _):
+        """Setup Kill Switch for --on setting."""
+        self.create_killswitch_connection()
+        self.setup_post_connection_ks(None, activating_soft_connection=True)
 
     def create_killswitch_connection(self):
         """Create killswitch connection/interface."""
@@ -276,7 +366,7 @@ class KillSwitchManager(AbstractInterfaceManager):
         self.deactivate_connection(self.ks_conn_name)
         self.deactivate_connection(self.routed_conn_name)
 
-    def delete_all_connections(self):
+    def delete_all_connections(self, _=None):
         """Delete all connections."""
         self.delete_connection(self.ks_conn_name)
         self.delete_connection(self.routed_conn_name)
