@@ -2,7 +2,7 @@ import subprocess
 from ipaddress import ip_network
 
 import dbus
-import gi
+from dbus.mainloop.glib import DBusGMainLoop
 
 from .. import exceptions
 from ..constants import (KILLSWITCH_CONN_NAME, KILLSWITCH_INTERFACE_NAME,
@@ -14,12 +14,10 @@ from ..logger import logger
 from .abstract_interface_manager import AbstractInterfaceManager
 from .dbus_get_wrapper import DbusGetWrapper
 
-gi.require_version("NM", "1.0")
-from gi.repository import NM, GLib  # noqa
-
 
 class KillSwitchManager(AbstractInterfaceManager):
-    bus = dbus.SystemBus()
+    dbus_loop = DBusGMainLoop()
+    bus = dbus.SystemBus(mainloop=dbus_loop)
 
     """Manages killswitch connection/interfaces."""
     def __init__(
@@ -75,17 +73,12 @@ class KillSwitchManager(AbstractInterfaceManager):
                 self.user_conf_manager.killswitch
             )
         )
+        conn_check = self.connectivity_check()
 
-        (
-            client,
-            conn_check_available,
-            conn_check_enabled
-        ) = self.connectivity_check()
-
-        if client is not None:
-            logger.info("client is not None, will setup_attempt to disable")
+        if conn_check is not None:
+            logger.info("Attempting to disable connectivity check")
             self.disable_connectivity_check(
-                client, conn_check_available, conn_check_enabled
+                conn_check[0], conn_check[1]
             )
 
         self.update_connection_status()
@@ -158,7 +151,7 @@ class KillSwitchManager(AbstractInterfaceManager):
 
         pre_attempts += 1
         self.update_connection_status()
-        self.setup_pre_connection(server_ip, pre_attempts=pre_attempts)
+        self.setup_pre_connection_ks(server_ip, pre_attempts=pre_attempts)
 
     def setup_post_connection_ks(
         self, _, post_attempts=0, activating_soft_connection=False
@@ -318,20 +311,38 @@ class KillSwitchManager(AbstractInterfaceManager):
         Args:
             conn_name (string): connection name (uid)
         """
-        subprocess_command = ""\
-            "nmcli c up {}".format(conn_name).split(" ")
-
         self.update_connection_status()
+        conn_dict = self.dbus_get_wrapper.search_for_connection( # noqa
+            name=conn_name,
+            return_device_path=True,
+            return_settings_path=True
+        )
         if (
             self.interface_state_tracker[conn_name]["exists"]
         ) and (
             not self.interface_state_tracker[conn_name]["is_running"]
-        ):
-            self.run_subprocess(
-                exceptions.ActivateKillswitchError,
-                "Unable to activate {}".format(conn_name),
-                subprocess_command
-            )
+        ) and conn_dict is not None:
+            device_path = str(conn_dict.get("device_path"))
+            settings_path = str(conn_dict.get("settings_path"))
+
+            try:
+                active_conn = self.dbus_get_wrapper.activate_connection(
+                    settings_path, device_path
+                )
+            except dbus.exceptions.DBusException as e:
+                logger.exception(e)
+                raise exceptions.ActivateKillswitchError(
+                    "Unable to activate {}".format(conn_name)
+                )
+            else:
+                if active_conn:
+                    return
+                logger.error(
+                    "Dbus returned empty, unable to activate connection"
+                )
+                raise exceptions.ActivateKillswitchError(
+                    "Unable to activate {}".format(conn_name)
+                )
 
     def deactivate_connection(self, conn_name):
         """Deactivate a connection based on connection name.
@@ -339,16 +350,25 @@ class KillSwitchManager(AbstractInterfaceManager):
         Args:
             conn_name (string): connection name (uid)
         """
-        subprocess_command = ""\
-            "nmcli c down {}".format(conn_name).split(" ")
-
         self.update_connection_status()
-        if self.interface_state_tracker[conn_name]["is_running"]: # noqa
-            self.run_subprocess(
-                exceptions.DectivateKillswitchError,
-                "Unable to deactivate {}".format(conn_name),
-                subprocess_command
-            )
+        active_conn_dict = self.dbus_get_wrapper.search_for_connection( # noqa
+            name=conn_name, is_active=True,
+            return_active_conn_path=True
+        )
+        if (
+            self.interface_state_tracker[conn_name]["is_running"]
+            and active_conn_dict is not None
+        ):
+            active_conn_path = str(active_conn_dict.get("active_conn_path"))
+            try:
+                self.dbus_get_wrapper.disconnect_connection(
+                    active_conn_path
+                )
+            except dbus.exceptions.DBusException as e:
+                logger.exception(e)
+                raise exceptions.DectivateKillswitchError(
+                    "Unable to deactivate {}".format(conn_name)
+                )
 
     def delete_connection(self, conn_name):
         """Delete a connection based on connection name.
@@ -441,11 +461,10 @@ class KillSwitchManager(AbstractInterfaceManager):
         (
             is_conn_check_available,
             is_conn_check_enabled,
-            client
         ) = self.check_status_connectivity_check()
 
         if not is_conn_check_enabled:
-            return (None, None, None)
+            return None
 
         if not is_conn_check_available:
             logger.error(
@@ -457,13 +476,13 @@ class KillSwitchManager(AbstractInterfaceManager):
                 "Unable to change connectivity check for killswitch"
             )
 
-        return client, is_conn_check_available, is_conn_check_enabled
+        return is_conn_check_available, is_conn_check_enabled
 
     def check_status_connectivity_check(self):
         """Check status of NM connectivity check."""
-        client = NM.Client.new(None)
-        is_conn_check_available = client.connectivity_check_get_available()
-        is_conn_check_enabled = client.connectivity_check_get_enabled()
+        nm_props = self.dbus_get_wrapper.get_network_manager_properties()
+        is_conn_check_available = nm_props["ConnectivityCheckAvailable"]
+        is_conn_check_enabled = nm_props["ConnectivityCheckEnabled"]
 
         logger.info(
             "Conn check available ({}) - Conn check enabled ({})".format(
@@ -472,24 +491,22 @@ class KillSwitchManager(AbstractInterfaceManager):
             )
         )
 
-        return is_conn_check_available, is_conn_check_enabled, client
+        return is_conn_check_available, is_conn_check_enabled
 
     def disable_connectivity_check(
-        self, client, is_conn_check_available, is_conn_check_enabled
+        self, is_conn_check_available, is_conn_check_enabled
     ):
         """Disable NetworkManager connectivity check."""
         if is_conn_check_enabled:
             logger.info("Disabling connectivity check")
-            # client.dbus_set_property(
-            #     "/org/freedesktop/NetworkManager",
-            #     "org.freedesktop.NetworkManager",
-            #     "ConnectivityCheckEnabled",
-            #     GLib.Variant.new_boolean(False),
-            #     -1, None, None, None
-            # )
-            client.props.connectivity_check_enabled = False
-            client = NM.Client.new(None)
-            if client.props.connectivity_check_enabled:
+            nm = self.dbus_get_wrapper.get_network_manager_properties_interface() # noqa
+            nm.Set(
+                "org.freedesktop.NetworkManager",
+                "ConnectivityCheckEnabled",
+                False
+            )
+            nm_props = self.dbus_get_wrapper.get_network_manager_properties()
+            if nm_props["ConnectivityCheckEnabled"]:
                 logger.error(
                     "[!] DisableConnectivityCheckError: "
                     + "Can not disable connectivity check for killswitch."
