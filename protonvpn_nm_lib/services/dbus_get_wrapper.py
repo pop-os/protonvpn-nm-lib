@@ -421,7 +421,6 @@ class DbusGetWrapper():
             nm_proxy_object, "org.freedesktop.NetworkManager"
         )
         return nm_interface
-        # x.Set("org.freedesktop.NetworkManager", "ConnectivityCheckEnabled", True)
 
     def get_network_manager_properties_interface(self):
         """Get network manager interface.
