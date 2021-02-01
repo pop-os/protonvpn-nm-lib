@@ -326,7 +326,7 @@ class KillSwitchManager(AbstractInterfaceManager):
             self.interface_state_tracker[conn_name]["exists"]
         ) and (
             not self.interface_state_tracker[conn_name]["is_running"]
-        ) and conn_dict is not None:
+        ) and conn_dict:
             device_path = str(conn_dict.get("device_path"))
             settings_path = str(conn_dict.get("settings_path"))
 
@@ -362,7 +362,7 @@ class KillSwitchManager(AbstractInterfaceManager):
         )
         if (
             self.interface_state_tracker[conn_name]["is_running"]
-            and active_conn_dict is not None
+            and active_conn_dict
         ):
             active_conn_path = str(active_conn_dict.get("active_conn_path"))
             try:

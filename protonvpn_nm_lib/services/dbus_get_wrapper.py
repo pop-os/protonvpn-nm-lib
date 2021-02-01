@@ -15,23 +15,24 @@ class DbusGetWrapper():
 
         Args:
             name (string): connection name
-            is_active (bool): check in list of active conns
+            is_active (bool): check for active conns
             is_interface (bool): if name is an interface
             return_settings_path (bool): return settings path
             return_device_path (bool): return device path
             return_active_conn_path (bool): return active connection
             path. This returns only if is_active is also True.
         Returns:
-           List: with specified content. Connection ID is returned always.
-           To extract contents of list, use the following keys:
+           Dict: with specified content. Connection ID is returned always.
+           To extract contents of dict, use the following keys:
             - connection_id
             - settings_path
             - device_path
             - active_conn_path
         """
-        connection_list = self.get_all_conns()
         if is_active:
             connection_list = self.get_all_active_conns()
+        else:
+            connection_list = self.get_all_conns()
 
         for iterated_connection in connection_list:
             if is_active:
@@ -74,7 +75,7 @@ class DbusGetWrapper():
 
                     return return_list
 
-        return None
+        return {}
 
     def get_connection_device_path(self, connection_settings_path):
         """Get path to connection device.
