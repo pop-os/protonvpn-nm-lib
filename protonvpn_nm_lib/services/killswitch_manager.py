@@ -16,6 +16,11 @@ from .dbus_get_wrapper import DbusGetWrapper
 
 
 class KillSwitchManager(AbstractInterfaceManager):
+    # Additional loop needs to be create since SystemBus automatically
+    # picks the default loop, which is intialized with the CLI.
+    # Thus, to refrain SystemBus from using the default loop,
+    # one extra loop is needed only to be passed, while it is never used.
+    # https://dbus.freedesktop.org/doc/dbus-python/tutorial.html#setting-up-an-event-loop
     dbus_loop = DBusGMainLoop()
     bus = dbus.SystemBus(mainloop=dbus_loop)
 
