@@ -76,7 +76,7 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
         # Auto connect at startup (Listen for StateChanged going forward)
         self.vpn_activator()
         try:
-            self.get_network_manager().connect_to_signal(
+            self.get_network_manager_interface().connect_to_signal(
                 "StateChanged", self.on_network_state_changed
             )
         except Exception as e:
@@ -214,7 +214,7 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
             active_connection (string): path to active connection
             vpn_interface (dbus.Proxy): proxy interface to vpn connection
         """
-        nm_interface = self.get_network_manager()
+        nm_interface = self.get_network_manager_interface()
         new_con = nm_interface.ActivateConnection(
             vpn_interface,
             dbus.ObjectPath("/"),

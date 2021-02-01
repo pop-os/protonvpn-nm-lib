@@ -211,9 +211,13 @@ class DbusGetWrapper():
         )
         connections = self.get_all_conns()
         for connection in connections:
-            all_settings, iface = self.get_all_conn_settings(
-                connection, return_iface=True
-            )
+            try:
+                all_settings, iface = self.get_all_conn_settings(
+                    connection, return_iface=True
+                )
+            except dbus.exceptions.DBusException as e:
+                logger.exception(e)
+                continue
             # all_settings[
             #   connection dbus.Dictionary
             #   vpn dbus.Dictionary
@@ -292,6 +296,9 @@ class DbusGetWrapper():
                     + "Exception: {}.".format(e)
                 )
                 return None
+            except dbus.exceptions.DBusException as e:
+                logger.exception(e)
+                continue
 
             if get_by_id and str(active_conn_props["Id"]) == get_by_id:
                 return active_conn
