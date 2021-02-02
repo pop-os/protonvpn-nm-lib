@@ -36,7 +36,8 @@ RUN pacman -S --noconfirm \
     python-keyring \
     python-distro \
     python-jinja \
-    python-gobject
+    python-gobject \
+    python-dbus
 
 RUN pacman -S --noconfirm \
     python-pytest \

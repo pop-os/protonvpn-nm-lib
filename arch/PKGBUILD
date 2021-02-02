@@ -1,13 +1,13 @@
 # Maintainer: Proton Technologies AG <opensource@proton.me>
 pkgname=python-protonvpn-nm-lib
-pkgver=0.3.0
+pkgver=0.4.0
 pkgrel=1
 pkgdesc="Official ProtonVPN NetworkManager library."
 arch=("any")
 url="https://github.com/ProtonVPN"
 license=("GPL3")
 groups=("ProtonVPN")
-depends=("networkmanager" "networkmanager-openvpn" "openvpn" "libnm" "dbus" "libsecret" "python-pyxdg" "python-keyring" "python-jinja" "python-distro")
+depends=("networkmanager" "networkmanager-openvpn" "openvpn" "libnm" "dbus" "libsecret" "python-pyxdg" "python-keyring" "python-jinja" "python-distro" "python-dbus")
 makedepends=("python-setuptools")
 source=("$pkgname.tar.gz")
 sha256sums=(.)

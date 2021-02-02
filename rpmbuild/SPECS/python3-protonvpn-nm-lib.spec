@@ -1,6 +1,6 @@
 %define unmangled_name protonvpn-nm-lib
-%define version 0.3.0
-%define release 2
+%define version 0.4.0
+%define release 1
 
 Prefix: %{_prefix}
 
@@ -30,6 +30,7 @@ Requires: python3-keyring
 Requires: python3-distro
 Requires: python3-jinja2
 Requires: python3-pyxdg
+Requires: python3-dbus
 
 %{?python_disable_dependency_generator}
 
@@ -55,5 +56,9 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
+* Mon Feb 01 2021 Proton Technologies AG <opensource@proton.me> 0.4.0-1
+- Improved Kill Switch logic
+- Improved reconnection logic after suspend/hibernate
+
 * Wed Jan 27 2021 Proton Technologies AG <opensource@proton.me> 0.3.0-2
 - Update .spec file for public release

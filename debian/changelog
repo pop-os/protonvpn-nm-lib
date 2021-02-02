@@ -1,3 +1,10 @@
+protonvpn-nm-core (0.4.0-1) unstable; urgency=low
+
+  * Improved Kill Switch logic
+  * Improved reconnection logic after suspend/hibernate 
+
+ -- Proton Technologies AG <opensource@proton.me>  Mon, 01 Feb 2021 13:02:15 +0000
+
 protonvpn-nm-core (0.3.0-6) UNRELEASED; urgency=low
 
   * Refactor server_manager
