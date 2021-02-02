@@ -1,6 +1,6 @@
 %define unmangled_name protonvpn-nm-lib
 %define version 0.4.0
-%define release 1
+%define release 2
 
 Prefix: %{_prefix}
 
@@ -56,9 +56,10 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
-* Mon Feb 01 2021 Proton Technologies AG <opensource@proton.me> 0.4.0-1
+* Mon Feb 01 2021 Proton Technologies AG <opensource@proton.me> 0.4.0-2
 - Improved Kill Switch logic
 - Improved reconnection logic after suspend/hibernate
+- Add IP server label suffix to username
 
 * Wed Jan 27 2021 Proton Technologies AG <opensource@proton.me> 0.3.0-2
 - Update .spec file for public release

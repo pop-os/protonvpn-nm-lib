@@ -33,31 +33,42 @@ class ServerManager(ConnectionStateManager):
             protocol (string): selected protocol
             servers (list): server list
             filtered_servers (list): filtered server list
+
         Returns:
             string: certificate filepath
         """
         self.validate_protocol(protocol)
 
-        entry_IP, exit_IP = self.get_server_entry_exit_ip(
+        physical_server_list = self.get_physical_server_list(
             servername, servers, filtered_servers
         )
+        physical_server = self.get_random_physical_server(
+            physical_server_list
+        )
+        entry_IP, exit_IP = self.get_server_entry_exit_ip(
+            physical_server
+        )
+        server_label = self.get_server_label(
+            physical_server
+        )
 
-        try:
-            matching_domain = self.get_matching_domain(
-                servers, exit_IP, server_feature
-            )
-        except KeyError:
+        matching_domain = self.get_matching_domain(
+            servers, exit_IP, server_feature
+        )
+
+        if matching_domain is not None:
             matching_domain = domain
 
         return self.cert_manager.generate_vpn_cert(
-            protocol, servername, entry_IP
-        ), matching_domain, entry_IP
+            protocol, servername, [entry_IP]
+        ), matching_domain, [entry_IP], server_label
 
     def get_config_for_fastest_server(self, session, _=None):
         """Get configuration for fastest server.
 
         Args:
             session (ProtonSessionWrapper): current user session object
+
         Returns:
             tuple: (
                 servername, server_domain, server_feature,
@@ -94,6 +105,7 @@ class ServerManager(ConnectionStateManager):
         Args:
             session (ProtonSessionWrapper): current user session object
             country_code (string): country code [PT|SE|CH ...]
+
         Returns:
             tuple: (
                 servername, server_domain, server_feature,
@@ -135,6 +147,7 @@ class ServerManager(ConnectionStateManager):
         Args:
             session (ProtonSessionWrapper): current user session object
             servername (string): servername to connect
+
         Returns:
             tuple: (
                 servername, server_domain, server_feature,
@@ -188,6 +201,7 @@ class ServerManager(ConnectionStateManager):
         Args:
             session (ProtonSessionWrapper): current user session object
             feature (string): literal feature [p2p|tor|sc]
+
         Returns:
             tuple: (
                 servername, server_domain, server_feature,
@@ -244,6 +258,7 @@ class ServerManager(ConnectionStateManager):
 
         Args:
             session (ProtonSessionWrapper): current user session object
+
         Returns:
             tuple: (
                 servername, server_domain, server_feature,
@@ -261,31 +276,30 @@ class ServerManager(ConnectionStateManager):
             filtered_servers
         ) + (filtered_servers, servers)
 
-    def get_server_entry_exit_ip(self, servername, servers, filtered_servers):
-        """Get server entry and exit IP.
+    def get_physical_server_list(self, servername, servers, filtered_servers):
+        """Get physical servers for matching logical servername.
 
         Args:
             servername (string): servername (ie PT#8, CH#6)
             servers (list): server list
             filtered_servers (list): filtered server list
+
         Returns:
-            tuple: (entry_IP, exit_IP)
+            list(dict): contains list of physical servers
         """
         try:
-            entry_IP, exit_IP = self.get_pyshical_ip_list(
-                servername, filtered_servers
+            physical_servers = self.extract_server_value(
+                servername, "Servers", servers
             )
         except IndexError as e:
-            logger.exception("[!] IllegalServername: {}".format(e))
-            raise exceptions.IllegalServername(
-                "\"{}\" is not a valid server".format(servername)
-            )
+            logger.info("[!] IndexError: {}".format(e))
+            raise IndexError(e)
         except Exception as e:
             logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
-        else:
-            self.save_server_ip(entry_IP)
-            return entry_IP, exit_IP
+            raise Exception("Unknown exception: {}".format(e))
+
+        return physical_servers
 
     def get_matching_domain(self, server_pool, exit_IP, server_feature):
         """Get matching domaing for featureless or secure-core servers.
@@ -294,6 +308,7 @@ class ServerManager(ConnectionStateManager):
             server_pool (list): pool with logical servers
             exit_IP (string): server exit IP
             server_feature (FeatureEnum): FeatureEnum object
+
         Returns:
             string: matching server domain
         """
@@ -304,8 +319,8 @@ class ServerManager(ConnectionStateManager):
                 for physical_server in server["Servers"]:
                     if exit_IP in physical_server["EntryIP"]:
                         return physical_server["Domain"]
-        else:
-            raise KeyError("No such server")
+
+        return None
 
     def validate_session(self, session):
         """Validates session.
@@ -352,40 +367,57 @@ class ServerManager(ConnectionStateManager):
             )
             raise ValueError(err_msg)
 
-    def get_pyshical_ip_list(
-        self, servername, servers,
-        server_certificate_check=True
-    ):
-        """Get physical IPs from server list, based on servername.
+    def get_random_physical_server(self, physical_server_list):
+        """Get physical server at random.
 
         Args:
-            servername (string): servername [PT#1]
-            servers (list): curated list containing the servers
-        Returns:
-            list: IPs for the selected server
+            physical_server_list (list(dict)): list with physical servers
+
+        Return:
+            dict: with server information
         """
-        logger.info("Generating IP list")
-
-        try:
-            subservers = self.extract_server_value(
-                servername, "Servers", servers
-            )
-        except IndexError as e:
-            logger.info("[!] IndexError: {}".format(e))
-            raise IndexError(e)
-        except Exception as e:
-            logger.exception("[!] Unknown exception: {}".format(e))
-            capture_exception(e)
-
-        ip_list = [
-            (subserver["EntryIP"], subserver["ExitIP"])
-            for subserver
-            in subservers
-            if subserver["Status"] == 1
+        logger.info("Selecting random physical server")
+        enabled_servers = [
+            server
+            for server
+            in physical_server_list
+            if server["Status"] == 1
         ]
-        entry_IP, exit_IP = random.choice(ip_list)
 
-        return [entry_IP], exit_IP
+        if len(enabled_servers) == 0:
+            logger.error("List of physical servers is empty")
+            raise exceptions.EmptyServerListError("No servers could be found")
+
+        return random.choice(enabled_servers)
+
+    def get_server_label(self, physical_server):
+        """Get physical server label.
+
+        Args:
+            server_physical_list (list(dict)): physical server
+        Returns:
+            None|Label: Returns the label if the key exists and it's length
+            is greater then 0, else return None.
+        """
+        server_label = physical_server.get("Label", "")
+
+        if len(server_label.strip()) == 0:
+            server_label = None
+
+        return server_label
+
+    def get_server_entry_exit_ip(self, physical_server):
+        """Get physical IPs from sub-servers.
+
+        Args:
+            physical_server (dict): physical server
+
+        Returns:
+            tuple: (entry_IP, exit_IP)
+        """
+        logger.info("Getting entry/exit IPs")
+
+        return physical_server.get("EntryIP"), physical_server.get("ExitIP")
 
     def filter_servers(
         self, servers,
@@ -398,6 +430,7 @@ class ServerManager(ConnectionStateManager):
             exclude_features (list): [FeatureEnum.TOR, ...] (optional)
             connect_to_country (string): country code PT|SE|CH (optional)
             servername (string): servername PT#1|SE#5|CH#10 (optional)
+
         Returns:
             list: serverlist extracted from raw json
         """
@@ -469,6 +502,7 @@ class ServerManager(ConnectionStateManager):
 
         Args:
             filtered_servers (list): filtered servers
+
         Returns:
             string: servername with the highest score (fastest)
         """
@@ -500,6 +534,7 @@ class ServerManager(ConnectionStateManager):
 
         Args:
             server_pool (list): pool with logical servers
+
         Returns:
             tuple: (servername, domain, server_feature)
         """
@@ -520,6 +555,7 @@ class ServerManager(ConnectionStateManager):
             servername (string): servername [PT#1]
             key (string): keyword that contains servernames in json
             servers (list): a list containing the servers
+
         Returns:
             list: dict with server information
         """
@@ -534,6 +570,7 @@ class ServerManager(ConnectionStateManager):
 
         Args:
             code (string): country code [PT|SE|CH]
+
         Returns:
             string:
                 country name if found, else returns country code
