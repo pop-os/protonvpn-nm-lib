@@ -424,7 +424,7 @@ class DbusGetWrapper():
         return nm_interface
 
     def get_network_manager_properties_interface(self):
-        """Get network manager interface.
+        """Get network manager properties interface.
 
         Returns:
             dbus.proxies.Interface: network manager proprties interface
