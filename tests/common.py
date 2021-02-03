@@ -97,7 +97,8 @@ SERVERS = [
                 "EntryIP": "255.255.255.0",
                 "ExitIP": "255.255.255.0",
                 "Domain": "pt-89.webtest.com", "ID": "ID5",
-                "Status": 1
+                "Status": 1,
+                "Label": "TestLabel"
             }
         ],
         "Load": 11, "Score": 1.00316551
@@ -213,7 +214,7 @@ SERVERS = [
                 "EntryIP": "255.255.255.0", "ExitIP": "255.255.255.0",
                 "Domain": "ch-99.webtest.com",
                 "ID": "ID8",
-                "Status": 1
+                "Status": 1,
             }
         ], "Load": 6, "Score": 1.00063101
     },
