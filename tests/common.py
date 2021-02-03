@@ -119,7 +119,7 @@ SERVERS = [
         "Status": 1,
         "Servers": [
             {
-                "EntryIP": "255.255.255.0", "ExitIP": "255.255.255.0",
+                "EntryIP": "255.211.255.0", "ExitIP": "255.211.255.0",
                 "Domain": "pt-99.webtest.com",
                 "ID": "ID6",
                 "Status": 1
