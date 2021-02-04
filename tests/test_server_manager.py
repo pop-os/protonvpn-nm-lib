@@ -115,12 +115,115 @@ class TestUnitServerManager:
         mock_get_patcher.stop()
 
     @pytest.mark.parametrize("servername", ["#", "", 5, None, {}, []])
-    def test_get_incorrect_get_pyshical_ip_list(self, servername):
+    def test_get_incorrect_get_pyshical_ip_list(
+        self, servername, mock_api_request
+    ):
+        mock_api_request.side_effect = [RAW_SERVER_LIST]
+        (
+            _servername,
+            server_domain,
+            server_feature,
+            filtered_servers,
+            servers
+        ) = self.server_man.get_config_for_fastest_server(
+            session=self.MOCKED_SESSION,
+        )
         with pytest.raises(IndexError):
-            self.server_man.get_pyshical_ip_list(servername, SERVERS)
+            self.server_man.get_physical_server_list(
+                servername, SERVERS, filtered_servers
+            )
 
-    def test_get_correct_get_pyshical_ip_list(self):
-        self.server_man.get_pyshical_ip_list("TEST#5", SERVERS)
+    def test_get_correct_get_pyshical_ip_list(self, mock_api_request):
+        mock_api_request.side_effect = [RAW_SERVER_LIST]
+        (
+            servername,
+            server_domain,
+            server_feature,
+            filtered_servers,
+            servers
+        ) = self.server_man.get_config_for_specific_server(
+            session=self.MOCKED_SESSION, servername="TEST#5"
+        )
+        servers = self.server_man.get_physical_server_list(
+            servername, SERVERS, filtered_servers
+        )
+        assert servers[0]["Domain"] == "pt-89.webtest.com"
+
+    def test_get_existing_label(self, mock_api_request):
+        mock_api_request.side_effect = [RAW_SERVER_LIST]
+        (
+            servername,
+            server_domain,
+            server_feature,
+            filtered_servers,
+            servers
+        ) = self.server_man.get_config_for_specific_server(
+            session=self.MOCKED_SESSION, servername="TEST#5"
+        )
+        servers = self.server_man.get_physical_server_list(
+            servername, servers, filtered_servers
+        )
+
+        server = self.server_man.get_random_physical_server(servers)
+        label = self.server_man.get_server_label(server)
+        assert label == "TestLabel"
+
+    def test_get_missing_label(self, mock_api_request):
+        mock_api_request.side_effect = [RAW_SERVER_LIST]
+        (
+            servername,
+            server_domain,
+            server_feature,
+            filtered_servers,
+            servers
+        ) = self.server_man.get_config_for_specific_server(
+            session=self.MOCKED_SESSION, servername="TEST#6"
+        )
+        servers = self.server_man.get_physical_server_list(
+            servername, servers, filtered_servers
+        )
+
+        server = self.server_man.get_random_physical_server(servers)
+        label = self.server_man.get_server_label(server)
+        assert label is None
+
+    def test_get_nonexisting_label(self, mock_api_request):
+        mock_api_request.side_effect = [RAW_SERVER_LIST]
+        (
+            servername,
+            server_domain,
+            server_feature,
+            filtered_servers,
+            servers
+        ) = self.server_man.get_config_for_specific_server(
+            session=self.MOCKED_SESSION, servername="TEST#6"
+        )
+        servers = self.server_man.get_physical_server_list(
+            servername, servers, filtered_servers
+        )
+
+        server = self.server_man.get_random_physical_server(servers)
+        label = self.server_man.get_server_label(server)
+        assert label is None
+
+    def test_get_server_IP(self, mock_api_request):
+        mock_api_request.side_effect = [RAW_SERVER_LIST]
+        (
+            servername,
+            server_domain,
+            server_feature,
+            filtered_servers,
+            servers
+        ) = self.server_man.get_config_for_specific_server(
+            session=self.MOCKED_SESSION, servername="TEST#6"
+        )
+        servers = self.server_man.get_physical_server_list(
+            servername, servers, filtered_servers
+        )
+
+        server = self.server_man.get_random_physical_server(servers)
+        ips = self.server_man.get_server_entry_exit_ip(server)
+        assert ips == ("255.211.255.0", "255.211.255.0")
 
     @pytest.fixture
     def empty_server_pool(self):
@@ -364,7 +467,8 @@ class TestIntegrationServerManager:
         (
             cert_fp,
             matching_domain,
-            entry_IP
+            entry_IP,
+            server_label
         ) = self.server_man.generate_server_certificate(
             servername, server_domain, server_feature,
             ProtocolEnum.TCP, servers, filtered_servers

@@ -1,9 +1,10 @@
-protonvpn-nm-core (0.4.0-1) unstable; urgency=low
+protonvpn-nm-core (0.4.0-2) unstable; urgency=low
 
   * Improved Kill Switch logic
-  * Improved reconnection logic after suspend/hibernate 
+  * Improved reconnection logic after suspend/hibernate
+  * Add IP server label suffix to username
 
- -- Proton Technologies AG <opensource@proton.me>  Mon, 01 Feb 2021 13:02:15 +0000
+ -- Proton Technologies AG <opensource@proton.me>  Tue, 02 Feb 2021 18:27:00 +0000
 
 protonvpn-nm-core (0.3.0-6) UNRELEASED; urgency=low
 
