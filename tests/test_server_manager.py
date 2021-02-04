@@ -141,11 +141,11 @@ class TestUnitServerManager:
             server_feature,
             filtered_servers,
             servers
-        ) = self.server_man.get_config_for_fastest_server(
-            session=self.MOCKED_SESSION,
+        ) = self.server_man.get_config_for_specific_server(
+            session=self.MOCKED_SESSION, servername="TEST#5"
         )
         servers = self.server_man.get_physical_server_list(
-            "TEST#5", SERVERS, filtered_servers
+            servername, SERVERS, filtered_servers
         )
         assert servers[0]["Domain"] == "pt-89.webtest.com"
 
@@ -167,6 +167,25 @@ class TestUnitServerManager:
         server = self.server_man.get_random_physical_server(servers)
         label = self.server_man.get_server_label(server)
         assert label == "TestLabel"
+
+    def test_get_missing_label(self, mock_api_request):
+        mock_api_request.side_effect = [RAW_SERVER_LIST]
+        (
+            servername,
+            server_domain,
+            server_feature,
+            filtered_servers,
+            servers
+        ) = self.server_man.get_config_for_specific_server(
+            session=self.MOCKED_SESSION, servername="TEST#6"
+        )
+        servers = self.server_man.get_physical_server_list(
+            servername, servers, filtered_servers
+        )
+
+        server = self.server_man.get_random_physical_server(servers)
+        label = self.server_man.get_server_label(server)
+        assert label is None
 
     def test_get_nonexisting_label(self, mock_api_request):
         mock_api_request.side_effect = [RAW_SERVER_LIST]

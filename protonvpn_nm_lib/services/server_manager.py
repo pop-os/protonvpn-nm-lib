@@ -399,12 +399,9 @@ class ServerManager(ConnectionStateManager):
             None|Label: Returns the label if the key exists and it's length
             is greater then 0, else return None.
         """
-        server_label = physical_server.get("Label", "")
+        server_label = physical_server.get("Label", "").strip()
 
-        if len(server_label.strip()) == 0:
-            server_label = None
-
-        return server_label
+        return server_label or None
 
     def get_server_entry_exit_ip(self, physical_server):
         """Get physical IPs from sub-servers.
