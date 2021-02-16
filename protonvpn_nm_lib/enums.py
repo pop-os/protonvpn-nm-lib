@@ -1,22 +1,25 @@
-class ProtocolEnum(object):
+from enum import Enum
+
+
+class ProtocolEnum(Enum):
     TCP = "tcp"
     UDP = "udp"
     IKEV2 = "ikev2"
     WIREGUARD = "wireguard"
 
 
-class ProtocolImplementationEnum(object):
+class ProtocolImplementationEnum(Enum):
     OPENVPN = "openvpn"
     STRONGSWAN = "strongswan"
     WIREGUARD = "wireguard"
 
 
-class ProtocolPortEnum(object):
+class ProtocolPortEnum(Enum):
     TCP = 443
     UDP = 1194
 
 
-class FeatureEnum(object):
+class FeatureEnum(Enum):
     NORMAL = 0
     SECURE_CORE = 1
     TOR = 2
@@ -25,7 +28,7 @@ class FeatureEnum(object):
     IPv6 = 16
 
 
-class ServerTierEnum(object):
+class ServerTierEnum(Enum):
     FREE = 0
     BASIC = 1
     PLUS = 2
@@ -34,19 +37,19 @@ class ServerTierEnum(object):
     PM = 3
 
 
-class ConnectionMetadataEnum(object):
+class ConnectionMetadataEnum(Enum):
     SERVER = "connected_server"
     CONNECTED_TIME = "connected_time"
     PROTOCOL = "connected_protocol"
 
 
-class LastConnectionMetadataEnum(object):
+class LastConnectionMetadataEnum(Enum):
     SERVER = ConnectionMetadataEnum.SERVER
     PROTOCOL = ConnectionMetadataEnum.PROTOCOL
     SERVER_IP = "last_connect_ip"
 
 
-class ClientSuffixEnum(object):
+class ClientSuffixEnum(Enum):
     PLATFORM = "pl"
     NETSHIELD = "f1"
     NETSHIELD_ADS_TRACKING = "f2"
@@ -54,45 +57,45 @@ class ClientSuffixEnum(object):
     RANDOMAZIED_NAT = "nr"
 
 
-class KeyringEnum(object):
+class KeyringEnum(Enum):
     DEFAULT_KEYRING_SERVICE = "ProtonVPN"
     DEFAULT_KEYRING_SESSIONDATA = "SessionData"
     DEFAULT_KEYRING_USERDATA = "UserData"
     DEFAULT_KEYRING_PROTON_USER = "ProtonUser"
 
 
-class UserSettingEnum(object):
+class UserSettingEnum(Enum):
     GENERAL = "general"
     CONNECTION = "connection"
     TRAY = "tray"
     ADVANCED = "advanced"
 
 
-class UserSettingStatusEnum(object):
+class UserSettingStatusEnum(Enum):
     DISABLED = 0
     ENABLED = 1
     CUSTOM = 2
 
 
-class KillswitchStatusEnum(object):
+class KillswitchStatusEnum(Enum):
     DISABLED = 0
     HARD = 1
     SOFT = 2
 
 
-class NetshieldStatusEnum(object):
+class NetshieldStatusEnum(Enum):
     DISABLED = "f0"
     MALWARE = ClientSuffixEnum.NETSHIELD
     ADS_MALWARE = ClientSuffixEnum.NETSHIELD_ADS_TRACKING
 
 
-class NetshieldTranslationEnum(object):
+class NetshieldTranslationEnum(Enum):
     DISABLED = UserSettingStatusEnum.DISABLED
     MALWARE = UserSettingStatusEnum.ENABLED
     ADS_MALWARE = UserSettingStatusEnum.CUSTOM
 
 
-class UserSettingConnectionEnum(object):
+class UserSettingConnectionEnum(Enum):
     DEFAULT_PROTOCOL = "default_protocol"
     KILLSWITCH = "killswitch"
     DNS = "dns"
@@ -104,7 +107,7 @@ class UserSettingConnectionEnum(object):
     NETSHIELD = "netshield"
 
 
-class ProtonSessionAPIMethodEnum(object):
+class ProtonSessionAPIMethodEnum(Enum):
     API_REQUEST = "api_request"
     AUTHENTICATE = "authenticate"
     LOGOUT = "logout"
@@ -112,13 +115,13 @@ class ProtonSessionAPIMethodEnum(object):
     LOADS_CACHE = "loads"
 
 
-class MetadataActionEnum(object):
+class MetadataActionEnum(Enum):
     GET = "get"
     WRITE = "write"
     REMOVE = "remove"
 
 
-class MetadataEnum(object):
+class MetadataEnum(Enum):
     CONNECTION = "connection_metadata"
     LAST_CONNECTION = "last_connection_metadata"
     SERVER_CACHE = "cache_metadata"
