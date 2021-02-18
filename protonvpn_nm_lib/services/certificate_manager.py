@@ -35,10 +35,10 @@ class CertificateManager(ConnectionStateManager):
         """
         logger.info("Generating VPN certificate")
         protocol_dict = {
-            ProtocolEnum.TCP: self.generate_openvpn_cert,
-            ProtocolEnum.UDP: self.generate_openvpn_cert,
-            ProtocolEnum.IKEV2: self.generate_strongswan_cert,
-            ProtocolEnum.WIREGUARD: self.generate_wireguard_cert
+            ProtocolEnum.TCP.value: self.generate_openvpn_cert,
+            ProtocolEnum.UDP.value: self.generate_openvpn_cert,
+            ProtocolEnum.IKEV2.value: self.generate_strongswan_cert,
+            ProtocolEnum.WIREGUARD.value: self.generate_wireguard_cert
         }
 
         if not isinstance(protocol, str):
@@ -65,17 +65,19 @@ class CertificateManager(ConnectionStateManager):
             )
             raise TypeError(err_msg)
 
+        logger.info("Type checks passed")
+
         if len(ip_list) == 0:
             logger.error(
                 "[!] ValueError: No servers were provided. Raising exception."
             )
             raise ValueError("No servers were provided")
 
-        self.save_servername(servername)
-        self.save_protocol(protocol)
-
         logger.info("Servername: \"{}\"".format(servername))
+        self.save_servername(servername)
+
         logger.info("Protocol: \"{}\"".format(protocol))
+        self.save_protocol(protocol)
 
         try:
             return protocol_dict[protocol](
@@ -108,8 +110,8 @@ class CertificateManager(ConnectionStateManager):
         """
         logger.info("Generating OpenVPN certificate")
         ports = {
-            ProtocolEnum.TCP: ProtocolPortEnum.TCP,
-            ProtocolEnum.UDP: ProtocolPortEnum.UDP
+            ProtocolEnum.TCP.value: ProtocolPortEnum.TCP.value,
+            ProtocolEnum.UDP.value: ProtocolPortEnum.UDP.value
         }
 
         j2_values = {

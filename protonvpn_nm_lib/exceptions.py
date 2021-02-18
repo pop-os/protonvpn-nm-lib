@@ -40,7 +40,6 @@ class IllegalUserData(IllegalData):
 
 
 
-
 class JSONError(ProtonVPNException): # noqa
     """JSON generated errors"""
 
@@ -105,6 +104,8 @@ class StoredProtonUsernameNotFound(KeyringDataNotFound):
     """Stored user data was not found"""
 
 
+class UserSessionNotFound(KeyringError):
+    """User session not found."""
 
 
 class IPv6LeakProtectionError(ProtonVPNException): # noqa

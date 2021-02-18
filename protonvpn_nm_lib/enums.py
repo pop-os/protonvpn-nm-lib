@@ -44,8 +44,8 @@ class ConnectionMetadataEnum(Enum):
 
 
 class LastConnectionMetadataEnum(Enum):
-    SERVER = ConnectionMetadataEnum.SERVER
-    PROTOCOL = ConnectionMetadataEnum.PROTOCOL
+    SERVER = ConnectionMetadataEnum.SERVER.value
+    PROTOCOL = ConnectionMetadataEnum.PROTOCOL.value
     SERVER_IP = "last_connect_ip"
 
 
@@ -85,14 +85,14 @@ class KillswitchStatusEnum(Enum):
 
 class NetshieldStatusEnum(Enum):
     DISABLED = "f0"
-    MALWARE = ClientSuffixEnum.NETSHIELD
-    ADS_MALWARE = ClientSuffixEnum.NETSHIELD_ADS_TRACKING
+    MALWARE = ClientSuffixEnum.NETSHIELD.value
+    ADS_MALWARE = ClientSuffixEnum.NETSHIELD_ADS_TRACKING.value
 
 
 class NetshieldTranslationEnum(Enum):
-    DISABLED = UserSettingStatusEnum.DISABLED
-    MALWARE = UserSettingStatusEnum.ENABLED
-    ADS_MALWARE = UserSettingStatusEnum.CUSTOM
+    DISABLED = UserSettingStatusEnum.DISABLED.value
+    MALWARE = UserSettingStatusEnum.ENABLED.value
+    ADS_MALWARE = UserSettingStatusEnum.CUSTOM.value
 
 
 class UserSettingConnectionEnum(Enum):
@@ -125,3 +125,13 @@ class MetadataEnum(Enum):
     CONNECTION = "connection_metadata"
     LAST_CONNECTION = "last_connection_metadata"
     SERVER_CACHE = "cache_metadata"
+
+
+class ConnectionTypeEnum(Enum):
+    SERVERNAME = 1
+    FASTEST = 2
+    RANDOM = 3
+    COUNTRY = 4
+    SECURE_CORE = 5
+    PEER2PEER = 6
+    TOR = 7

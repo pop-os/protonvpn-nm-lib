@@ -32,8 +32,8 @@ class UserConfigurationManager():
         """Protocol get property."""
         user_configs = self.get_user_configurations()
         return user_configs[
-            UserSettingEnum.CONNECTION
-        ][UserSettingConnectionEnum.DEFAULT_PROTOCOL]
+            UserSettingEnum.CONNECTION.value
+        ][UserSettingConnectionEnum.DEFAULT_PROTOCOL.value]
 
     @property
     def dns(self):
@@ -41,12 +41,16 @@ class UserConfigurationManager():
         user_configs = self.get_user_configurations()
 
         dns_status = user_configs[
-            UserSettingEnum.CONNECTION
-        ][UserSettingConnectionEnum.DNS][UserSettingConnectionEnum.DNS_STATUS]
+            UserSettingEnum.CONNECTION.value
+        ][UserSettingConnectionEnum.DNS.value][
+            UserSettingConnectionEnum.DNS_STATUS.value
+        ]
 
         custom_dns = user_configs[
-            UserSettingEnum.CONNECTION
-        ][UserSettingConnectionEnum.DNS][UserSettingConnectionEnum.CUSTOM_DNS]
+            UserSettingEnum.CONNECTION.value
+        ][UserSettingConnectionEnum.DNS.value][
+            UserSettingConnectionEnum.CUSTOM_DNS.value
+        ]
 
         return (dns_status, [custom_dns])
 
@@ -55,8 +59,8 @@ class UserConfigurationManager():
         """Killswitch get property."""
         user_configs = self.get_user_configurations()
         return user_configs[
-            UserSettingEnum.CONNECTION
-        ][UserSettingConnectionEnum.KILLSWITCH]
+            UserSettingEnum.CONNECTION.value
+        ][UserSettingConnectionEnum.KILLSWITCH.value]
 
     @property
     def netshield(self):
@@ -64,8 +68,8 @@ class UserConfigurationManager():
         user_configs = self.get_user_configurations()
         try:
             return user_configs[
-                UserSettingEnum.CONNECTION
-            ][UserSettingConnectionEnum.NETSHIELD]
+                UserSettingEnum.CONNECTION.value
+            ][UserSettingConnectionEnum.NETSHIELD.value]
         except KeyError:
             return 0
 
@@ -84,7 +88,7 @@ class UserConfigurationManager():
             raise KeyError("Illegal options")
 
         user_configs = self.get_user_configurations()
-        user_configs[UserSettingEnum.CONNECTION][UserSettingConnectionEnum.DEFAULT_PROTOCOL] = protocol # noqa
+        user_configs[UserSettingEnum.CONNECTION.value][UserSettingConnectionEnum.DEFAULT_PROTOCOL.value] = protocol # noqa
         self.set_user_configurations(user_configs)
 
     def update_dns(self, status, custom_dns=None):
@@ -99,8 +103,12 @@ class UserConfigurationManager():
 
         user_configs = self.get_user_configurations()
 
-        user_configs[UserSettingEnum.CONNECTION][UserSettingConnectionEnum.DNS][UserSettingConnectionEnum.DNS_STATUS] = status # noqa
-        user_configs[UserSettingEnum.CONNECTION][UserSettingConnectionEnum.DNS][UserSettingConnectionEnum.CUSTOM_DNS] = custom_dns # noqa
+        user_configs[UserSettingEnum.CONNECTION.value][
+            UserSettingConnectionEnum.DNS.value
+        ][UserSettingConnectionEnum.DNS_STATUS.value] = status # noqa
+        user_configs[UserSettingEnum.CONNECTION.value][
+            UserSettingConnectionEnum.DNS.value
+        ][UserSettingConnectionEnum.CUSTOM_DNS.value] = custom_dns # noqa
 
         self.set_user_configurations(user_configs)
 
@@ -114,7 +122,9 @@ class UserConfigurationManager():
             raise KeyError("Illegal options")
 
         user_configs = self.get_user_configurations()
-        user_configs[UserSettingEnum.CONNECTION][UserSettingConnectionEnum.KILLSWITCH] = status # noqa
+        user_configs[UserSettingEnum.CONNECTION.value][
+            UserSettingConnectionEnum.KILLSWITCH.value
+        ] = status # noqa
         self.set_user_configurations(user_configs)
 
     def update_netshield(self, status):
@@ -134,8 +144,8 @@ class UserConfigurationManager():
 
         user_configs = self.get_user_configurations()
         user_configs[
-            UserSettingEnum.CONNECTION
-        ][UserSettingConnectionEnum.NETSHIELD] = status
+            UserSettingEnum.CONNECTION.value
+        ][UserSettingConnectionEnum.NETSHIELD.value] = status
         self.set_user_configurations(user_configs)
 
     def reset_default_configs(self):

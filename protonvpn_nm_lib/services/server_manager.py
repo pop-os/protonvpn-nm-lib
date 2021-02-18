@@ -56,12 +56,12 @@ class ServerManager(ConnectionStateManager):
             servers, exit_IP, server_feature
         )
 
-        if matching_domain is not None:
-            matching_domain = domain
+        if matching_domain != None:
+            domain = matching_domain
 
         return self.cert_manager.generate_vpn_cert(
             protocol, servername, [entry_IP]
-        ), matching_domain, [entry_IP], server_label
+        ), domain, [entry_IP], server_label
 
     def get_config_for_fastest_server(self, session, _=None):
         """Get configuration for fastest server.
@@ -75,12 +75,15 @@ class ServerManager(ConnectionStateManager):
                 filtered_servers, servers
             )
         """
+        logger.info("Generating config for fastest server")
         if not self.killswitch_status == KillswitchStatusEnum.HARD:
             session.cache_servers()
         servers = self.extract_server_list()
 
         excluded_features = [
-            FeatureEnum.SECURE_CORE, FeatureEnum.TOR, FeatureEnum.P2P
+            FeatureEnum.SECURE_CORE.value,
+            FeatureEnum.TOR.value,
+            FeatureEnum.P2P.value
         ]
         filtered_servers = self.filter_servers(
             servers, exclude_features=excluded_features
@@ -94,7 +97,6 @@ class ServerManager(ConnectionStateManager):
             )
             raise exceptions.EmptyServerListError(err_msg)
 
-        # Add new element to tuple
         return self.get_fastest_server(
             filtered_servers
         ) + (filtered_servers, servers)
@@ -112,12 +114,15 @@ class ServerManager(ConnectionStateManager):
                 filtered_servers, servers
             )
         """
+        logger.info("Generating config for fastest server in \"{}\"".format(
+            country_code
+        ))
         if not self.killswitch_status == KillswitchStatusEnum.HARD:
             session.cache_servers()
         servers = self.extract_server_list()
 
         excluded_features = [
-            FeatureEnum.TOR, FeatureEnum.SECURE_CORE
+            FeatureEnum.TOR.value, FeatureEnum.SECURE_CORE.value
         ]
         filtered_servers = self.filter_servers(
             servers,
@@ -213,12 +218,12 @@ class ServerManager(ConnectionStateManager):
         servers = self.extract_server_list()
 
         allowed_features = {
-            "normal": FeatureEnum.NORMAL,
-            "sc": FeatureEnum.SECURE_CORE,
-            "tor": FeatureEnum.TOR,
-            "p2p": FeatureEnum.P2P,
-            "stream": FeatureEnum.STREAMING,
-            "ipv6": FeatureEnum.IPv6
+            "normal": FeatureEnum.NORMAL.value,
+            "sc": FeatureEnum.SECURE_CORE.value,
+            "tor": FeatureEnum.TOR.value,
+            "p2p": FeatureEnum.P2P.value,
+            "stream": FeatureEnum.STREAMING.value,
+            "ipv6": FeatureEnum.IPv6.value
         }
 
         if feature not in allowed_features:
@@ -312,8 +317,7 @@ class ServerManager(ConnectionStateManager):
         Returns:
             string: matching server domain
         """
-        _list = [FeatureEnum.NORMAL, FeatureEnum.SECURE_CORE]
-
+        _list = [FeatureEnum.NORMAL.value, FeatureEnum.SECURE_CORE.value]
         if server_feature in _list:
             for server in server_pool:
                 for physical_server in server["Servers"]:

@@ -4,7 +4,6 @@ import sys
 
 import protonvpn_nm_lib
 
-# from .. import exceptions
 from ..constants import (ENV_CI_NAME, LOCAL_SERVICE_FILEPATH, SERVICE_TEMPLATE,
                          XDG_CONFIG_SYSTEMD_USER)
 from ..logger import logger

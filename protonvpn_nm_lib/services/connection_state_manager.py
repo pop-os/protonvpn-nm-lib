@@ -4,6 +4,7 @@ import time
 from ..enums import (ConnectionMetadataEnum, LastConnectionMetadataEnum,
                      MetadataActionEnum, MetadataEnum)
 from .metadata_manager import MetadataManager
+from ..logger import logger
 
 
 class ConnectionStateManager(MetadataManager):
@@ -19,12 +20,20 @@ class ConnectionStateManager(MetadataManager):
                 MetadataEnum.LAST_CONNECTION
             )
         except FileNotFoundError:
-            last_metadata = {ConnectionMetadataEnum.SERVER: servername}
+            last_metadata = {ConnectionMetadataEnum.SERVER.value: servername}
         else:
-            last_metadata[ConnectionMetadataEnum.SERVER] = servername
+            last_metadata[ConnectionMetadataEnum.SERVER.value] = servername
 
-        real_metadata = {ConnectionMetadataEnum.SERVER: servername}
+        real_metadata = {ConnectionMetadataEnum.SERVER.value: servername}
+
+        logger.info("Saving servername \"{}\" on \"{}\"".format(
+            servername, MetadataEnum.CONNECTION
+        ))
         self.write_connection_metadata(MetadataEnum.CONNECTION, real_metadata)
+
+        logger.info("Saving servername \"{}\" on \"{}\"".format(
+            servername, MetadataEnum.LAST_CONNECTION
+        ))
         self.write_connection_metadata(
             MetadataEnum.LAST_CONNECTION, last_metadata
         )
@@ -32,8 +41,11 @@ class ConnectionStateManager(MetadataManager):
     def save_connected_time(self):
         """Save connected time metdata."""
         metadata = self.get_connection_metadata(MetadataEnum.CONNECTION)
-        metadata[ConnectionMetadataEnum.CONNECTED_TIME] = str(int(time.time()))
+        metadata[ConnectionMetadataEnum.CONNECTED_TIME.value] = str(
+            int(time.time())
+        )
         self.write_connection_metadata(MetadataEnum.CONNECTION, metadata)
+        logger.info("Saved connected time to file")
 
     def save_protocol(self, protocol):
         """Save connected protocol.
@@ -46,13 +58,21 @@ class ConnectionStateManager(MetadataManager):
             MetadataEnum.LAST_CONNECTION
         )
 
-        real_metadata[ConnectionMetadataEnum.PROTOCOL] = protocol
-        last_metadata[LastConnectionMetadataEnum.PROTOCOL] = protocol
+        real_metadata[ConnectionMetadataEnum.PROTOCOL.value] = protocol
+        last_metadata[LastConnectionMetadataEnum.PROTOCOL.value] = protocol
 
+        logger.info("Saving protocol \"{}\" on \"{}\"".format(
+            protocol, MetadataEnum.CONNECTION
+        ))
         self.write_connection_metadata(MetadataEnum.CONNECTION, real_metadata)
+
+        logger.info("Saving protocol \"{}\" on \"{}\"".format(
+            protocol, MetadataEnum.LAST_CONNECTION
+        ))
         self.write_connection_metadata(
             MetadataEnum.LAST_CONNECTION, last_metadata
         )
+        logger.info("Saved protocol to file")
 
     def save_server_ip(self, ip):
         """Save connected server IP.
@@ -61,9 +81,13 @@ class ConnectionStateManager(MetadataManager):
             IP (list(string)): server IP
         """
         metadata = {
-            LastConnectionMetadataEnum.SERVER_IP: ip
+            LastConnectionMetadataEnum.SERVER_IP.value: ip
         }
+        logger.info("Saving server ip \"{}\" on \"{}\"".format(
+            ip, MetadataEnum.LAST_CONNECTION
+        ))
         self.write_connection_metadata(MetadataEnum.LAST_CONNECTION, metadata)
+        logger.info("Saved server IP to file")
 
     def get_server_ip(self):
         """Get server IP.
@@ -71,12 +95,16 @@ class ConnectionStateManager(MetadataManager):
         Returns:
             list: contains server IPs
         """
+        logger.info("Getting server IP")
         return self.get_connection_metadata(
             MetadataEnum.LAST_CONNECTION
-        )[LastConnectionMetadataEnum.SERVER_IP]
+        )[LastConnectionMetadataEnum.SERVER_IP.value]
 
     def get_connection_metadata(self, metadata_type):
         """Get connection state metadata.
+
+        Args:
+            metadata_type (MetadataEnum): type of metadata to save
 
         Returns:
             dict: connection metadata

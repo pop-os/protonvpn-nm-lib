@@ -14,10 +14,10 @@ class UserManager(UserSessionManager):
     def __init__(
         self,
         user_conf_manager,
-        keyring_service=KeyringEnum.DEFAULT_KEYRING_SERVICE,
-        keyring_sessiondata=KeyringEnum.DEFAULT_KEYRING_SESSIONDATA,
-        keyring_userdata=KeyringEnum.DEFAULT_KEYRING_USERDATA,
-        keyring_proton_user=KeyringEnum.DEFAULT_KEYRING_PROTON_USER
+        keyring_service=KeyringEnum.DEFAULT_KEYRING_SERVICE.value,
+        keyring_sessiondata=KeyringEnum.DEFAULT_KEYRING_SESSIONDATA.value,
+        keyring_userdata=KeyringEnum.DEFAULT_KEYRING_USERDATA.value,
+        keyring_proton_user=KeyringEnum.DEFAULT_KEYRING_PROTON_USER.value
     ):
         self.keyring_service = keyring_service
         self.keyring_sessiondata = keyring_sessiondata
@@ -165,7 +165,7 @@ class UserManager(UserSessionManager):
     def append_suffix(self, username):
         """Append suffixes to OpenVPN username."""
         suffixes = [
-            ClientSuffixEnum.PLATFORM,
+            ClientSuffixEnum.PLATFORM.value,
             NETSHIELD_STATUS_DICT[self.user_conf_manager.netshield]
         ]
 

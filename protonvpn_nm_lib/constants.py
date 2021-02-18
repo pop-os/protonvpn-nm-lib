@@ -38,16 +38,16 @@ LOGGER_NAME = "protonvpn"
 VIRTUAL_DEVICE_NAME = "proton0"
 
 SUPPORTED_PROTOCOLS = {
-    ProtocolImplementationEnum.OPENVPN: [ProtocolEnum.TCP, ProtocolEnum.UDP],
+    ProtocolImplementationEnum.OPENVPN.value: [ProtocolEnum.TCP.value, ProtocolEnum.UDP.value],
     # ProtocolImplementationEnum.STRONGSWAN: [ProtocolEnum.IKEV2],
     # ProtocolImplementationEnum.WIREGUARD: [ProtocolEnum.WIREGUARD],
 }
 
 SERVER_TIERS = {
-    ServerTierEnum.FREE: "Free",
-    ServerTierEnum.BASIC: "Basic",
-    ServerTierEnum.PLUS_VISIONARY: "Plus/Visionary",
-    ServerTierEnum.PM: "PMTEAM"
+    ServerTierEnum.FREE.value: "Free",
+    ServerTierEnum.BASIC.value: "Basic",
+    ServerTierEnum.PLUS_VISIONARY.value: "Plus/Visionary",
+    ServerTierEnum.PM.value: "PMTEAM"
 }
 
 FLAT_SUPPORTED_PROTOCOLS = [
@@ -56,45 +56,43 @@ FLAT_SUPPORTED_PROTOCOLS = [
     for proto in proto_list
 ]
 SUPPORTED_FEATURES = {
-    FeatureEnum.NORMAL: "",
-    FeatureEnum.SECURE_CORE: "Secure-Core",
-    FeatureEnum.TOR: "Tor",
-    FeatureEnum.P2P: "P2P",
-    FeatureEnum.STREAMING: "Streaming",
-    FeatureEnum.IPv6: "IPv6"
+    FeatureEnum.NORMAL.value: "",
+    FeatureEnum.SECURE_CORE.value: "Secure-Core",
+    FeatureEnum.TOR.value: "Tor",
+    FeatureEnum.P2P.value: "P2P",
+    FeatureEnum.STREAMING.value: "Streaming",
+    FeatureEnum.IPv6.value: "IPv6"
 }
+
 CONFIG_STATUSES = [
-    UserSettingStatusEnum.DISABLED,
-    UserSettingStatusEnum.ENABLED,
-    UserSettingStatusEnum.CUSTOM,
+    UserSettingStatusEnum.DISABLED.value,
+    UserSettingStatusEnum.ENABLED.value,
+    UserSettingStatusEnum.CUSTOM.value,
 ]
 USER_CONFIG_TEMPLATE = {
-    UserSettingEnum.CONNECTION: {
-        UserSettingConnectionEnum.DEFAULT_PROTOCOL: ProtocolEnum.UDP,
-        UserSettingConnectionEnum.KILLSWITCH: KillswitchStatusEnum.DISABLED,
-        UserSettingConnectionEnum.DNS: {
-            UserSettingConnectionEnum.DNS_STATUS: UserSettingStatusEnum.ENABLED, # noqa
-            UserSettingConnectionEnum.CUSTOM_DNS: []
+    UserSettingEnum.CONNECTION.value: {
+        UserSettingConnectionEnum.DEFAULT_PROTOCOL.value: ProtocolEnum.UDP.value, # noqa
+        UserSettingConnectionEnum.KILLSWITCH.value: KillswitchStatusEnum.DISABLED.value, # noqa
+        UserSettingConnectionEnum.DNS.value: {
+            UserSettingConnectionEnum.DNS_STATUS.value: UserSettingStatusEnum.ENABLED.value, # noqa
+            UserSettingConnectionEnum.CUSTOM_DNS.value: []
         },
-        UserSettingConnectionEnum.SPLIT_TUNNELING: {
-            UserSettingConnectionEnum.SPLIT_TUNNELING_STATUS: UserSettingStatusEnum.DISABLED, # noqa
-            UserSettingConnectionEnum.IP_LIST: []
+        UserSettingConnectionEnum.SPLIT_TUNNELING.value: {
+            UserSettingConnectionEnum.SPLIT_TUNNELING_STATUS.value: UserSettingStatusEnum.DISABLED.value, # noqa
+            UserSettingConnectionEnum.IP_LIST.value: []
         },
-        UserSettingConnectionEnum.NETSHIELD: UserSettingStatusEnum.DISABLED
+        UserSettingConnectionEnum.NETSHIELD.value: UserSettingStatusEnum.DISABLED.value  # noqa
     },
-    UserSettingEnum.GENERAL: {},
-    UserSettingEnum.ADVANCED: {},
-    UserSettingEnum.TRAY: {},
 }
 NETSHIELD_STATUS_DICT = {
-    NetshieldTranslationEnum.DISABLED: NetshieldStatusEnum.DISABLED,
-    NetshieldTranslationEnum.MALWARE: NetshieldStatusEnum.MALWARE,
-    NetshieldTranslationEnum.ADS_MALWARE: NetshieldStatusEnum.ADS_MALWARE
+    NetshieldTranslationEnum.DISABLED.value: NetshieldStatusEnum.DISABLED.value, # noqa
+    NetshieldTranslationEnum.MALWARE.value: NetshieldStatusEnum.MALWARE.value,
+    NetshieldTranslationEnum.ADS_MALWARE.value: NetshieldStatusEnum.ADS_MALWARE.value # noqa
 }
 KILLSWITCH_STATUS_TEXT = {
-    KillswitchStatusEnum.HARD: "Always-on",
-    KillswitchStatusEnum.SOFT: "On",
-    KillswitchStatusEnum.DISABLED: "Off",
+    KillswitchStatusEnum.HARD.value: "Always-on",
+    KillswitchStatusEnum.SOFT.value: "On",
+    KillswitchStatusEnum.DISABLED.value: "Off",
 }
 
 # Constant folders

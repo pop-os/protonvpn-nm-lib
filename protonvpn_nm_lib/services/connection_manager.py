@@ -44,7 +44,7 @@ class ConnectionManager(ConnectionStateManager):
                 "str is expected but got {} instead".format(type(filename))
 
             logger.error(
-                "[!] TypeError: {}".format(err_msg)
+                "TypeError: {}".format(err_msg)
             )
             raise TypeError(err_msg)
 
@@ -52,7 +52,7 @@ class ConnectionManager(ConnectionStateManager):
             err_msg = "A valid filename must be provided"
 
             logger.error(
-                "[!] ValueError: {}".format(err_msg)
+                "ValueError: {}".format(err_msg)
             )
             raise ValueError(err_msg)
 
@@ -61,7 +61,7 @@ class ConnectionManager(ConnectionStateManager):
                 "str is expected but got {} instead".format(type(username))
 
             logger.error(
-                "[!] TypeError: {}".format(err_msg)
+                "TypeError: {}".format(err_msg)
             )
             raise TypeError(err_msg)
 
@@ -69,14 +69,14 @@ class ConnectionManager(ConnectionStateManager):
             err_msg = "Incorrect object type, "\
                 "str is expected but got {} instead".format(type(password))
             logger.error(
-                "[!] TypeError: {}".format(err_msg)
+                "TypeError: {}".format(err_msg)
             )
             raise TypeError(err_msg)
 
         elif not username.strip() or not password.strip():
             err_msg = "Both username and password must be provided"
             logger.error(
-                "[!] ValueError: {}".format(err_msg)
+                "ValueError: {}".format(err_msg)
             )
             raise ValueError(err_msg)
 
@@ -87,7 +87,7 @@ class ConnectionManager(ConnectionStateManager):
             pass
         except Exception as e:
             logger.exception(
-                "[!] NotImplementedError: {}".format(e)
+                "NotImplementedError: {}".format(e)
             )
             capture_exception(e)
             err_msg = "Expects object method, {} was not passed".format(
@@ -144,7 +144,7 @@ class ConnectionManager(ConnectionStateManager):
 
     def set_custom_connection_id(self, connection_settings):
         id_suffix_dict = self.get_connection_metadata(MetadataEnum.CONNECTION)
-        id_suffix = id_suffix_dict[ConnectionMetadataEnum.SERVER]
+        id_suffix = id_suffix_dict[ConnectionMetadataEnum.SERVER.value]
         connection_settings.props.id = "ProtonVPN " + id_suffix
 
     def add_vpn_credentials(self, vpn_settings,
@@ -164,7 +164,7 @@ class ConnectionManager(ConnectionStateManager):
             vpn_settings.add_secret("password", openvpn_password)
         except Exception as e:
             logger.exception(
-                "[!] AddConnectionCredentialsError: {}. ".format(e)
+                "AddConnectionCredentialsError: {}. ".format(e)
                 + "Raising exception."
             )
             capture_exception(e)
@@ -213,7 +213,7 @@ class ConnectionManager(ConnectionStateManager):
             )
         except Exception as e:
             logger.exception(
-                "[!] AddServerCertificateCheckError: {}. ".format(e)
+                "AddServerCertificateCheckError: {}. ".format(e)
                 + "Raising exception."
             )
             capture_exception(e)
@@ -229,7 +229,7 @@ class ConnectionManager(ConnectionStateManager):
 
         if len(conn) < 2 and conn[0] is False:
             logger.error(
-                "[!] ConnectionNotFound: Connection not found, "
+                "ConnectionNotFound: Connection not found, "
                 + "raising exception"
             )
             raise exceptions.ConnectionNotFound(
@@ -304,7 +304,7 @@ class ConnectionManager(ConnectionStateManager):
 
         if len(conn) < 2 and conn[0] is False:
             logger.info(
-                "[!] ConnectionNotFound: Connection not found, "
+                "ConnectionNotFound: Connection not found, "
                 + "raising exception"
             )
             raise exceptions.ConnectionNotFound(
@@ -345,7 +345,7 @@ class ConnectionManager(ConnectionStateManager):
 
         return self.get_connection_metadata(MetadataEnum.CONNECTION)
 
-    def check_internet_connectivity(self, ks_status):
+    def is_internet_connection_available(self, ks_status):
         logger.info("Checking internet connectivity")
         if ks_status == KillswitchStatusEnum.HARD:
             return
@@ -356,23 +356,39 @@ class ConnectionManager(ConnectionStateManager):
                 timeout=5,
             )
         except requests.exceptions.Timeout as e:
-            logger.exception("[!] InternetConnectionError: {}".format(e))
+            logger.exception("InternetConnectionError: {}".format(e))
             raise exceptions.InternetConnectionError(
-                "No internet connection"
+                "No internet connection found, request timed out. "
+                "Please make sure you are connected and retry."
             )
-        except Exception as e:
-            logger.exception("[!] InternetConnectionError: {}".format(e))
+        except (requests.exceptions.RequestException, Exception) as e:
+            logger.exception("InternetConnectionError: {}".format(e))
             raise exceptions.InternetConnectionError(
-                "No internet connection"
+                "No internet connection. "
+                "Please make sure you are connected and retry."
             )
+
+    def is_api_reacheable(self, ks_status):
+        logger.info("Checking API connectivity")
+
+        if ks_status == KillswitchStatusEnum.HARD:
+            return
 
         try:
             requests.get(
                 "https://api.protonvpn.ch/tests/ping", timeout=10
             )
-        except Exception as e:
-            logger.exception("[!] UnreacheableAPIError: {}".format(e))
-            raise exceptions.UnreacheableAPIError("Unable to reach API")
+        except requests.exceptions.Timeout as e:
+            logger.exception("APITimeoutError: {}".format(e))
+            raise exceptions.APITimeoutError(
+                "API unreacheable. Connection timed out."
+            )
+        except (requests.exceptions.RequestException, Exception) as e:
+            logger.exception("UnreacheableAPIError: {}".format(e))
+            raise exceptions.UnreacheableAPIError(
+                "Couldn't reach Proton API."
+                "This might happen due to connection issues or network blocks."
+            )
 
     def dynamic_callback(self, client, result, data):
         """Dynamic callback method.
@@ -418,7 +434,7 @@ class ConnectionManager(ConnectionStateManager):
             )
             logger.info(msg)
         except Exception as e:
-            logger.exception("[!] Exception: {}".format(e))
+            logger.exception("Exception: {}".format(e))
 
         main_loop.quit()
 
@@ -440,25 +456,25 @@ class ConnectionManager(ConnectionStateManager):
             try:
                 dev_type = dev_type[0].split()[1]
             except IndexError as e:
-                logger.exception("[!] VirtualDeviceNotFound: {}".format(e))
+                logger.exception("VirtualDeviceNotFound: {}".format(e))
                 raise exceptions.VirtualDeviceNotFound(
                     "No virtual device type was specified in .ovpn file"
                 )
             except Exception as e:
-                logger.exception("[!] Unknown exception: {}".format(e))
+                logger.exception("Unknown exception: {}".format(e))
                 capture_exception(e)
 
             try:
                 index = virtual_dev_type_list.index(dev_type)
             except (ValueError, KeyError, TypeError) as e:
-                logger.exception("[!] IllegalVirtualDevice: {}".format(e))
+                logger.exception("IllegalVirtualDevice: {}".format(e))
                 raise exceptions.IllegalVirtualDevice(
                     "Only {} are permitted, though \"{}\" ".format(
                         ' and '.join(virtual_dev_type_list), dev_type
                     ) + " was provided"
                 )
             except Exception as e:
-                logger.exception("[!] Unknown exception: {}".format(e))
+                logger.exception("Unknown exception: {}".format(e))
                 capture_exception(e)
             else:
                 return virtual_dev_type_list[index]
