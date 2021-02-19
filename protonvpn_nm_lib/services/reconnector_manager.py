@@ -7,9 +7,16 @@ import protonvpn_nm_lib
 from ..constants import (ENV_CI_NAME, LOCAL_SERVICE_FILEPATH, SERVICE_TEMPLATE,
                          XDG_CONFIG_SYSTEMD_USER)
 from ..logger import logger
+from ..enums import DaemonReconnectorEnum
 
 
 class ReconnectorManager():
+    DAEMON_COMMANDS = [
+        DaemonReconnectorEnum.START,
+        DaemonReconnectorEnum.STOP,
+        DaemonReconnectorEnum.DAEMON_RELOAD
+    ]
+
     def __init__(self):
         if not os.path.isdir(XDG_CONFIG_SYSTEMD_USER):
             os.makedirs(XDG_CONFIG_SYSTEMD_USER)
@@ -30,7 +37,7 @@ class ReconnectorManager():
         with open(LOCAL_SERVICE_FILEPATH, "w") as f:
             f.write(with_cli_path)
 
-        self.call_daemon_reconnector("daemon-reload")
+        self.call_daemon_reconnector(DaemonReconnectorEnum.DAEMON_RELOAD)
 
     def start_daemon_reconnector(self):
         """Start daemon reconnector."""
@@ -46,7 +53,10 @@ class ReconnectorManager():
             return
 
         if not os.environ.get(ENV_CI_NAME):
-            self.daemon_reconnector_manager("start", daemon_status)
+            self.daemon_reconnector_manager(
+                DaemonReconnectorEnum.START,
+                daemon_status
+            )
 
     def stop_daemon_reconnector(self):
         """Stop daemon reconnector."""
@@ -67,16 +77,16 @@ class ReconnectorManager():
         """Start/stop daemon reconnector.
 
         Args:
-            callback_type (string): start, stop
+            callback_type (DaemonReconnectorEnum): enum
             daemon_status (int): 1 or 0
         """
         logger.info(
             "Managing daemon: cb_type-> \"{}\"; ".format(callback_type)
             + "daemon_status -> \"{}\"".format(daemon_status)
         )
-        if callback_type == "start" and not daemon_status:
+        if callback_type == DaemonReconnectorEnum.START and not daemon_status:
             self.call_daemon_reconnector(callback_type)
-        elif callback_type == "stop" and daemon_status:
+        elif callback_type == DaemonReconnectorEnum.STOP and daemon_status:
             self.call_daemon_reconnector(callback_type)
             try:
                 daemon_status = self.check_daemon_reconnector_status()
@@ -122,7 +132,7 @@ class ReconnectorManager():
             )
 
     def call_daemon_reconnector(
-        self, command=["start", "stop", "daemon-reload"]
+        self, command
     ):
         """Makes calls to daemon reconnector to either
         start or stop the process.
@@ -131,13 +141,20 @@ class ReconnectorManager():
             command (string): to either start or stop the process
         """
         logger.info("Calling daemon reconnector")
+        if command not in self.DAEMON_COMMANDS:
+            raise Exception("Invalid daemon command \"{}\"".format(command))
+
         call_daemon = subprocess.run(
-            ["systemctl", command, "--user", "protonvpn_reconnect"],
+            ["systemctl", command.value, "--user", "protonvpn_reconnect"],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
-        if command == "daemon-reload":
+        if command == DaemonReconnectorEnum.DAEMON_RELOAD:
             call_daemon = subprocess.run(
-                ["systemctl", "--user", "daemon-reload"],
+                [
+                    "systemctl",
+                    "--user",
+                    DaemonReconnectorEnum.DAEMON_RELOAD.value
+                ],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
         decoded_stdout = call_daemon.stdout.decode()

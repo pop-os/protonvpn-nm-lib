@@ -1,7 +1,7 @@
 import dbus
-from protonvpn_nm_lib.logger import logger
-from protonvpn_nm_lib.services.dbus_get_wrapper import DbusGetWrapper
-from protonvpn_nm_lib.enums import KillswitchStatusEnum
+from ..logger import logger
+from ..services.dbus_get_wrapper import DbusGetWrapper
+from ..enums import KillswitchStatusEnum, KillSwitchManagerActionEnum
 
 
 class MonitorVPNConnectionStart(DbusGetWrapper):
@@ -56,10 +56,12 @@ class MonitorVPNConnectionStart(DbusGetWrapper):
             msg = "Successfully connected to ProtonVPN."
 
             if self.user_conf_manager.killswitch == KillswitchStatusEnum.HARD: # noqa
-                self.ks_manager.manage("post_connection")
+                self.ks_manager.manage(
+                    KillSwitchManagerActionEnum.POST_CONNECTION
+                )
 
             if self.user_conf_manager.killswitch == KillswitchStatusEnum.SOFT: # noqa
-                self.ks_manager.manage("soft_connection")
+                self.ks_manager.manage(KillSwitchManagerActionEnum.SOFT)
 
             self.session.cache_servers()
 

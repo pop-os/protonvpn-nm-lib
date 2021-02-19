@@ -31,8 +31,8 @@ class FeatureEnum(Enum):
 class ServerTierEnum(Enum):
     FREE = 0
     BASIC = 1
-    PLUS = 2
-    VISIONARY = 2
+    # PLUS = 2
+    # VISIONARY = 2
     PLUS_VISIONARY = 2
     PM = 3
 
@@ -41,12 +41,14 @@ class ConnectionMetadataEnum(Enum):
     SERVER = "connected_server"
     CONNECTED_TIME = "connected_time"
     PROTOCOL = "connected_protocol"
+    DISPLAY_SERVER_IP = "display_server_ip"
 
 
 class LastConnectionMetadataEnum(Enum):
     SERVER = ConnectionMetadataEnum.SERVER.value
     PROTOCOL = ConnectionMetadataEnum.PROTOCOL.value
     SERVER_IP = "last_connect_ip"
+    DISPLAY_SERVER_IP = ConnectionMetadataEnum.DISPLAY_SERVER_IP.value
 
 
 class ClientSuffixEnum(Enum):
@@ -62,13 +64,6 @@ class KeyringEnum(Enum):
     DEFAULT_KEYRING_SESSIONDATA = "SessionData"
     DEFAULT_KEYRING_USERDATA = "UserData"
     DEFAULT_KEYRING_PROTON_USER = "ProtonUser"
-
-
-class UserSettingEnum(Enum):
-    GENERAL = "general"
-    CONNECTION = "connection"
-    TRAY = "tray"
-    ADVANCED = "advanced"
 
 
 class UserSettingStatusEnum(Enum):
@@ -90,19 +85,19 @@ class NetshieldStatusEnum(Enum):
 
 
 class NetshieldTranslationEnum(Enum):
-    DISABLED = UserSettingStatusEnum.DISABLED.value
-    MALWARE = UserSettingStatusEnum.ENABLED.value
-    ADS_MALWARE = UserSettingStatusEnum.CUSTOM.value
+    DISABLED = 0
+    MALWARE = 1
+    ADS_MALWARE = 2
 
 
 class UserSettingConnectionEnum(Enum):
     DEFAULT_PROTOCOL = "default_protocol"
     KILLSWITCH = "killswitch"
     DNS = "dns"
-    DNS_STATUS = "status"
+    DNS_STATUS = "dns_status"
     CUSTOM_DNS = "custom_dns"
     SPLIT_TUNNELING = "split_tunneling"
-    SPLIT_TUNNELING_STATUS = "status"
+    SPLIT_TUNNELING_STATUS = "split_tunneling_status"
     IP_LIST = "ip_list"
     NETSHIELD = "netshield"
 
@@ -135,3 +130,63 @@ class ConnectionTypeEnum(Enum):
     SECURE_CORE = 5
     PEER2PEER = 6
     TOR = 7
+
+
+class NetworkManagerConnectionTypeEnum(Enum):
+    ACTIVE = 0
+    ALL = 1
+
+
+class ServerInfoEnum(Enum):
+    SERVERNAME = "Servername"
+    COUNTRY = "ExitCountry"
+    CITY = "City"
+    LOAD = "Load"
+    TIER = "Tier"
+    FEATURES = "Features"
+    LOCATION = "Location"
+    LATITUDE = "Lat"
+    LONGITUDE = "Long"
+    ENTRY_COUNTRY = "EntryCountry"
+    REGION = "Region"
+
+
+class ConnectionStatusEnum(Enum):
+    SERVER_INFORMATION = "server_information"
+    PROTOCOL = "protocol"
+    TIME = "time"
+    KILLSWITCH = "killswitch"
+    NETSHIELD = "netshield"
+    SERVER_IP = "server_ip"
+
+
+class DisplayUserSettingsEnum(Enum):
+    PROTOCOL = 0
+    KILLSWITCH = 1
+    DNS = 2
+    CUSTOM_DNS = 3
+    NETSHIELD = 4
+
+
+class KillSwitchInterfaceTrackerEnum(Enum):
+    EXISTS = 0
+    IS_RUNNING = 1
+
+
+class KillSwitchManagerActionEnum(Enum):
+    PRE_CONNECTION = "pre_connection",
+    POST_CONNECTION = "post_connection",
+    SOFT = "soft_connection"
+    ENABLE = "enable"
+    DISABLE = "disable"
+
+
+class DaemonReconnectorEnum(Enum):
+    STOP = "stop"
+    START = "start"
+    DAEMON_RELOAD = "daemon-reload"
+
+
+class JsonDataEnumAction(Enum):
+    LOAD = 0
+    SAVE = 1

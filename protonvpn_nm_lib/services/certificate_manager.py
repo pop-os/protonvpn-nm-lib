@@ -20,7 +20,7 @@ class CertificateManager(ConnectionStateManager):
 
     def generate_vpn_cert(
         self, protocol,
-        servername, ip_list, cached_cert=CACHED_OPENVPN_CERTIFICATE
+        servername, ip_list, exit_IP, cached_cert=CACHED_OPENVPN_CERTIFICATE
     ):
         """Abstract method that generates a vpn certificate.
 
@@ -35,15 +35,17 @@ class CertificateManager(ConnectionStateManager):
         """
         logger.info("Generating VPN certificate")
         protocol_dict = {
-            ProtocolEnum.TCP.value: self.generate_openvpn_cert,
-            ProtocolEnum.UDP.value: self.generate_openvpn_cert,
-            ProtocolEnum.IKEV2.value: self.generate_strongswan_cert,
-            ProtocolEnum.WIREGUARD.value: self.generate_wireguard_cert
+            ProtocolEnum.TCP: self.generate_openvpn_cert,
+            ProtocolEnum.UDP: self.generate_openvpn_cert,
+            ProtocolEnum.IKEV2: self.generate_strongswan_cert,
+            ProtocolEnum.WIREGUARD: self.generate_wireguard_cert
         }
 
-        if not isinstance(protocol, str):
+        if not isinstance(protocol, ProtocolEnum):
             err_msg = "Incorrect object type, "\
-                "str is expected but got {} instead".format(type(protocol))
+                "ProtocolEnum is expected but got {} instead".format(
+                    type(protocol)
+                )
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(err_msg)
             )
@@ -72,12 +74,6 @@ class CertificateManager(ConnectionStateManager):
                 "[!] ValueError: No servers were provided. Raising exception."
             )
             raise ValueError("No servers were provided")
-
-        logger.info("Servername: \"{}\"".format(servername))
-        self.save_servername(servername)
-
-        logger.info("Protocol: \"{}\"".format(protocol))
-        self.save_protocol(protocol)
 
         try:
             return protocol_dict[protocol](
@@ -115,9 +111,9 @@ class CertificateManager(ConnectionStateManager):
         }
 
         j2_values = {
-            "openvpn_protocol": protocol,
+            "openvpn_protocol": protocol.value,
             "serverlist": ip_list,
-            "openvpn_ports": [ports[protocol]],
+            "openvpn_ports": [ports[protocol.value]],
         }
 
         j2 = Environment(loader=FileSystemLoader(TEMPLATES))

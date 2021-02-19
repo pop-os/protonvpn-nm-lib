@@ -1,5 +1,5 @@
-from .logger import logger
-from . import exceptions
+from ..logger import logger
+from .. import exceptions
 
 
 class Logout:
@@ -8,14 +8,17 @@ class Logout:
 
         if _pass_check is None and _removed is None:
             logger.info("First logout round")
-            self.get_existing_session()
-            self.server_manager.validate_session(self.session)
+            # Public method providade by protonvpn_lib
+            self._set_self_session()
+            # Public method providade by protonvpn_lib
+            self._validate_session()
             try:
                 self.session.logout()
             except exceptions.ProtonSessionWrapperError:
                 logger.info("Unable to logout from API")
                 pass
-            self.remove_existing_connection()
+            # Public method providade by protonvpn_lib
+            self._remove_existing_connection()
             _pass_check = []
             _removed = []
 

@@ -1,5 +1,6 @@
-from .logger import logger
-from . import exceptions
+from ..logger import logger
+from .. import exceptions
+import re
 
 
 class Login:
@@ -7,8 +8,23 @@ class Login:
         """Proxymethod to login user with ProtonVPN credentials."""
         self.server_manager.killswitch_status = self.user_conf_manager.killswitch # noqa
         logger.info("Checking connectivity")
-        self.check_connectivity()
+        # Public method providade by protonvpn_lib
+        self._check_connectivity()
+        self.__validate_username(username)
         self.__login_user(username, password)
+
+    def __validate_username(self, username):
+        re_username = re.compile(
+            r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
+        )
+        if not re_username.search(username):
+            raise exceptions.InvalidUsernameFormat(
+                "The provided username \"{}\" is invalid."
+                "\nPlease provide your full Proton account username, ie: "
+                "username@protonmail.com".format(
+                    username
+                )
+            )
 
     def __login_user(self, protonvpn_username, protonvpn_password):
         logger.info("Attempting to login...")

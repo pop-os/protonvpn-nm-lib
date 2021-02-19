@@ -1,7 +1,13 @@
-from . import exceptions
-from .constants import FLAT_SUPPORTED_PROTOCOLS
-from .logger import logger
-from .services.certificate_manager import CertificateManager
+from dbus.mainloop.glib import DBusGMainLoop
+from gi.repository import GLib
+
+from .. import exceptions
+from ..constants import FLAT_SUPPORTED_PROTOCOLS, VIRTUAL_DEVICE_NAME
+from ..country_codes import country_codes
+from ..enums import (ConnectionTypeEnum, NetworkManagerConnectionTypeEnum,
+                     ProtocolEnum)
+from ..logger import logger
+from ..services.certificate_manager import CertificateManager
 
 
 class Connect():
@@ -14,43 +20,92 @@ class Connect():
     the vpn connection.
     """
     def _connect(self):
-        """Connect to VPN."""
+        """Public method.
+
+        Connects to VPN with previously
+        setup configurations.
+
+        It is recommended to either run
+        connect._setup_connection() or reconnect._setup_reconnect()
+        before calling this method.
+
+        Returns:
+            string: response from dbus monitor
+        """
         dbus_response = {"dbus_response": ""}
         self.connection_manager.start_connection()
-        self.setup_dbus_vpn_monitor(dbus_response)
-        self.start_dbus_vpn_monitor()
+        self.__setup_dbus_vpn_monitor(dbus_response)
+        self.__start_dbus_vpn_monitor()
         return dbus_response.get(
             "dbus_response", "Something went wrong (x99)"
         )
 
-    def setup_connection(self, servername=None, protocol=None):
-        """Setup VPN connection.
+    def _setup_connection(
+        self,
+        connection_type,
+        connection_type_extra_arg=None,
+        protocol=None
+    ):
+        """Public method.
+
+        Setup and configure VPN connection prior
+        calling connect._connect().
 
         Args:
-            servername (string): [PT#9]
-                (optional) should be passed only when
-                connecting to a specific server.
+            connection_type (ConnectionTypeEnum):
+                selected connection type
+            connection_type_extra_arg (string):
+                (optional) should be used only when
+                connecting directly to a specific server
+                with ConnectionTypeEnum.SERVERNAME or when
+                connecting to a specific country with
+                ConnectionTypeEnum.COUNTRY.
             optional protocol (ProtocolEnum): ProtocolEnum.TPC
                 (optional) if None, then protocol will be fetched
                 from user configurations.
 
         Returns:
-            dict: contains connection information to be displayes for user.
+            dict: contains connection information to be displayed for the user.
         """
-        if servername: self.validate_servername(servername)
-        self.get_existing_session()
-        self.__validate_session()
+        servername = None
+        if connection_type == ConnectionTypeEnum.SERVERNAME:
+            servername = connection_type_extra_arg
+        elif (
+            connection_type == ConnectionTypeEnum.COUNTRY
+            and not self.__check_country_exists(connection_type_extra_arg)
+        ):
+            raise exceptions.InvalidCountryCode(
+                "The provided country code \"{}\" is invalid.".format(
+                    connection_type_extra_arg
+                )
+            )
+
+        self.connection_type = connection_type
+        self.connection_type_extra_arg = connection_type_extra_arg
+
+        if servername: self.__validate_servername(servername)
+
+        # Public method providade by protonvpn_lib
+        self._set_self_session()
+        # Public method providade by protonvpn_lib
+        self._validate_session()
 
         self.protocol = protocol
-        if not self.is_protocol_valid() or self.protocol is None:
-            self.protocol = self.user_conf_manager.default_protocol
+        if not self.__is_protocol_valid() or self.protocol is None:
+            self.protocol = ProtocolEnum(
+                self.user_conf_manager.default_protocol
+            )
         logger.info("Setup protocol: {}".format(protocol))
 
         self.server_manager.killswitch_status = self.user_conf_manager.killswitch # noqa
         logger.info("Setup killswitch user setting")
-        self.check_connectivity()
+
+        # Public method providade by protonvpn_lib
+        self._check_connectivity()
         logger.info("Checked for interet and api connectivity")
-        self.remove_existing_connection()
+
+        # Public method providade by protonvpn_lib
+        self._remove_existing_connection()
         logger.info("Removed any possible existing connection")
 
         openvpn_username, openvpn_password = self.__get_ovpn_credentials()
@@ -60,9 +115,16 @@ class Connect():
             openvpn_username, openvpn_password
         )
 
+        logger.info("Returning connection information")
         return connection_info
 
-    def validate_servername(self, servername):
+    def __check_country_exists(self, country_code):
+        if country_code not in country_codes:
+            return False
+
+        return True
+
+    def __validate_servername(self, servername):
         if (
             not self.server_manager.is_servername_valid(servername)
         ):
@@ -72,22 +134,22 @@ class Connect():
                 )
             )
 
-    def __validate_session(self):
-        try:
-            self.server_manager.validate_session(self.session)
-        except Exception as e:
-            raise Exception(e)
-
-    def is_protocol_valid(self):
+    def __is_protocol_valid(self):
         """Check if provided protocol is a valid protocol."""
         logger.info("Checking if protocol is valid")
+        try:
+            self.protocol = ProtocolEnum(self.protocol)
+        except ValueError:
+            return False
+
         if self.protocol in FLAT_SUPPORTED_PROTOCOLS:
             return True
 
         return False
 
     def __add_connection(self, openvpn_username, openvpn_password):
-        self.refresh_servers(self.session)
+        # Public method providade by protonvpn_lib
+        self._refresh_servers()
         (
             servername, domain,
             server_feature,
@@ -117,8 +179,8 @@ class Connect():
         )
         logger.info("Added VPN connection to NetworkManager.")
 
-        connection_info = self.connection_manager.display_connection_status(
-            "all_connections"
+        connection_info = self._get_connection_metadata(
+            NetworkManagerConnectionTypeEnum.ALL
         )
 
         return connection_info
@@ -191,20 +253,19 @@ class Connect():
         """Proxymethod to get certficate filename and server domain."""
         logger.info(
             "Connect type: {} - {}".format(
-                self.connect_type,
-                type(self.connect_type),
+                self.connection_type,
+                type(self.connection_type),
             )
         )
         logger.info(
             "Connect type extra arg: {} - {}".format(
-                self.connect_type_extra_arg,
-                type(self.connect_type_extra_arg),
+                self.connection_type_extra_arg,
+                type(self.connection_type_extra_arg),
             )
         )
         try:
-            return self.CONNECT_TYPE_DICT[self.connect_type](
-                self.session,
-                self.connect_type_extra_arg
+            return self.CONNECT_TYPE_DICT[self.connection_type](
+                self.connection_type_extra_arg
             )
         except (KeyError, TypeError, ValueError) as e:
             logger.exception("Error: {}".format(e))
@@ -241,3 +302,17 @@ class Connect():
                 "Unknown error: {}".format(e)
             )
             raise Exception("Unknown error occured: {}.".format(e))
+
+    def __setup_dbus_vpn_monitor(self, dbus_response):
+        DBusGMainLoop(set_as_default=True)
+        self.dbus_loop = GLib.MainLoop()
+        self.vpn_monitor_connection_start.setup_monitor(
+            VIRTUAL_DEVICE_NAME, self.dbus_loop,
+            self.ks_manager, self.user_conf_manager,
+            self.connection_manager, self.reconector_manager,
+            self.session, dbus_response
+        )
+
+    def __start_dbus_vpn_monitor(self):
+        self.vpn_monitor_connection_start.start_monitor()
+        self.dbus_loop.run()

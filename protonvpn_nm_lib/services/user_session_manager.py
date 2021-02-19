@@ -8,7 +8,7 @@ import keyring.backends.SecretService
 from .proton_session_wrapper import ProtonSessionWrapper
 
 from .. import exceptions
-from ..enums import KeyringEnum
+from ..enums import KeyringEnum, JsonDataEnumAction
 from ..logger import logger
 from . import capture_exception
 
@@ -97,7 +97,7 @@ class UserSessionManager:
 
         json_data = self.json_session_transform(
             data,
-            "save"
+            JsonDataEnumAction.SAVE
         )
 
         try:
@@ -150,7 +150,7 @@ class UserSessionManager:
         try:
             return self.json_session_transform(
                 stored_data,
-                "load"
+                JsonDataEnumAction.LOAD
             )
         except json.decoder.JSONDecodeError as e:
             logger.exception("[!] JSONDataEmptyError: {}".format(e))
@@ -194,19 +194,19 @@ class UserSessionManager:
             logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
 
-    def json_session_transform(self, session_data, action=["save", "load"]):
+    def json_session_transform(self, session_data, action):
         """JSON encode/decode session_data.
 
         Args:
             session_data (string): api response containg json headers
-            action (string): [save, load]
+            action (JsonDataEnumAction): enum
         Returns:
             string or json
         """
         logger.info("Transforming session: \"{}\"".format(action))
         json_action = json.dumps
 
-        if action == "load":
+        if action == JsonDataEnumAction.LOAD:
             json_action = json.loads
 
         return json_action(session_data)

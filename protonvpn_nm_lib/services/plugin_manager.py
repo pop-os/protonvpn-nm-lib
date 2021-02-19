@@ -6,9 +6,10 @@ import gi
 gi.require_version("NM", "1.0")
 from gi.repository import NM
 
-from ..constants import SUPPORTED_PROTOCOLS
-from ..logger import logger
 from .. import exceptions
+from ..constants import SUPPORTED_PROTOCOLS
+from ..enums import ProtocolEnum, ProtocolImplementationEnum
+from ..logger import logger
 from . import capture_exception
 
 
@@ -24,7 +25,6 @@ class PluginManager():
         logger.info("Importing connection from file")
         pm = PluginManager()
         vpn_protocol = pm.extract_openvpn_protocol(filename)
-
         if not vpn_protocol:
             raise Exception("IKEv2/Wireguard protocols are not yet supported")
 
@@ -103,12 +103,15 @@ class PluginManager():
                 protocol implementation type (openvpn/strongswan/wireguard)
         """
         logger.info("Getting protocol implementation type")
+        vpn_protocol = ProtocolEnum(vpn_protocol)
         for plugin_name, protocol_types in SUPPORTED_PROTOCOLS.items():
             if vpn_protocol in protocol_types:
                 return plugin_name
 
         logger.error("[!] IllegalVPNProtocol: Raising exception")
-        raise exceptions.IllegalVPNProtocol("Selected protocol was not found")
+        raise exceptions.IllegalVPNProtocol(
+            "\"{}\" protocol could not found".format(vpn_protocol)
+        )
 
     def get_matching_plugin(self, protocol_implementation_type):
         """Find and return matching protocol plugin.
@@ -121,14 +124,16 @@ class PluginManager():
         """
         logger.info("Getting matching plugin")
         plugin_info = NM.VpnPluginInfo
-
+        protocol_implementation_type = ProtocolImplementationEnum(
+            protocol_implementation_type
+        )
         # returns [NM.VpnPluginInfo] plugins
         vpn_plugin_list = plugin_info.list_load()
 
         # returns the first NM.VpnPluginInfo
         protocol_plugin = plugin_info.list_find_by_name(
             vpn_plugin_list,
-            protocol_implementation_type
+            protocol_implementation_type.value
         )
 
         if protocol_plugin is None:

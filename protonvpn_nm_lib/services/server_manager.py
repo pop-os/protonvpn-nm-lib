@@ -4,11 +4,10 @@ import re
 
 from .. import exceptions
 from ..constants import CACHED_SERVERLIST
-from ..enums import FeatureEnum, UserSettingStatusEnum, KillswitchStatusEnum
+from ..enums import FeatureEnum, UserSettingStatusEnum, ProtocolEnum
 from ..logger import logger
 from . import capture_exception
 from .connection_state_manager import ConnectionStateManager
-from .proton_session_wrapper import ProtonSessionWrapper
 
 
 class ServerManager(ConnectionStateManager):
@@ -59,15 +58,24 @@ class ServerManager(ConnectionStateManager):
         if matching_domain != None:
             domain = matching_domain
 
+        logger.info("Saving servername: \"{}\"".format(servername))
+        self.save_servername(servername)
+
+        logger.info("Saving protocol: \"{}\"".format(protocol))
+        self.save_protocol(protocol)
+
+        logger.info("Saving server entry IP: \"{}\"".format(entry_IP))
+        self.save_server_ip(entry_IP)
+
+        logger.info("Saving server exit IP: \"{}\"".format(exit_IP))
+        self.save_display_server_ip(exit_IP)
+
         return self.cert_manager.generate_vpn_cert(
-            protocol, servername, [entry_IP]
+            protocol, servername, [entry_IP], exit_IP
         ), domain, [entry_IP], server_label
 
-    def get_config_for_fastest_server(self, session, _=None):
+    def get_config_for_fastest_server(self, _=None):
         """Get configuration for fastest server.
-
-        Args:
-            session (ProtonSessionWrapper): current user session object
 
         Returns:
             tuple: (
@@ -76,14 +84,12 @@ class ServerManager(ConnectionStateManager):
             )
         """
         logger.info("Generating config for fastest server")
-        if not self.killswitch_status == KillswitchStatusEnum.HARD:
-            session.cache_servers()
         servers = self.extract_server_list()
 
         excluded_features = [
-            FeatureEnum.SECURE_CORE.value,
-            FeatureEnum.TOR.value,
-            FeatureEnum.P2P.value
+            FeatureEnum.SECURE_CORE,
+            FeatureEnum.TOR,
+            FeatureEnum.P2P
         ]
         filtered_servers = self.filter_servers(
             servers, exclude_features=excluded_features
@@ -101,11 +107,10 @@ class ServerManager(ConnectionStateManager):
             filtered_servers
         ) + (filtered_servers, servers)
 
-    def get_config_for_fastest_server_in_country(self, session, country_code):
+    def get_config_for_fastest_server_in_country(self, country_code):
         """Get configuration for fastest server in a specific country.
 
         Args:
-            session (ProtonSessionWrapper): current user session object
             country_code (string): country code [PT|SE|CH ...]
 
         Returns:
@@ -117,12 +122,10 @@ class ServerManager(ConnectionStateManager):
         logger.info("Generating config for fastest server in \"{}\"".format(
             country_code
         ))
-        if not self.killswitch_status == KillswitchStatusEnum.HARD:
-            session.cache_servers()
         servers = self.extract_server_list()
 
         excluded_features = [
-            FeatureEnum.TOR.value, FeatureEnum.SECURE_CORE.value
+            FeatureEnum.TOR, FeatureEnum.SECURE_CORE
         ]
         filtered_servers = self.filter_servers(
             servers,
@@ -146,11 +149,10 @@ class ServerManager(ConnectionStateManager):
             filtered_servers
         ) + (filtered_servers, servers)
 
-    def get_config_for_specific_server(self, session, servername):
+    def get_config_for_specific_server(self, servername):
         """Get configuration to specified server.
 
         Args:
-            session (ProtonSessionWrapper): current user session object
             servername (string): servername to connect
 
         Returns:
@@ -159,15 +161,10 @@ class ServerManager(ConnectionStateManager):
                 filtered_servers, servers
             )
         """
-        # This check is done since when a user uses the dialog
-        # the input passed diferently, thus it needs to be checked.
-        if not self.killswitch_status == KillswitchStatusEnum.HARD:
-            session.cache_servers()
-
         if isinstance(servername, list):
             servername = servername[1]
 
-        servername = servername.strip().upper()
+        servername = servername.upper()
 
         if not self.is_servername_valid(servername):
             err_msg = "Invalid servername {}".format(servername)
@@ -199,12 +196,11 @@ class ServerManager(ConnectionStateManager):
         ) + (filtered_servers, servers)
 
     def get_config_for_fastest_server_with_specific_feature(
-        self, session, feature
+        self, feature
     ):
         """Get configuration to fastest server based on specified feature.
 
         Args:
-            session (ProtonSessionWrapper): current user session object
             feature (string): literal feature [p2p|tor|sc]
 
         Returns:
@@ -213,17 +209,15 @@ class ServerManager(ConnectionStateManager):
                 filtered_servers, servers
             )
         """
-        if not self.killswitch_status == KillswitchStatusEnum.HARD:
-            session.cache_servers()
         servers = self.extract_server_list()
 
         allowed_features = {
-            "normal": FeatureEnum.NORMAL.value,
-            "sc": FeatureEnum.SECURE_CORE.value,
-            "tor": FeatureEnum.TOR.value,
-            "p2p": FeatureEnum.P2P.value,
-            "stream": FeatureEnum.STREAMING.value,
-            "ipv6": FeatureEnum.IPv6.value
+            "normal": FeatureEnum.NORMAL,
+            "sc": FeatureEnum.SECURE_CORE,
+            "tor": FeatureEnum.TOR,
+            "p2p": FeatureEnum.P2P,
+            "stream": FeatureEnum.STREAMING,
+            "ipv6": FeatureEnum.IPv6
         }
 
         if feature not in allowed_features:
@@ -258,11 +252,8 @@ class ServerManager(ConnectionStateManager):
             filtered_servers
         ) + (filtered_servers, servers)
 
-    def get_config_for_random_server(self, session, _=None):
+    def get_config_for_random_server(self, _=None):
         """Get configuration to random server.
-
-        Args:
-            session (ProtonSessionWrapper): current user session object
 
         Returns:
             tuple: (
@@ -270,8 +261,6 @@ class ServerManager(ConnectionStateManager):
                 filtered_servers, servers
             )
         """
-        if not self.killswitch_status == KillswitchStatusEnum.HARD:
-            session.cache_servers()
         servers = self.extract_server_list()
 
         filtered_servers = self.filter_servers(servers)
@@ -317,7 +306,7 @@ class ServerManager(ConnectionStateManager):
         Returns:
             string: matching server domain
         """
-        _list = [FeatureEnum.NORMAL.value, FeatureEnum.SECURE_CORE.value]
+        _list = [FeatureEnum.NORMAL, FeatureEnum.SECURE_CORE]
         if server_feature in _list:
             for server in server_pool:
                 for physical_server in server["Servers"]:
@@ -326,26 +315,6 @@ class ServerManager(ConnectionStateManager):
 
         return None
 
-    def validate_session(self, session):
-        """Validates session.
-
-        Args:
-            session (proton.api.Session): current user session
-        """
-        logger.info("Validating session")
-        if not isinstance(session, ProtonSessionWrapper):
-            err_msg = "Incorrect object type, "\
-                "{} is expected "\
-                "but got {} instead".format(
-                    ProtonSessionWrapper, session
-                )
-            logger.error(
-                "[!] TypeError: {}. Raising exception.".format(
-                    err_msg
-                )
-            )
-            raise TypeError(err_msg)
-
     def validate_protocol(self, protocol):
         """Validates protocol.
 
@@ -353,23 +322,17 @@ class ServerManager(ConnectionStateManager):
             protocol (ProtocolEnum): ProtocolEnum.TCP, ProtocolEnum.UDP ...
         """
         logger.info("Validating protocol")
-        if not isinstance(protocol, str):
+        if not isinstance(protocol, ProtocolEnum):
             err_msg = "Incorrect object type, "\
-                "str is expected but got {} instead".format(type(protocol))
+                "ProtocolEnum is expected but got {} instead".format(
+                    type(protocol)
+                )
             logger.error(
                 "[!] TypeError: {}. Raising exception.".format(
                     err_msg
                 )
             )
             raise TypeError(err_msg)
-        elif len(protocol) == 0:
-            err_msg = "The provided argument \"protocol\" is empty"
-            logger.error(
-                "[!] TypeError: {}. Raising exception.".format(
-                    err_msg
-                )
-            )
-            raise ValueError(err_msg)
 
     def get_random_physical_server(self, physical_server_list):
         """Get physical server at random.
@@ -440,6 +403,7 @@ class ServerManager(ConnectionStateManager):
 
         filtered_servers = []
         for server in servers:
+            random_server_feature = FeatureEnum(server["Features"] or 0)
             if (
                 server["Tier"] <= user_tier
             ) and (
@@ -449,7 +413,7 @@ class ServerManager(ConnectionStateManager):
                     not exclude_features
                 ) or (
                     exclude_features
-                    and server["Features"] not in exclude_features
+                    and random_server_feature not in exclude_features
                 )
             ) and (
                 (
@@ -542,7 +506,10 @@ class ServerManager(ConnectionStateManager):
         random_server = random.choice(server_pool)
         servername = random_server["Name"]
         server_domain = random_server["Domain"]
-        server_feature = random_server["Features"]
+        server_feature = 0
+        random_server_feature = random_server["Features"] or 0
+        server_feature = FeatureEnum(int(random_server_feature))
+        # server_feature = random_server["Features"]
 
         return servername, server_domain, server_feature
 

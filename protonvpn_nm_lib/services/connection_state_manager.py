@@ -57,9 +57,8 @@ class ConnectionStateManager(MetadataManager):
         last_metadata = self.get_connection_metadata(
             MetadataEnum.LAST_CONNECTION
         )
-
-        real_metadata[ConnectionMetadataEnum.PROTOCOL.value] = protocol
-        last_metadata[LastConnectionMetadataEnum.PROTOCOL.value] = protocol
+        real_metadata[ConnectionMetadataEnum.PROTOCOL.value] = protocol.value
+        last_metadata[LastConnectionMetadataEnum.PROTOCOL.value] = protocol.value
 
         logger.info("Saving protocol \"{}\" on \"{}\"".format(
             protocol, MetadataEnum.CONNECTION
@@ -74,19 +73,33 @@ class ConnectionStateManager(MetadataManager):
         )
         logger.info("Saved protocol to file")
 
+    def save_display_server_ip(self, ip):
+        real_metadata = self.get_connection_metadata(MetadataEnum.CONNECTION)
+        real_metadata[ConnectionMetadataEnum.DISPLAY_SERVER_IP.value] = ip
+
+        logger.info("Saving exit server IP \"{}\" on \"{}\"".format(
+            ip, MetadataEnum.CONNECTION
+        ))
+        self.write_connection_metadata(MetadataEnum.CONNECTION, real_metadata)
+
+        logger.info("Saved exit ip to file")
+
     def save_server_ip(self, ip):
         """Save connected server IP.
 
         Args:
-            IP (list(string)): server IP
+            IP (string): server IP
         """
-        metadata = {
-            LastConnectionMetadataEnum.SERVER_IP.value: ip
-        }
+        last_metadata = self.get_connection_metadata(
+            MetadataEnum.LAST_CONNECTION
+        )
+        last_metadata[LastConnectionMetadataEnum.SERVER_IP.value] = ip
         logger.info("Saving server ip \"{}\" on \"{}\"".format(
             ip, MetadataEnum.LAST_CONNECTION
         ))
-        self.write_connection_metadata(MetadataEnum.LAST_CONNECTION, metadata)
+        self.write_connection_metadata(
+            MetadataEnum.LAST_CONNECTION, last_metadata
+        )
         logger.info("Saved server IP to file")
 
     def get_server_ip(self):

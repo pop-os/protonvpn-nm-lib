@@ -165,12 +165,12 @@ class UserManager(UserSessionManager):
     def append_suffix(self, username):
         """Append suffixes to OpenVPN username."""
         suffixes = [
-            ClientSuffixEnum.PLATFORM.value,
+            ClientSuffixEnum.PLATFORM,
             NETSHIELD_STATUS_DICT[self.user_conf_manager.netshield]
         ]
 
         _username = username + "+" + "+".join(
-            suffix for suffix in suffixes
+            suffix.value for suffix in suffixes
         )
 
         return _username

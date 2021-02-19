@@ -9,7 +9,8 @@ from ..constants import (KILLSWITCH_CONN_NAME, KILLSWITCH_INTERFACE_NAME,
                          ROUTED_CONN_NAME, ROUTED_INTERFACE_NAME,
                          IPv4_DUMMY_ADDRESS, IPv4_DUMMY_GATEWAY,
                          IPv6_DUMMY_ADDRESS, IPv6_DUMMY_GATEWAY)
-from ..enums import KillswitchStatusEnum
+from ..enums import (KillSwitchInterfaceTrackerEnum,
+                     KillSwitchManagerActionEnum, KillswitchStatusEnum)
 from ..logger import logger
 from .abstract_interface_manager import AbstractInterfaceManager
 from .dbus_get_wrapper import DbusGetWrapper
@@ -50,19 +51,19 @@ class KillSwitchManager(AbstractInterfaceManager):
         self.dbus_get_wrapper.bus = self.bus
         self.interface_state_tracker = {
             self.ks_conn_name: {
-                "exists": False,
-                "is_running": False
+                KillSwitchInterfaceTrackerEnum.EXISTS: False,
+                KillSwitchInterfaceTrackerEnum.IS_RUNNING: False
             },
             self.routed_conn_name: {
-                "exists": False,
-                "is_running": False
+                KillSwitchInterfaceTrackerEnum.EXISTS: False,
+                KillSwitchInterfaceTrackerEnum.IS_RUNNING: False
             }
         }
 
         logger.info("Initialized killswitch manager")
         _ = self.check_status_connectivity_check()
 
-    def manage(self, action, is_menu=False, server_ip=None):
+    def manage(self, action, server_ip=None):
         """Manage killswitch.
 
         Args:
@@ -72,9 +73,8 @@ class KillSwitchManager(AbstractInterfaceManager):
             server_ip (string): server ip to be connected to
         """
         logger.info(
-            "Action({}) -> is_menu({}); Killswitch setting: {}".format(
+            "Action({}); Killswitch setting: {}".format(
                 action,
-                is_menu,
                 self.user_conf_manager.killswitch
             )
         )
@@ -88,29 +88,31 @@ class KillSwitchManager(AbstractInterfaceManager):
 
         self.update_connection_status()
 
-        if is_menu:
-            if int(action) == KillswitchStatusEnum.HARD:
-                self.create_killswitch_connection()
-            elif int(action) in [
-                KillswitchStatusEnum.SOFT, KillswitchStatusEnum.DISABLED
-            ]:
-                self.delete_all_connections()
-            else:
-                raise exceptions.KillswitchError(
-                    "Incorrect option for killswitch manager"
-                )
-
-            return
-
         actions_dict = {
-            "pre_connection": self.setup_pre_connection_ks,
-            "post_connection": self.setup_post_connection_ks,
-            "soft_connection": self.setup_soft_connection,
-            "disable": self.delete_all_connections
+            KillSwitchManagerActionEnum.PRE_CONNECTION: self.setup_pre_connection_ks, # noqa
+            KillSwitchManagerActionEnum.POST_CONNECTION: self.setup_post_connection_ks, # noqa
+            KillSwitchManagerActionEnum.SOFT: self.setup_soft_connection,
+            KillSwitchManagerActionEnum.DISABLE: self.delete_all_connections
 
-        }
+        }[action](server_ip)
 
-        actions_dict[action](server_ip)
+    def update_from_user_configuration_menu(self, action):
+        logger.info(
+            "Action({}); Killswitch setting: {}".format(
+                action,
+                self.user_conf_manager.killswitch
+            )
+        )
+        if action == KillswitchStatusEnum.HARD:
+            self.create_killswitch_connection()
+        elif action in [
+            KillswitchStatusEnum.SOFT, KillswitchStatusEnum.DISABLED
+        ]:
+            self.delete_all_connections()
+        else:
+            raise exceptions.KillswitchError(
+                "Incorrect option for killswitch manager"
+            )
 
     def setup_pre_connection_ks(self, server_ip, pre_attempts=0):
         """Assure pre-connection Kill Switch is setup correctly.
@@ -124,8 +126,12 @@ class KillSwitchManager(AbstractInterfaceManager):
 
         # happy path
         if (
-            self.interface_state_tracker[self.ks_conn_name]["is_running"]
-            and not self.interface_state_tracker[self.routed_conn_name]["exists"] # noqa
+            self.interface_state_tracker[self.ks_conn_name][
+                KillSwitchInterfaceTrackerEnum.IS_RUNNING
+            ]
+            and not self.interface_state_tracker[self.routed_conn_name][
+                KillSwitchInterfaceTrackerEnum.EXISTS
+            ]
         ):
             self.create_routed_connection(server_ip)
             self.deactivate_connection(self.ks_conn_name)
@@ -133,8 +139,12 @@ class KillSwitchManager(AbstractInterfaceManager):
 
         # check for routed ks and remove if present/running
         if (
-            self.interface_state_tracker[self.routed_conn_name]["exists"]
-            or self.interface_state_tracker[self.routed_conn_name]["is_running"] # noqa
+            self.interface_state_tracker[self.routed_conn_name][
+                KillSwitchInterfaceTrackerEnum.EXISTS
+            ]
+            or self.interface_state_tracker[self.routed_conn_name][
+                KillSwitchInterfaceTrackerEnum.IS_RUNNING
+            ]
         ):
             self.delete_connection(self.routed_conn_name)
 
@@ -142,7 +152,7 @@ class KillSwitchManager(AbstractInterfaceManager):
         if (
             not self.interface_state_tracker[
                 self.ks_conn_name
-            ]["is_running"]
+            ][KillSwitchInterfaceTrackerEnum.IS_RUNNING]
         ):
             self.activate_connection(self.ks_conn_name)
 
@@ -150,7 +160,7 @@ class KillSwitchManager(AbstractInterfaceManager):
         if (
             not self.interface_state_tracker[
                 self.ks_conn_name
-            ]["exists"]
+            ][KillSwitchInterfaceTrackerEnum.EXISTS]
         ):
             self.create_killswitch_connection()
 
@@ -171,8 +181,12 @@ class KillSwitchManager(AbstractInterfaceManager):
 
         # happy path
         if (
-            not self.interface_state_tracker[self.ks_conn_name]["is_running"]
-            and self.interface_state_tracker[self.routed_conn_name]["is_running"] # noqa
+            not self.interface_state_tracker[self.ks_conn_name][
+                KillSwitchInterfaceTrackerEnum.IS_RUNNING
+            ]
+            and self.interface_state_tracker[self.routed_conn_name][
+                KillSwitchInterfaceTrackerEnum.IS_RUNNING
+            ]
         ):
             self.activate_connection(self.ks_conn_name)
             self.delete_connection(self.routed_conn_name)
@@ -180,8 +194,8 @@ class KillSwitchManager(AbstractInterfaceManager):
         elif (
             activating_soft_connection
             and (
-                not self.interface_state_tracker[self.routed_conn_name]["is_running"] # noqa
-                or not self.interface_state_tracker[self.routed_conn_name]["exists"] # noqa
+                not self.interface_state_tracker[self.routed_conn_name][KillSwitchInterfaceTrackerEnum.IS_RUNNING] # noqa
+                or not self.interface_state_tracker[self.routed_conn_name][KillSwitchInterfaceTrackerEnum.EXISTS] # noqa
             )
         ):
             self.activate_connection(self.ks_conn_name)
@@ -189,14 +203,16 @@ class KillSwitchManager(AbstractInterfaceManager):
 
         # check for ks and disable it if is running
         if (
-            self.interface_state_tracker[self.ks_conn_name]["is_running"]
+            self.interface_state_tracker[self.ks_conn_name][
+                KillSwitchInterfaceTrackerEnum.IS_RUNNING
+            ]
         ):
             self.deactivate_connection(self.ks_conn_name)
 
         # check if routed ks exists, if so then activate it
         # else raise exception
         if (
-            self.interface_state_tracker[self.routed_conn_name]["exists"] # noqa
+            self.interface_state_tracker[self.routed_conn_name][KillSwitchInterfaceTrackerEnum.EXISTS] # noqa
         ):
             self.activate_connection(self.routed_conn_name)
         else:
@@ -216,20 +232,19 @@ class KillSwitchManager(AbstractInterfaceManager):
 
     def create_killswitch_connection(self):
         """Create killswitch connection/interface."""
-        subprocess_command = ""\
-            "nmcli c a type dummy ifname {interface_name} "\
-            "con-name {conn_name} ipv4.method manual "\
-            "ipv4.addresses {ipv4_addrs} ipv4.gateway {ipv4_gateway} "\
-            "ipv6.method manual ipv6.addresses {ipv6_addrs} "\
-            "ipv6.gateway {ipv6_gateway} "\
-            "ipv4.route-metric 98 ipv6.route-metric 98".format(
-                conn_name=self.ks_conn_name,
-                interface_name=self.ks_interface_name,
-                ipv4_addrs=self.ipv4_dummy_addrs,
-                ipv4_gateway=self.ipv4_dummy_gateway,
-                ipv6_addrs=self.ipv6_dummy_addrs,
-                ipv6_gateway=self.ipv6_dummy_gateway,
-            ).split(" ")
+        subprocess_command = [
+            "nmcli", "c", "a", "type", "dummy",
+            "ifname", self.ks_interface_name,
+            "con-name", self.ks_conn_name,
+            "ipv4.method", "manual",
+            "ipv4.addresses", self.ipv4_dummy_addrs,
+            "ipv4.gateway", self.ipv4_dummy_gateway,
+            "ipv6.method", "manual",
+            "ipv6.addresses", self.ipv6_dummy_addrs,
+            "ipv6.gateway", self.ipv6_dummy_gateway,
+            "ipv4.route-metric", "98",
+            "ipv6.route-metric", "98"
+        ]
 
         self.create_connection(
             self.ks_conn_name,
@@ -253,36 +268,33 @@ class KillSwitchManager(AbstractInterfaceManager):
         route_data = [str(ipv4) for ipv4 in subnet_list]
         route_data_str = ",".join(route_data)
 
-        subprocess_command = ""\
-            "nmcli c a type dummy ifname {interface_name} "\
-            "con-name {conn_name} ipv4.method manual "\
-            "ipv4.addresses {ipv4_addrs} "\
-            "ipv6.method manual ipv6.addresses {ipv6_addrs} "\
-            "ipv6.gateway {ipv6_gateway} "\
-            "ipv4.route-metric 97 ipv6.route-metric 97 "\
-            "ipv4.routes {routes}".format(
-                conn_name=self.routed_conn_name,
-                interface_name=self.routed_interface_name,
-                ipv4_addrs=self.ipv4_dummy_addrs,
-                ipv6_addrs=self.ipv6_dummy_addrs,
-                ipv6_gateway=self.ipv6_dummy_gateway,
-                routes=route_data_str
-            ).split(" ")
+        subprocess_command = [
+            "nmcli", "c", "a", "type", "dummy",
+            "ifname", self.routed_interface_name,
+            "con-name", self.routed_conn_name,
+            "ipv4.method", "manual",
+            "ipv4.addresses", self.ipv4_dummy_addrs,
+            "ipv6.method", "manual",
+            "ipv6.addresses", self.ipv6_dummy_addrs,
+            "ipv6.gateway", self.ipv6_dummy_gateway,
+            "ipv4.route-metric", "97",
+            "ipv6.route-metric", "97",
+            "ipv4.routes", route_data_str
+        ]
 
         if try_route_addrs:
-            subprocess_command = ""\
-                "nmcli c a type dummy ifname {interface_name} "\
-                "con-name {conn_name} ipv4.method manual "\
-                "ipv4.addresses {ipv4_addrs} "\
-                "ipv6.method manual ipv6.addresses {ipv6_addrs} "\
-                "ipv6.gateway {ipv6_gateway} "\
-                "ipv4.route-metric 97 ipv6.route-metric 97".format(
-                    conn_name=self.routed_conn_name,
-                    interface_name=self.routed_interface_name,
-                    ipv4_addrs=route_data_str,
-                    ipv6_addrs=self.ipv6_dummy_addrs,
-                    ipv6_gateway=self.ipv6_dummy_gateway,
-                ).split(" ")
+            subprocess_command = [
+                "nmcli", "c", "a", "type", "dummy",
+                "ifname", self.routed_interface_name,
+                "con-name", self.routed_conn_name,
+                "ipv4.method", "manual",
+                "ipv4.addresses", route_data_str,
+                "ipv6.method", "manual",
+                "ipv6.addresses", self.ipv6_dummy_addrs,
+                "ipv6.gateway", self.ipv6_dummy_gateway,
+                "ipv4.route-metric", "97",
+                "ipv6.route-metric", "97"
+            ]
 
         logger.info(subprocess_command)
         exception_msg = "Unable to activate {}".format(self.routed_conn_name)
@@ -303,7 +315,9 @@ class KillSwitchManager(AbstractInterfaceManager):
         subprocess_command, exception
     ):
         self.update_connection_status()
-        if not self.interface_state_tracker[conn_name]["exists"]:
+        if not self.interface_state_tracker[conn_name][
+            KillSwitchInterfaceTrackerEnum.EXISTS
+        ]:
             self.run_subprocess(
                 exception,
                 exception_msg,
@@ -323,9 +337,13 @@ class KillSwitchManager(AbstractInterfaceManager):
             return_settings_path=True
         )
         if (
-            self.interface_state_tracker[conn_name]["exists"]
+            self.interface_state_tracker[conn_name][
+                KillSwitchInterfaceTrackerEnum.EXISTS
+            ]
         ) and (
-            not self.interface_state_tracker[conn_name]["is_running"]
+            not self.interface_state_tracker[conn_name][
+                KillSwitchInterfaceTrackerEnum.IS_RUNNING
+            ]
         ) and conn_dict:
             device_path = str(conn_dict.get("device_path"))
             settings_path = str(conn_dict.get("settings_path"))
@@ -361,8 +379,9 @@ class KillSwitchManager(AbstractInterfaceManager):
             return_active_conn_path=True
         )
         if (
-            self.interface_state_tracker[conn_name]["is_running"]
-            and active_conn_dict
+            self.interface_state_tracker[conn_name][
+                KillSwitchInterfaceTrackerEnum.IS_RUNNING
+            ] and active_conn_dict
         ):
             active_conn_path = str(active_conn_dict.get("active_conn_path"))
             try:
@@ -385,7 +404,7 @@ class KillSwitchManager(AbstractInterfaceManager):
             "nmcli c delete {}".format(conn_name).split(" ")
 
         self.update_connection_status()
-        if self.interface_state_tracker[conn_name]["exists"]: # noqa
+        if self.interface_state_tracker[conn_name][KillSwitchInterfaceTrackerEnum.EXISTS]: # noqa
             self.run_subprocess(
                 exceptions.DeleteKillswitchError,
                 "Unable to delete {}".format(conn_name),
@@ -407,10 +426,10 @@ class KillSwitchManager(AbstractInterfaceManager):
         all_conns = self.dbus_get_wrapper.get_all_conns()
         active_conns = self.dbus_get_wrapper.get_all_active_conns()
 
-        self.interface_state_tracker[self.ks_conn_name]["exists"] = False # noqa
-        self.interface_state_tracker[self.routed_conn_name]["exists"] = False  # noqa
-        self.interface_state_tracker[self.ks_conn_name]["is_running"] = False # noqa
-        self.interface_state_tracker[self.routed_conn_name]["is_running"] = False  # noqa
+        self.interface_state_tracker[self.ks_conn_name][KillSwitchInterfaceTrackerEnum.EXISTS] = False # noqa
+        self.interface_state_tracker[self.routed_conn_name][KillSwitchInterfaceTrackerEnum.EXISTS] = False  # noqa
+        self.interface_state_tracker[self.ks_conn_name][KillSwitchInterfaceTrackerEnum.IS_RUNNING] = False # noqa
+        self.interface_state_tracker[self.routed_conn_name][KillSwitchInterfaceTrackerEnum.IS_RUNNING] = False  # noqa
 
         for conn in all_conns:
             conn_name = str(self.dbus_get_wrapper.get_all_conn_settings(
@@ -418,7 +437,9 @@ class KillSwitchManager(AbstractInterfaceManager):
             )["connection"]["id"])
 
             if conn_name in self.interface_state_tracker:
-                self.interface_state_tracker[conn_name]["exists"] = True
+                self.interface_state_tracker[conn_name][
+                    KillSwitchInterfaceTrackerEnum.EXISTS
+                ] = True
 
         for active_conn in active_conns:
             conn_name = str(self.dbus_get_wrapper.get_active_conn_props(
@@ -426,7 +447,7 @@ class KillSwitchManager(AbstractInterfaceManager):
             )["Id"])
 
             if conn_name in self.interface_state_tracker:
-                self.interface_state_tracker[conn_name]["is_running"] = True # noqa
+                self.interface_state_tracker[conn_name][KillSwitchInterfaceTrackerEnum.IS_RUNNING] = True # noqa
 
         logger.info("Tracker info: {}".format(self.interface_state_tracker))
 

@@ -1,15 +1,22 @@
-from .logger import logger
-from .enums import MetadataEnum, ConnectionMetadataEnum, ConnectionTypeEnum
+from ..logger import logger
+from ..enums import MetadataEnum, ConnectionMetadataEnum, ConnectionTypeEnum
 
 
 class Reconnect():
+    """Reconnect Class
 
-    def setup_reconnect(self):
-        """Reconnect to previously connected server."""
+    Exposes one method _setup_reconnect(), that should be
+    used before attempting to connect.
+    To connect to VPN, the exposed method provided
+    by connect._connect(), can be used.
+    """
+    def _setup_reconnect(self):
+        """Public method.
+
+        Setup connection to reconnect to previously connected server.
+        """
         logger.info("Attemtping to recconnect to previous server")
-        self.get_existing_session()
         self.server_manager.killswitch_status = self.user_conf_manager.killswitch # noqa
-
         last_connection_metadata = self.__get_last_connection_metadata()
 
         try:
@@ -26,28 +33,30 @@ class Reconnect():
             )
 
         try:
-            self.protocol = last_connection_metadata[
+            protocol = last_connection_metadata[
                 ConnectionMetadataEnum.PROTOCOL.value
             ]
         except KeyError:
-            self.protocol = None
-
-        if not self.is_protocol_valid() or self.protocol is None:
-            self.protocol = self.user_conf_manager.default_protocol
-
-        self.connect_type = ConnectionTypeEnum.SERVERNAME
-        self.connect_type_extra_arg = previous_server
+            protocol = None
 
         logger.info("Passed all check, will reconnecto to \"{}\"".format(
             previous_server
         ))
 
-        self.setup_connection(servername=previous_server)
-        connection_info = self.setup_connection()
+        # Public method provided by connect.py
+        connection_info = self._setup_connection(
+            connection_type=ConnectionTypeEnum.SERVERNAME,
+            connection_type_extra_arg=previous_server,
+            protocol=protocol
+        )
 
         return connection_info
 
     def __get_last_connection_metadata(self):
+        """Private method.
+
+        Get metadata of last made connection.
+        """
         try:
             return self.server_manager.get_connection_metadata(
                 MetadataEnum.LAST_CONNECTION

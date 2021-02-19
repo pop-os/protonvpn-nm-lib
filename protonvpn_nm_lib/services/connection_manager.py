@@ -9,8 +9,9 @@ from gi.repository import NM, GLib
 
 from .. import exceptions
 from ..constants import CONFIG_STATUSES, ENV_CI_NAME, VIRTUAL_DEVICE_NAME
-from ..enums import (ConnectionMetadataEnum, KillswitchStatusEnum,
-                     UserSettingStatusEnum, MetadataEnum)
+from ..enums import (ConnectionMetadataEnum, KillSwitchManagerActionEnum,
+                     KillswitchStatusEnum, MetadataEnum,
+                     NetworkManagerConnectionTypeEnum, UserSettingStatusEnum)
 from ..logger import logger
 from ..services.connection_state_manager import ConnectionStateManager
 from . import capture_exception
@@ -48,7 +49,7 @@ class ConnectionManager(ConnectionStateManager):
             )
             raise TypeError(err_msg)
 
-        elif not filename.strip():
+        elif len(filename) == 0:
             err_msg = "A valid filename must be provided"
 
             logger.error(
@@ -80,21 +81,6 @@ class ConnectionManager(ConnectionStateManager):
             )
             raise ValueError(err_msg)
 
-        # Check that method to delete cached certificates is implemented
-        try:
-            delete_cached_cert("no_existing_cert.ovpn")
-        except FileNotFoundError:
-            pass
-        except Exception as e:
-            logger.exception(
-                "NotImplementedError: {}".format(e)
-            )
-            capture_exception(e)
-            err_msg = "Expects object method, {} was not passed".format(
-                delete_cached_cert
-            )
-            raise NotImplementedError(err_msg)
-
         # https://lazka.github.io/pgi-docs/NM-1.0/classes/Client.html
         client = NM.Client.new(None)
         main_loop = GLib.MainLoop()
@@ -110,11 +96,14 @@ class ConnectionManager(ConnectionStateManager):
         self.add_vpn_credentials(vpn_settings, username, password)
         self.add_server_certificate_check(vpn_settings, domain)
         self.apply_virtual_device_type(vpn_settings, filename)
-        self.dns_manager(connection, user_conf_manager.dns)
+        self.dns_manager(connection, user_conf_manager)
         if ipv6_lp_manager.enable_ipv6_leak_protection:
-            ipv6_lp_manager.manage("enable")
+            ipv6_lp_manager.manage(KillSwitchManagerActionEnum.ENABLE)
         if user_conf_manager.killswitch == KillswitchStatusEnum.HARD: # noqa
-            ks_manager.manage("pre_connection", server_ip=entry_ip)
+            ks_manager.manage(
+                KillSwitchManagerActionEnum.PRE_CONNECTION,
+                server_ip=entry_ip
+            )
 
         client.add_connection_async(
             connection,
@@ -170,15 +159,18 @@ class ConnectionManager(ConnectionStateManager):
             capture_exception(e)
             raise exceptions.AddConnectionCredentialsError(e)
 
-    def dns_manager(self, connection, dns_setting):
+    def dns_manager(self, connection, user_conf_manager):
         """Apply dns configurations to ProtonVPN connection.
 
         Args:
             connection (NM.SimpleConnection): vpn connection object
             dns_setting (tuple(int, [])): contains dns configurations
         """
-        logger.info("DNS configs: {}".format(dns_setting))
-        dns_status, custom_dns = dns_setting
+        dns_status, custom_dns = user_conf_manager.dns
+        logger.info("DNS configs: {} - {}".format(
+            dns_status, custom_dns
+        ))
+        custom_dns = custom_dns[0]
 
         if dns_status not in CONFIG_STATUSES:
             raise Exception("Incorrect status configuration")
@@ -198,9 +190,9 @@ class ConnectionManager(ConnectionStateManager):
                 logger.info("Applying custom DNS: {}".format(custom_dns))
                 ipv4_config.props.dns_priority = -50
                 ipv6_config.props.dns_priority = -50
-                split_custom_dns = custom_dns[0].split()
-                logger.info("After split: {}".format(split_custom_dns))
-                ipv4_config.props.dns = split_custom_dns
+                for ip in custom_dns:
+                    user_conf_manager.is_valid_ip(ip)
+                ipv4_config.props.dns = custom_dns
             else:
                 logger.info("DNS managemenet disallowed")
 
@@ -225,7 +217,10 @@ class ConnectionManager(ConnectionStateManager):
         client = NM.Client.new(None)
         main_loop = GLib.MainLoop()
 
-        conn = self.get_proton_connection("all_connections", client=client)
+        conn = self.get_protonvpn_connection(
+            NetworkManagerConnectionTypeEnum.ALL,
+            client=client
+        )
 
         if len(conn) < 2 and conn[0] is False:
             logger.error(
@@ -267,7 +262,10 @@ class ConnectionManager(ConnectionStateManager):
 
         main_loop = GLib.MainLoop()
 
-        conn = self.get_proton_connection("active_connections", client)
+        conn = self.get_protonvpn_connection(
+            NetworkManagerConnectionTypeEnum.ACTIVE,
+            client
+        )
 
         if len(conn) < 2 and conn[0] is False:
             logger.info("Connection not found")
@@ -300,7 +298,10 @@ class ConnectionManager(ConnectionStateManager):
         logger.info("Removing VPN connection")
         client = NM.Client.new(None)
         main_loop = GLib.MainLoop()
-        conn = self.get_proton_connection("all_connections", client)
+        conn = self.get_protonvpn_connection(
+            NetworkManagerConnectionTypeEnum.ALL,
+            client
+        )
 
         if len(conn) < 2 and conn[0] is False:
             logger.info(
@@ -320,10 +321,10 @@ class ConnectionManager(ConnectionStateManager):
 
         # conn is a NM.RemoteConnection
         # https://lazka.github.io/pgi-docs/NM-1.0/classes/RemoteConnection.html#NM.RemoteConnection
-        ipv6_lp_manager.manage("disable")
+        ipv6_lp_manager.manage(KillSwitchManagerActionEnum.DISABLE)
 
         if user_conf_manager.killswitch == KillswitchStatusEnum.SOFT: # noqa
-            ks_manager.manage("disable")
+            ks_manager.manage(KillSwitchManagerActionEnum.DISABLE)
 
         conn.delete_async(
             None,
@@ -336,14 +337,6 @@ class ConnectionManager(ConnectionStateManager):
         )
 
         main_loop.run()
-
-    def display_connection_status(self, from_connections="active_connections"):
-        connection_exists = self.get_proton_connection(from_connections)
-
-        if not connection_exists[0]:
-            return False
-
-        return self.get_connection_metadata(MetadataEnum.CONNECTION)
 
     def is_internet_connection_available(self, ks_status):
         logger.info("Checking internet connectivity")
@@ -493,36 +486,44 @@ class ConnectionManager(ConnectionStateManager):
         vpn_settings.add_data_item("dev", self.virtual_device_name)
         vpn_settings.add_data_item("dev-type", virtual_device_type)
 
-    def get_proton_connection(self, connection_type, client=None):
+    def get_protonvpn_connection(
+        self, network_manager_connection_type, client=None
+    ):
         """Get ProtonVPN connection.
 
         Args:
-            connection_type (string): can either be
-                all_connections - check all connections
-                active_connections - check only active connections
+            connection_type (NetworkManagerConnectionTypeEnum):
+                can either be:
+                ALL - for all connections
+                ACTIVE - only active connections
             client (NM.Client): nm client object (optional)
 
         Returns:
             tuple: (bool|Empty) or (connection, connection_id)
         """
-        logger.info("Getting VPN connection: \"{}\"".format(connection_type))
+        logger.info("Getting VPN from \"{}\" connections".format(
+            network_manager_connection_type
+        ))
         return_conn = [False]
 
         if not client:
             client = NM.Client.new(None)
 
         connection_types = {
-            "all_connections": client.get_connections,
-            "active_connections": client.get_active_connections
+            NetworkManagerConnectionTypeEnum.ALL: client.get_connections,
+            NetworkManagerConnectionTypeEnum.ACTIVE: client.get_active_connections # noqa
         }
 
-        all_cons = connection_types[connection_type]()
+        connections_list = connection_types[network_manager_connection_type]()
 
-        for conn in all_cons:
+        for conn in connections_list:
             if conn.get_connection_type() == "vpn":
                 conn_for_vpn = conn
                 # conn can be either NM.RemoteConnection or NM.ActiveConnection
-                if connection_type == "active_connections":
+                if (
+                    network_manager_connection_type
+                    == NetworkManagerConnectionTypeEnum.ACTIVE
+                ):
                     conn_for_vpn = conn.get_connection()
 
                 vpn_settings = conn_for_vpn.get_setting_vpn()

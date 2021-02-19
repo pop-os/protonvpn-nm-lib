@@ -1,6 +1,7 @@
 import json
 import os
 import re
+from enum import Enum
 
 from ..constants import (
     CONFIG_STATUSES,
@@ -11,8 +12,8 @@ from ..constants import (
 )
 from ..enums import (
     ProtocolEnum,
-    UserSettingEnum,
     UserSettingConnectionEnum,
+    KillswitchStatusEnum
 )
 
 
@@ -31,25 +32,19 @@ class UserConfigurationManager():
     def default_protocol(self):
         """Protocol get property."""
         user_configs = self.get_user_configurations()
-        return user_configs[
-            UserSettingEnum.CONNECTION.value
-        ][UserSettingConnectionEnum.DEFAULT_PROTOCOL.value]
+        return user_configs[UserSettingConnectionEnum.DEFAULT_PROTOCOL]
 
     @property
     def dns(self):
         """DNS get property."""
         user_configs = self.get_user_configurations()
 
-        dns_status = user_configs[
-            UserSettingEnum.CONNECTION.value
-        ][UserSettingConnectionEnum.DNS.value][
-            UserSettingConnectionEnum.DNS_STATUS.value
+        dns_status = user_configs[UserSettingConnectionEnum.DNS][
+            UserSettingConnectionEnum.DNS_STATUS
         ]
 
-        custom_dns = user_configs[
-            UserSettingEnum.CONNECTION.value
-        ][UserSettingConnectionEnum.DNS.value][
-            UserSettingConnectionEnum.CUSTOM_DNS.value
+        custom_dns = user_configs[UserSettingConnectionEnum.DNS][
+            UserSettingConnectionEnum.CUSTOM_DNS
         ]
 
         return (dns_status, [custom_dns])
@@ -58,18 +53,14 @@ class UserConfigurationManager():
     def killswitch(self):
         """Killswitch get property."""
         user_configs = self.get_user_configurations()
-        return user_configs[
-            UserSettingEnum.CONNECTION.value
-        ][UserSettingConnectionEnum.KILLSWITCH.value]
+        return user_configs[UserSettingConnectionEnum.KILLSWITCH]
 
     @property
     def netshield(self):
         """Netshield get property."""
         user_configs = self.get_user_configurations()
         try:
-            return user_configs[
-                UserSettingEnum.CONNECTION.value
-            ][UserSettingConnectionEnum.NETSHIELD.value]
+            return user_configs[UserSettingConnectionEnum.NETSHIELD]
         except KeyError:
             return 0
 
@@ -79,19 +70,14 @@ class UserConfigurationManager():
         Args:
             protocol (ProtocolEnum): protocol type
         """
-        if protocol not in [
-            ProtocolEnum.TCP,
-            ProtocolEnum.UDP,
-            ProtocolEnum.IKEV2,
-            ProtocolEnum.WIREGUARD,
-        ]:
-            raise KeyError("Illegal options")
+        if not isinstance(protocol, ProtocolEnum):
+            raise KeyError("Illegal protocol")
 
         user_configs = self.get_user_configurations()
-        user_configs[UserSettingEnum.CONNECTION.value][UserSettingConnectionEnum.DEFAULT_PROTOCOL.value] = protocol # noqa
+        user_configs[UserSettingConnectionEnum.DEFAULT_PROTOCOL] = protocol # noqa
         self.set_user_configurations(user_configs)
 
-    def update_dns(self, status, custom_dns=None):
+    def update_dns(self, status, custom_dns=[]):
         """Update DNS setting.
 
         Args:
@@ -103,12 +89,12 @@ class UserConfigurationManager():
 
         user_configs = self.get_user_configurations()
 
-        user_configs[UserSettingEnum.CONNECTION.value][
-            UserSettingConnectionEnum.DNS.value
-        ][UserSettingConnectionEnum.DNS_STATUS.value] = status # noqa
-        user_configs[UserSettingEnum.CONNECTION.value][
-            UserSettingConnectionEnum.DNS.value
-        ][UserSettingConnectionEnum.CUSTOM_DNS.value] = custom_dns # noqa
+        user_configs[
+            UserSettingConnectionEnum.DNS
+        ][UserSettingConnectionEnum.DNS_STATUS] = status # noqa
+        user_configs[
+            UserSettingConnectionEnum.DNS
+        ][UserSettingConnectionEnum.CUSTOM_DNS] = custom_dns # noqa
 
         self.set_user_configurations(user_configs)
 
@@ -118,12 +104,12 @@ class UserConfigurationManager():
         Args:
             status (UserSettingStatusEnum): Kill Switch status
         """
-        if status not in CONFIG_STATUSES:
+        if not isinstance(status, KillswitchStatusEnum):
             raise KeyError("Illegal options")
 
         user_configs = self.get_user_configurations()
-        user_configs[UserSettingEnum.CONNECTION.value][
-            UserSettingConnectionEnum.KILLSWITCH.value
+        user_configs[
+            UserSettingConnectionEnum.KILLSWITCH
         ] = status # noqa
         self.set_user_configurations(user_configs)
 
@@ -143,9 +129,7 @@ class UserConfigurationManager():
             raise KeyError("Illegal netshield option")
 
         user_configs = self.get_user_configurations()
-        user_configs[
-            UserSettingEnum.CONNECTION.value
-        ][UserSettingConnectionEnum.NETSHIELD.value] = status
+        user_configs[UserSettingConnectionEnum.NETSHIELD] = status
         self.set_user_configurations(user_configs)
 
     def reset_default_configs(self):
@@ -164,11 +148,85 @@ class UserConfigurationManager():
     def get_user_configurations(self):
         """Get user configurations from file. Reads from file.
 
+        If any keys missmatch, it will attempt to reset
+        the configuration file to default values and re-read
+        the values.
+
         Returns:
             dict(json)
         """
         with open(self.user_config_filepath, "r") as f:
-            return json.load(f)
+            try:
+                user_configuration_object = self.transform_dict_to_enum(
+                    json.load(f)
+                )
+            except KeyError:
+                pass
+            else:
+                return user_configuration_object
+
+        self.reset_default_configs()
+        with open(self.user_config_filepath, "r") as f:
+            return self.transform_dict_to_enum(json.load(f))
+
+    def transform_dict_to_enum(self, json_data):
+        """Transform user configrations data
+        from json/dict to dict of enum objects.
+
+        Args:
+            json_data (dict): user configurations read from file
+
+        Returns:
+            Dict(Enum): dict with enums that represent user configurations
+        """
+
+        transformed_object = {}
+        for json_data_key, json_dict_value in json_data.items():
+
+            _enum_setting_first_key = UserSettingConnectionEnum[
+                json_data_key.upper()
+            ]
+            if isinstance(json_dict_value, dict):
+                internal_dict = {}
+                for internal_dict_key, internal_dict_value in json_dict_value.items(): # noqa
+
+                    _enum_setting_second_key = UserSettingConnectionEnum[
+                        internal_dict_key.upper()
+                    ]
+
+                    template_dict_value_enum_object = USER_CONFIG_TEMPLATE[
+                        _enum_setting_first_key
+                    ][_enum_setting_second_key]
+
+                    enum_object = template_dict_value_enum_object.__class__(
+                        internal_dict_value
+                    )
+
+                    internal_dict[_enum_setting_second_key] = enum_object
+
+                transformed_object[_enum_setting_first_key] = internal_dict
+            else:
+                template_dict_value_enum_object = USER_CONFIG_TEMPLATE[
+                    _enum_setting_first_key
+                ]
+
+                if isinstance(json_dict_value, int):
+                    transformed_object[
+                        _enum_setting_first_key
+                    ] = template_dict_value_enum_object.__class__(
+                        json_dict_value
+                    )
+                elif isinstance(json_dict_value, str):
+                    transformed_object[
+                        _enum_setting_first_key
+                    ] = template_dict_value_enum_object.__class__[
+                        json_dict_value.upper()
+                    ]
+                else:
+                    raise TypeError("Object {} is invalid".format(
+                        json_dict_value
+                    ))
+        return transformed_object
 
     def set_user_configurations(self, config_dict):
         """Set user configurations. Writes to file.
@@ -176,8 +234,35 @@ class UserConfigurationManager():
         Args:
             config_dict (dict): user configurations
         """
+        object = self.transform_enum_to_dict(config_dict)
         with open(self.user_config_filepath, "w") as f:
-            json.dump(config_dict, f, indent=4)
+            json.dump(object, f, indent=4)
+
+    def transform_enum_to_dict(self, json_data):
+        """Transform user configrations data
+        from dict of enum objects to dict.
+
+        Args:
+            json_data (dict(enum)): dict of enums that
+            represent user configurations
+
+        Returns:
+            Dict: dict with string representations of enums
+        """
+        transformed_dict = {}
+        for key, dict_value in json_data.items():
+            if isinstance(dict_value, dict):
+                value = {}
+                for _key, _dict_value in dict_value.items():
+                    value[_key.value] = (
+                        _dict_value.value
+                        if isinstance(_dict_value, Enum)
+                        else _dict_value
+                    )
+            else:
+                value = dict_value.value
+            transformed_dict[key.value] = value
+        return transformed_dict
 
     def is_valid_ip(self, ipaddr):
         if not isinstance(ipaddr, str):

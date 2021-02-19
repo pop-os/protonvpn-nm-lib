@@ -165,6 +165,7 @@ class ProtonSessionWrapper(MetadataManager):
             metadata = self.manage_metadata(
                 MetadataActionEnum.GET, MetadataEnum.SERVER_CACHE
             )
+
             metadata["loads_cache_timestamp"] = str(
                 self.calculate_next_loads_cache()
             )

@@ -6,6 +6,7 @@ from .. import exceptions
 from ..constants import (IPv6_DUMMY_ADDRESS, IPv6_DUMMY_GATEWAY,
                          IPv6_LEAK_PROTECTION_CONN_NAME,
                          IPv6_LEAK_PROTECTION_IFACE_NAME)
+from ..enums import KillSwitchInterfaceTrackerEnum, KillSwitchManagerActionEnum
 from ..logger import logger
 from .abstract_interface_manager import AbstractInterfaceManager
 
@@ -30,8 +31,8 @@ class IPv6LeakProtectionManager(AbstractInterfaceManager):
         self.ipv6_dummy_gateway = ipv6_dummy_gateway
         self.interface_state_tracker = {
             self.conn_name: {
-                "exists": False,
-                "is_running": False
+                KillSwitchInterfaceTrackerEnum.EXISTS: False,
+                KillSwitchInterfaceTrackerEnum.IS_RUNNING: False
             }
         }
         logger.info("Intialized IPv6 leak protection manager")
@@ -45,9 +46,12 @@ class IPv6LeakProtectionManager(AbstractInterfaceManager):
         logger.info("Manage IPV6: {}".format(action))
         self.update_connection_status()
 
-        if action == "enable" and self.enable_ipv6_leak_protection:
+        if (
+            action == KillSwitchManagerActionEnum.ENABLE
+            and self.enable_ipv6_leak_protection
+        ):
             self.add_leak_protection()
-        elif action == "disable":
+        elif action == KillSwitchManagerActionEnum.DISABLE:
             self.remove_leak_protection()
         else:
             raise exceptions.IPv6LeakProtectionOptionError(
@@ -57,19 +61,20 @@ class IPv6LeakProtectionManager(AbstractInterfaceManager):
     def add_leak_protection(self):
         """Add leak protection connection/interface."""
         logger.info("Removing IPv6 leak protection")
-        subprocess_command = ""\
-            "nmcli c a type dummy ifname {iface} "\
-            "con-name {conn} ipv6.method manual "\
-            "ipv6.addresses {ipv6_addr} ipv6.gateway {ipv6_gtwy} "\
-            "ipv6.route-metric 95".format(
-                iface=IPv6_LEAK_PROTECTION_IFACE_NAME,
-                conn=IPv6_LEAK_PROTECTION_CONN_NAME,
-                ipv6_addr=IPv6_DUMMY_ADDRESS,
-                ipv6_gtwy=IPv6_DUMMY_GATEWAY
-            ).split(" ")
+        subprocess_command = [
+            "nmcli", "c", "a", "type", "dummy",
+            "ifname", IPv6_LEAK_PROTECTION_IFACE_NAME,
+            "con-name", IPv6_LEAK_PROTECTION_CONN_NAME,
+            "ipv6.method", "manual",
+            "ipv6.addresses", IPv6_DUMMY_ADDRESS,
+            "ipv6.gateway", IPv6_DUMMY_GATEWAY,
+            "ipv6.route-metric", "95"
+        ]
 
-        if not self.interface_state_tracker[self.conn_name]["exists"]:
-            self.manage("disable")
+        if not self.interface_state_tracker[self.conn_name][
+            KillSwitchInterfaceTrackerEnum.EXISTS
+        ]:
+            self.manage(KillSwitchManagerActionEnum.DISABLE)
             self.run_subprocess(
                 exceptions.EnableIPv6LeakProtectionError,
                 "Unable to add IPv6 leak protection connection/interface",
@@ -83,7 +88,9 @@ class IPv6LeakProtectionManager(AbstractInterfaceManager):
             IPv6_LEAK_PROTECTION_CONN_NAME
         ).split(" ")
 
-        if self.interface_state_tracker[self.conn_name]["exists"]:
+        if self.interface_state_tracker[self.conn_name][
+            KillSwitchInterfaceTrackerEnum.EXISTS
+        ]:
             self.run_subprocess(
                 exceptions.DisableIPv6LeakProtectionError,
                 "Unable to remove IPv6 leak protection connection/interface",
@@ -126,8 +133,12 @@ class IPv6LeakProtectionManager(AbstractInterfaceManager):
         all_conns = client.get_connections()
         active_conns = client.get_active_connections()
 
-        self.interface_state_tracker[self.conn_name]["exists"] = False
-        self.interface_state_tracker[self.conn_name]["is_running"] = False
+        self.interface_state_tracker[self.conn_name][
+            KillSwitchInterfaceTrackerEnum.EXISTS
+        ] = False
+        self.interface_state_tracker[self.conn_name][
+            KillSwitchInterfaceTrackerEnum.IS_RUNNING
+        ] = False
 
         for conn in all_conns:
             try:
@@ -135,7 +146,9 @@ class IPv6LeakProtectionManager(AbstractInterfaceManager):
             except KeyError:
                 pass
             else:
-                self.interface_state_tracker[conn.get_id()]["exists"] = True
+                self.interface_state_tracker[conn.get_id()][
+                    KillSwitchInterfaceTrackerEnum.EXISTS
+                ] = True
 
         for active_conn in active_conns:
             try:
@@ -143,6 +156,6 @@ class IPv6LeakProtectionManager(AbstractInterfaceManager):
             except KeyError:
                 pass
             else:
-                self.interface_state_tracker[active_conn.get_id()]["is_running"] = True # noqa
+                self.interface_state_tracker[active_conn.get_id()][KillSwitchInterfaceTrackerEnum.IS_RUNNING] = True # noqa
 
         logger.info("IPv6 status: {}".format(self.interface_state_tracker))

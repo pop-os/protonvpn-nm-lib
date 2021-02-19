@@ -306,3 +306,11 @@ class IllegalServername(ProtonVPNException):
 
 class EmptyServerListError(ProtonVPNException):
     """Empty server list error."""
+
+
+class InvalidCountryCode(ProtonVPNException):
+    """Illegal country code."""
+
+
+class InvalidUsernameFormat(ProtonVPNException):
+    """Invalid username format."""

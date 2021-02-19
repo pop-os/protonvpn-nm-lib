@@ -1,5 +1,5 @@
-from .logger import logger
-from . import exceptions
+from ..logger import logger
+from .. import exceptions
 import dbus
 
 

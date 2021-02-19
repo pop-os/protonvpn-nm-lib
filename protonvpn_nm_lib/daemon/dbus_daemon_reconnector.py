@@ -33,7 +33,9 @@ import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
 from protonvpn_nm_lib.constants import VIRTUAL_DEVICE_NAME
-from protonvpn_nm_lib.enums import KillswitchStatusEnum
+from protonvpn_nm_lib.enums import (KillSwitchInterfaceTrackerEnum,
+                                    KillSwitchManagerActionEnum,
+                                    KillswitchStatusEnum, MetadataEnum)
 from protonvpn_nm_lib.logger import logger
 from protonvpn_nm_lib.services.connection_state_manager import \
     ConnectionStateManager
@@ -43,7 +45,6 @@ from protonvpn_nm_lib.services.ipv6_leak_protection_manager import \
 from protonvpn_nm_lib.services.killswitch_manager import KillSwitchManager
 from protonvpn_nm_lib.services.user_configuration_manager import \
     UserConfigurationManager
-from protonvpn_nm_lib.enums import MetadataEnum
 
 
 class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
@@ -145,7 +146,9 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
             )
 
             if self.ipv6_leak_manager.enable_ipv6_leak_protection:
-                self.ipv6_leak_manager.manage("enable")
+                self.ipv6_leak_manager.manage(
+                    KillSwitchManagerActionEnum.ENABLE
+                )
 
             if (
                 self.user_conf_manager.killswitch
@@ -155,17 +158,22 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
                 if (
                     not self.ks_manager.interface_state_tracker[
                         self.ks_manager.ks_conn_name
-                    ]["exists"]
+                    ][KillSwitchInterfaceTrackerEnum.IS_RUNNING]
                 ):
-                    self.ks_manager.manage("soft_connection")
+                    self.ks_manager.manage(KillSwitchManagerActionEnum.SOFT)
                 else:
-                    self.ks_manager.manage("post_connection")
+                    self.ks_manager.manage(
+                        KillSwitchManagerActionEnum.POST_CONNECTION
+                    )
 
         elif state == 7 and reason == 2:
             logger.info("ProtonVPN connection was manually disconnected.")
             self.failed_attempts = 0
 
-            vpn_iface, settings = self.get_vpn_interface(True)
+            try:
+                vpn_iface, settings = self.get_vpn_interface(True)
+            except TypeError as e:
+                logger.exception(e)
 
             self.remove_connection_metadata(MetadataEnum.CONNECTION)
 
@@ -179,7 +187,9 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
             else:
                 logger.info("ProtonVPN connection has been manually removed.")
 
-                self.ipv6_leak_manager.manage("disable")
+                self.ipv6_leak_manager.manage(
+                    KillSwitchManagerActionEnum.DISABLE
+                )
 
                 if (
                     self.user_conf_manager.killswitch
@@ -234,7 +244,8 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
         ):
             try:
                 self.ks_manager.manage(
-                    "pre_connection", server_ip=server_ip
+                    KillSwitchManagerActionEnum.PRE_CONNECTION,
+                    server_ip=server_ip
                 )
             except Exception as e:
                 logger.exception(
@@ -326,7 +337,10 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
                 self.user_conf_manager.killswitch
                 != KillswitchStatusEnum.DISABLED
             ):
-                self.ks_manager.manage("pre_connection", server_ip=server_ip)
+                self.ks_manager.manage(
+                    KillSwitchManagerActionEnum.PRE_CONNECTION,
+                    server_ip=server_ip
+                )
             self.vpn_signal_handler(conn)
             return
 
