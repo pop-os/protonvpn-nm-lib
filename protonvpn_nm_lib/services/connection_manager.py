@@ -118,8 +118,8 @@ class ConnectionManager(ConnectionStateManager):
         )
 
         main_loop.run()
-        if not os.environ.get(ENV_CI_NAME):
-            delete_cached_cert(filename)
+        # if not os.environ.get(ENV_CI_NAME):
+        #     delete_cached_cert(filename)
 
     def make_vpn_user_owned(self, connection_settings):
         # returns NM.SettingConnection

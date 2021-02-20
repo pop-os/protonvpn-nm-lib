@@ -10,15 +10,14 @@ from ..logger import logger
 
 class MetadataManager():
     METADATA_DICT = {
-        MetadataEnum.CONNECTION.value: CONNECTION_STATE_FILEPATH,
-        MetadataEnum.LAST_CONNECTION.value: LAST_CONNECTION_METADATA_FILEPATH,
-        MetadataEnum.SERVER_CACHE.value: CACHE_METADATA_FILEPATH
+        MetadataEnum.CONNECTION: CONNECTION_STATE_FILEPATH,
+        MetadataEnum.LAST_CONNECTION: LAST_CONNECTION_METADATA_FILEPATH,
+        MetadataEnum.SERVER_CACHE: CACHE_METADATA_FILEPATH
     }
 
     def manage_metadata(self, action, metadata_type, metadata=None):
         """Metadata manager."""
-        action = action.value
-        metadata_type = metadata_type.value
+        # metadata_type = metadata_type.value
         logger.info(
             "Metadata manager \"action: {} - Metadata type: {}\"".format(
                 action,
@@ -26,9 +25,9 @@ class MetadataManager():
             )
         )
         metadata_action_dict = {
-            MetadataActionEnum.GET.value: self.get_metadata_from_file,
-            MetadataActionEnum.WRITE.value: self.write_metadata_to_file,
-            MetadataActionEnum.REMOVE.value: self.remove_metadata_file
+            MetadataActionEnum.GET: self.get_metadata_from_file,
+            MetadataActionEnum.WRITE: self.write_metadata_to_file,
+            MetadataActionEnum.REMOVE: self.remove_metadata_file
         }
 
         if action not in metadata_action_dict:
@@ -36,7 +35,7 @@ class MetadataManager():
                 "Illegal {} metadata action".format(action)
             )
 
-        self.is_metadata_type_valid(metadata_type)
+        self.ensure_metadata_type_is_valid(metadata_type)
 
         metadata_from_file = metadata_action_dict[action](
             metadata_type, metadata
@@ -70,7 +69,7 @@ class MetadataManager():
         if os.path.isfile(filepath):
             os.remove(filepath)
 
-    def is_metadata_type_valid(self, metadata_type):
+    def ensure_metadata_type_is_valid(self, metadata_type):
         """Check metedata type."""
         logger.info("Checking if {} is valid".format(metadata_type))
         if metadata_type not in self.METADATA_DICT:
@@ -83,7 +82,7 @@ class MetadataManager():
         """Check if metadata file exists."""
         metadata_type = metadata_type.value
         logger.info("Checking if \"{}\" exists".format(metadata_type))
-        self.is_metadata_type_valid(metadata_type)
+        self.ensure_metadata_type_is_valid(metadata_type)
 
         metadata_exists = False
         if os.path.isfile(self.METADATA_DICT[metadata_type]):

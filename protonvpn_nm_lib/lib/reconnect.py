@@ -10,12 +10,13 @@ class ProtonVPNReconnect:
     To connect to VPN, the exposed method provided
     by connect._connect(), can be used.
     """
-    def __init__(self, connect, server_manager):
+    def __init__(self, connect, server_manager, user_conf_manager):
         # library
         self.connect = connect
 
         # services
         self.server_manager = server_manager
+        self.user_conf_manager = user_conf_manager
 
     def _setup_reconnection(self):
         """Setup connection to reconnect to previously connected server.

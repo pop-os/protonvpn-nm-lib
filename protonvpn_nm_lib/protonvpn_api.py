@@ -58,7 +58,7 @@ class API():
         ipv6_lp_manager, reconector_manager,
         ks_manager
     )
-    reconnect = ProtonVPNReconnect(connect, server_manager)
+    reconnect = ProtonVPNReconnect(connect, server_manager, user_conf_manager)
     user_settings = ProtonVPNUserSetting(
         user_conf_manager, user_manager, ks_manager
     )
