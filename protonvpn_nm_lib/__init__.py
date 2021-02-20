@@ -1,5 +1,3 @@
-from .services.dbus_dbus_monitor_vpn_connection_start import \
-    MonitorVPNConnectionStart
-from .protonvpn_lib import ProtonVPNNMLib
+from .protonvpn_api import API
 
-protonvpn = ProtonVPNNMLib(MonitorVPNConnectionStart())
+protonvpn = API()

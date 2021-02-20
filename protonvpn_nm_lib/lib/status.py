@@ -1,16 +1,43 @@
-from ..constants import SUPPORTED_PROTOCOLS, KILLSWITCH_STATUS_TEXT
+import datetime
+import time
+
+from ..constants import KILLSWITCH_STATUS_TEXT, SUPPORTED_PROTOCOLS
 from ..enums import (ConnectionMetadataEnum, ConnectionStatusEnum,
-                     KillswitchStatusEnum, ProtocolEnum,
-                     ProtocolImplementationEnum, NetshieldTranslationEnum,
-                     KillSwitchInterfaceTrackerEnum)
+                     KillSwitchInterfaceTrackerEnum, KillswitchStatusEnum,
+                     NetshieldTranslationEnum, ProtocolEnum,
+                     ProtocolImplementationEnum)
 from ..logger import logger
 
 
-class Status:
+class ProtonVPNStatus:
 
-    def _get_connection_status(self, raw_format=False):
+    def __init__(
+        self, connection, server, ks_manager,
+        user_settings, user_conf_manager
+    ):
+        # library
+        self.connection = connection
+        self.server = server
 
-        connection_information = self._get_connection_metadata() # noqa
+        # services
+        self.ks_manager = ks_manager
+        self.user_settings = user_settings
+        self.user_conf_manager = user_conf_manager
+
+    def _get_active_connection_status(self, readeable_format):
+        """Get active connection status.
+
+        Args:
+            readeable_format (bool):
+                If true then all content will be returnes in
+                human readeable format, else all content is returned in
+                enum objects.
+
+        Returns:
+            dict:
+                Keys: ConnectionStatusEnum
+        """
+        connection_information = self.connection._get_connection_metadata() # noqa
         servername = connection_information[ConnectionMetadataEnum.SERVER.value] # noqa
         protocol = connection_information[ConnectionMetadataEnum.PROTOCOL.value] # noqa
         connected_time = connection_information[ConnectionMetadataEnum.CONNECTED_TIME.value] # noqa
@@ -19,8 +46,9 @@ class Status:
         except KeyError:
             exit_server_ip = "(Missing)"
 
-        # Public method providade by protonvpn_lib
-        server_information_dict = self._get_server_information(servername)
+        server_information_dict = self.server._get_server_information(
+            servername
+        )
 
         self.ks_manager.update_connection_status()
 
@@ -39,10 +67,10 @@ class Status:
             ConnectionStatusEnum.PROTOCOL: ProtocolEnum(protocol),
             ConnectionStatusEnum.KILLSWITCH: ks_status,
             ConnectionStatusEnum.TIME: connected_time,
-            ConnectionStatusEnum.NETSHIELD: self._get_netshield(),
+            ConnectionStatusEnum.NETSHIELD: self.user_settings._get_netshield(), # noqa
             ConnectionStatusEnum.SERVER_IP: exit_server_ip,
         }
-        if raw_format:
+        if not readeable_format:
             return raw_dict
 
         return self.__transform_status_to_readable_format(raw_dict)
@@ -66,7 +94,7 @@ class Status:
             transformed_protocol = raw_protocol.value.upper()
 
         # Public method providade by user_settings
-        ks_user_setting = self._get_killswitch()
+        ks_user_setting = self.user_settings._get_killswitch()
 
         # killswitch
         ks_add_text = ""
@@ -103,3 +131,22 @@ class Status:
             ConnectionStatusEnum.NETSHIELD: transformed_ns,
             ConnectionStatusEnum.SERVER_IP: server_ip,
         }
+
+    def _convert_time_from_epoch(self, seconds_since_epoch):
+        """Convert time from epoch to 24h.
+
+        Args:
+           time_in_epoch (string): time in seconds since epoch
+
+        Returns:
+            string: time in 24h format, since last connection was made
+        """
+        connection_time = (
+            time.time()
+            - int(seconds_since_epoch)
+        )
+        return str(
+            datetime.timedelta(
+                seconds=connection_time
+            )
+        ).split(".")[0]

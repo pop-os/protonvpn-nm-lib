@@ -2,7 +2,7 @@ from ..logger import logger
 from ..enums import MetadataEnum, ConnectionMetadataEnum, ConnectionTypeEnum
 
 
-class Reconnect():
+class ProtonVPNReconnect:
     """Reconnect Class
 
     Exposes one method _setup_reconnect(), that should be
@@ -10,10 +10,18 @@ class Reconnect():
     To connect to VPN, the exposed method provided
     by connect._connect(), can be used.
     """
-    def _setup_reconnect(self):
-        """Public method.
+    def __init__(self, connect, server_manager):
+        # library
+        self.connect = connect
 
-        Setup connection to reconnect to previously connected server.
+        # services
+        self.server_manager = server_manager
+
+    def _setup_reconnection(self):
+        """Setup connection to reconnect to previously connected server.
+
+        Returns:
+            dict: connect._setup_connection()
         """
         logger.info("Attemtping to recconnect to previous server")
         self.server_manager.killswitch_status = self.user_conf_manager.killswitch # noqa
@@ -43,8 +51,7 @@ class Reconnect():
             previous_server
         ))
 
-        # Public method provided by connect.py
-        connection_info = self._setup_connection(
+        connection_info = self.connect._setup_connection(
             connection_type=ConnectionTypeEnum.SERVERNAME,
             connection_type_extra_arg=previous_server,
             protocol=protocol
@@ -53,17 +60,15 @@ class Reconnect():
         return connection_info
 
     def __get_last_connection_metadata(self):
-        """Private method.
+        """Get metadata of last made connection.
 
-        Get metadata of last made connection.
+        Returns:
+            dict
         """
         try:
             return self.server_manager.get_connection_metadata(
                 MetadataEnum.LAST_CONNECTION
             )
-        except FileNotFoundError:
-            logger.error("No previous connection data was found, exitting")
-            raise Exception(
-                "No previous connection data was found, "
-                "please first connect to a server."
-            )
+        except FileNotFoundError as e:
+            logger.exception(e)
+            return {}

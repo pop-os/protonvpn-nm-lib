@@ -27,3 +27,67 @@ If you would like to run the the CLI from within a virtual environment (for eith
   2. `pipenv install` (installs virtual environment and all necessary dependencies from Pipfile).
   3. `pipenv shell` (enter virtual environment).
   4. `pip install -e .` (to install).
+
+<br>
+
+# How to use:
+
+### Login
+``` protonvpn._login("protonvpn@protonmail.com", "ProtonPassword") ```
+
+<br>
+
+### Logout
+``` protonvpn._logout() ```
+
+<br>
+
+### Connect
+``` protonvpn._setup_connection(ConnectionTypeEnum.SERVERNAME, "PT#12", ProtocolEnum.TCP) ``` <br>
+``` protonvpn._connect() ``` 
+
+<br>
+
+### Disconnect
+``` protonvpn._disconnect() ```
+
+| **API**                              | **Description**                                                                                                     |
+|:------------------------------------------------|:----------------------------------------------------------------------------------------------------------------|
+|`protonvpn._login(username, password)` | Login with your Proton credentials. |
+| `protonvpn._ensure_username_is_valid(username)` | Ensure that the username is correctly formatted and is valid. |
+| `protonvpn._logout()` | Logout user and delete current user session. |
+| `protonvpn._setup_connection(connection_type, connection_type_extra_arg, protocol)` | Setup and configure VPN connection prior calling protonvpn._connect(). |
+| `protonvpn._connect()` | Should be user either after protonvpn._setup_connection() orprotonvpn._setup_reconnection(). |
+| `protonvpn._is_protocol_valid()` | Checks if provided protocol is a valid protocol. This is checked during protonvpn._setup_connection() and protonvpn._setup_reconnection(). Can be used whenever needed. |
+| `protonvpn._get_active_connection_metadata()` | Get metadata of an active ProtonVPN connection. |
+| `protonvpn._get_protonvpn_connection()` | Get ProtonVPN connection object. |
+| `protonvpn._ensure_connectivity()` | Check for connectivity. 1) It checks if there is internet connection 2) It checks if API can be reached. This is checked during protonvpn._login(), protonvpn._setup_connection() and protonvpn._setup_reconnection(). Can be used whenever needed.|
+| `protonvpn._disconnect()` | Disconnect from ProtonVPN. |
+| `protonvpn._setup_reconnection()` | Setup and configure VPN connection to a previously connected server. Should be called before calling protonvpn._connect(). |
+| `protonvpn._get_session()` | Get user session. This is fetched during protonvpn._login(), protonvpn._logout(), protonvpn._setup_connection() and protonvpn._setup_reconnection(). Can be used whenever needed. |
+| `protonvpn._check_session_exists()` | Check if sessions exists. This is checked during protonvpn._login() and protonvpn._logout(), protonvpn._setup_connection() and protonvpn._setup_reconnection(). |
+| `protonvpn._ensure_session_is_valid()` | Ensure that provided session is valid. This is checked during protonvpn._setup_connection() and protonvpn.setup_reconnection(). |
+| `protonvpn._ensure_servername_is_valid()` | Ensures if the provided servername is valid. This is checked during protonvpn._setup_connection() and protonvpn._setup_reconnection(). Can be used whenever needed. |
+| `protonvpn._get_country_name()` | Get country name of a given country code. |
+| `protonvpn._check_country_exists(country_code)` | Checks if given country code exists. This is checked during protonvpn._setup_connection() and protonvpn._setup_reconnection(). Can be used whenever needed. |
+| `protonvpn._get_filtered_servers()` | Get filtered server list. This is checked during protonvpn._setup_connection() and protonvpn._setup_reconnection(). Can be used whenever needed. |
+|`protonvpn._get_server_list()` | Get server list. This is checked during protonvpn._setup_connection() and protonvpn._setup_reconnection(). Can be used whenever needed. |
+|`protonvpn._get_country_with_matching_servername(server_list)` | Generate dict with {country:[servername]}. |
+|`protonvpn._get_server_information(servername)` | Get server information. |
+|`protonvpn._refresh_servers()` | Refresh cached server list. This is fetched during protonvpn._setup_connection() and protonvpn._setup_reconnection(). Can be used whenever needed. |
+|`protonvpn._get_active_connection_status(readeable_format=True)` | Get active connection status. |
+|`protonvpn._convert_time_from_epoch(seconds_since_epoch)` | Convert time from epoch to 24h. |
+|`protonvpn._get_user_settings_get_user_settings(readeable_format=True)` | Get user settings. |
+|`protonvpn._get_netshield()` | Get user netshield setting. |
+|`protonvpn._get_killswitch()` | Get user Kill Switch setting. |
+|`protonvpn._get_protocol()` | Get user set default protocol. |
+|`protonvpn._get_dns()` | Get user DNS setting. |
+|`protonvpn._get_custom_dns()` | Get user custom DNS servers. |
+|`protonvpn._get_user_tier()` | Get stored user tier. |
+|`protonvpn._set_netshield(netshield_enum)` | Set netshield to specified option. |
+|`protonvpn._set_killswitch(killswitch_enum)` | Set Kill Switch to specified option. |
+|`protonvpn._set_protocol(protocol_enum)` | Set default protocol to specified option. |
+|`protonvpn._set_automatic_dns()` | Set DNS to be managed automatically by ProtonVPN. |
+|`protonvpn._set_custom_dns(dns_ip_list)` | Set DNS to be managed by custom servers. |
+|`protonvpn._is_valid_dns_ipv4(dns_server_ip)` | Check if provided IP is valid. |
+|`protonvpn._reset_to_default_configs()` | Reset user configuration to default values. |

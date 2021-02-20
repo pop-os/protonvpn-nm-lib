@@ -265,6 +265,14 @@ class UserConfigurationManager():
         return transformed_dict
 
     def is_valid_ip(self, ipaddr):
+        """Check if the provided IP is valid IPv4.
+        
+        Args:
+            ipaddr (string): IPv4
+
+        Returns:
+            bool
+        """
         if not isinstance(ipaddr, str):
             raise ValueError("Invalid object type")
 

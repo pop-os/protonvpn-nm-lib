@@ -435,7 +435,11 @@ class ServerManager(ConnectionStateManager):
         return filtered_servers
 
     def extract_server_list(self):
-        """Extracts server list from raw cache file."""
+        """Extracts server list from raw cache file.
+
+        Returns:
+            list
+        """
         try:
             with open(self.CACHED_SERVERLIST, "r") as f:
                 server_data = json.load(f)

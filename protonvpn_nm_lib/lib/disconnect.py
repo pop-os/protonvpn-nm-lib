@@ -1,9 +1,22 @@
-from ..logger import logger
-from .. import exceptions
 import dbus
 
+from .. import exceptions
+from ..logger import logger
 
-class Disconnect:
+
+class ProtonVPNDisconnect:
+
+    def __init__(
+        self, connection_manager,
+        user_conf_manager, ipv6_lp_manager,
+        reconector_manager, ks_manager
+    ):
+        self.connection_manager = connection_manager
+        self.user_conf_manager = user_conf_manager
+        self.ipv6_lp_manager = ipv6_lp_manager
+        self.reconector_manager = reconector_manager
+        self.ks_manager = ks_manager
+
     def _disconnect(self):
         logger.info("Attempting to disconnecting from ProtonVPN")
 

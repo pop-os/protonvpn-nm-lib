@@ -3,22 +3,59 @@ from gi.repository import GLib
 
 from .. import exceptions
 from ..constants import FLAT_SUPPORTED_PROTOCOLS, VIRTUAL_DEVICE_NAME
-from ..country_codes import country_codes
 from ..enums import (ConnectionTypeEnum, NetworkManagerConnectionTypeEnum,
                      ProtocolEnum)
 from ..logger import logger
 from ..services.certificate_manager import CertificateManager
 
 
-class Connect():
+class ProtonVPNConnect():
     """Connect Class
 
-    Exposes two methods, setup_connection and connect.
+    Exposes methods:
+        - _setup_connection()
+        - _connect()
     Before attempting to connect(), a user should first
     attempt to setup the connection. Once the connection has
     been successfully setup, the user can proceed to start
     the vpn connection.
     """
+
+    def __init__(
+        self, connection, session, server,
+        connection_manager, server_manager,
+        user_manager, user_conf_manager,
+        ks_manager, vpn_monitor_connection_start,
+        ipv6_lp_manager, reconector_manager
+    ):
+        # library
+        self.connection = connection
+        self.session = session
+        self.server = server
+
+        # services
+        self.connection_manager = connection_manager
+        self.server_manager = server_manager
+        self.user_manager = user_manager
+        self.user_conf_manager = user_conf_manager
+        self.ks_manager = ks_manager
+        self.vpn_monitor_connection_start = vpn_monitor_connection_start
+        self.ipv6_lp_manager = ipv6_lp_manager
+        self.reconector_manager = reconector_manager
+
+        self.user_session = None
+        self.connect_type = None
+        self.connect_type_extra_arg = None
+        self.CONNECT_TYPE_DICT = {
+            ConnectionTypeEnum.SERVERNAME: self.server_manager.get_config_for_specific_server, # noqa
+            ConnectionTypeEnum.FASTEST: self.server_manager.get_config_for_fastest_server, # noqa
+            ConnectionTypeEnum.RANDOM: self.server_manager.get_config_for_random_server, # noqa
+            ConnectionTypeEnum.COUNTRY: self.server_manager.get_config_for_fastest_server_in_country, # noqa
+            ConnectionTypeEnum.SECURE_CORE: self.server_manager.get_config_for_fastest_server_with_specific_feature, # noqa
+            ConnectionTypeEnum.PEER2PEER: self.server_manager.get_config_for_fastest_server_with_specific_feature, # noqa
+            ConnectionTypeEnum.TOR: self.server_manager.get_config_for_fastest_server_with_specific_feature # noqa
+        }
+
     def _connect(self):
         """Public method.
 
@@ -72,7 +109,9 @@ class Connect():
             servername = connection_type_extra_arg
         elif (
             connection_type == ConnectionTypeEnum.COUNTRY
-            and not self.__check_country_exists(connection_type_extra_arg)
+            and not self.server._check_country_exists(
+                connection_type_extra_arg
+            )
         ):
             raise exceptions.InvalidCountryCode(
                 "The provided country code \"{}\" is invalid.".format(
@@ -83,78 +122,76 @@ class Connect():
         self.connection_type = connection_type
         self.connection_type_extra_arg = connection_type_extra_arg
 
-        if servername: self.__validate_servername(servername)
+        if servername: self.server._ensure_servername_is_valid(servername) # noqa
 
-        # Public method providade by protonvpn_lib
-        self._set_self_session()
-        # Public method providade by protonvpn_lib
-        self._validate_session()
+        self.user_session = self.session._get_session()
+        self.session._ensure_session_is_valid(self.user_session)
 
-        self.protocol = protocol
-        if not self.__is_protocol_valid() or self.protocol is None:
-            self.protocol = ProtocolEnum(
+        if not self._is_protocol_valid(protocol):
+            protocol = ProtocolEnum(
                 self.user_conf_manager.default_protocol
             )
+        else:
+            protocol = ProtocolEnum(protocol)
+        
         logger.info("Setup protocol: {}".format(protocol))
 
         self.server_manager.killswitch_status = self.user_conf_manager.killswitch # noqa
         logger.info("Setup killswitch user setting")
 
-        # Public method providade by protonvpn_lib
-        self._check_connectivity()
+        self.connection._ensure_connectivity()
         logger.info("Checked for interet and api connectivity")
 
-        # Public method providade by protonvpn_lib
-        self._remove_existing_connection()
+        self.connection._remove_protonvpn_connection()
         logger.info("Removed any possible existing connection")
 
         openvpn_username, openvpn_password = self.__get_ovpn_credentials()
         logger.info("OpenVPN credentials collected")
 
         connection_info = self.__add_connection(
-            openvpn_username, openvpn_password
+            openvpn_username, openvpn_password, protocol
         )
 
         logger.info("Returning connection information")
         return connection_info
 
-    def __check_country_exists(self, country_code):
-        if country_code not in country_codes:
-            return False
+    def _is_protocol_valid(self, protocol):
+        """Check if provided protocol is a valid protocol.
 
-        return True
+        Args:
+            protocol (ProtocolEnum)
 
-    def __validate_servername(self, servername):
-        if (
-            not self.server_manager.is_servername_valid(servername)
-        ):
-            raise Exception(
-                "IllegalServername: Invalid servername {}".format(
-                    servername
-                )
-            )
-
-    def __is_protocol_valid(self):
-        """Check if provided protocol is a valid protocol."""
+        Returns:
+            bool
+        """
         logger.info("Checking if protocol is valid")
         try:
-            self.protocol = ProtocolEnum(self.protocol)
-        except ValueError:
+            protocol = ProtocolEnum(protocol)
+        except (TypeError, ValueError):
             return False
 
-        if self.protocol in FLAT_SUPPORTED_PROTOCOLS:
+        if protocol in FLAT_SUPPORTED_PROTOCOLS:
             return True
 
         return False
 
-    def __add_connection(self, openvpn_username, openvpn_password):
-        # Public method providade by protonvpn_lib
-        self._refresh_servers()
+    def __add_connection(self, openvpn_username, openvpn_password, protocol):
+        """Add ProtonVPN connection.
+
+        Args:
+            openvpn_username (string): OpenVPN username
+            openvpn_password (string): OpenVPN password
+            protocol (ProtocolEnum)
+
+        Returns:
+            dict: connection metadata
+        """
+        self.server._refresh_servers()
         (
             servername, domain,
             server_feature,
             filtered_servers, servers
-        ) = self.__get_connection_configurations()
+        ) = self.__collect_server_information()
 
         logger.info("Generated connection configuration.")
 
@@ -165,7 +202,7 @@ class Connect():
             server_label
         ) = self.server_manager.generate_server_certificate(
             servername, domain, server_feature,
-            self.protocol, servers, filtered_servers
+            protocol, servers, filtered_servers
         )
         logger.info("Generated certificate.")
 
@@ -179,7 +216,7 @@ class Connect():
         )
         logger.info("Added VPN connection to NetworkManager.")
 
-        connection_info = self._get_connection_metadata(
+        connection_info = self.connection._get_connection_metadata(
             NetworkManagerConnectionTypeEnum.ALL
         )
 
@@ -189,7 +226,15 @@ class Connect():
         self, certificate_filename, openvpn_username,
         openvpn_password, domain, entry_ip
     ):
-        """Proxymethod to add ProtonVPN connection."""
+        """Proxymethod to add connection to NetworkManager.
+
+        Args:
+            certificate_filename (string): path to certificate
+            openvpn_username (string): OpenVPN username
+            openvpn_password (string): OpenVPN password
+            domain (string): selected subserver domain
+            entry_ip (string): selected subserver entry_ip
+        """
         try:
             self.connection_manager.add_connection(
                 certificate_filename, openvpn_username, openvpn_password,
@@ -207,14 +252,18 @@ class Connect():
             raise Exception("Unknown error: {}".format(e))
 
     def __get_ovpn_credentials(self, retry=False):
-        """Proxymethod to get user OVPN credentials."""
+        """Proxymethod to get OVPN credentials.
+
+        Returns:
+            tuple: openvpnvpn_username, openvpn_password
+        """
         logger.info("Getting openvpn credentials")
 
         try:
             if retry:
                 self.user_manager.cache_user_data()
             return self.user_manager.get_stored_vpn_credentials( # noqa
-                self.session
+                self.user_session
             )
         except exceptions.JSONDataEmptyError:
             raise Exception(
@@ -249,8 +298,16 @@ class Connect():
             )
             raise Exception("Unknown error occured: {}.".format(e))
 
-    def __get_connection_configurations(self):
-        """Proxymethod to get certficate filename and server domain."""
+    def __collect_server_information(self):
+        """Proxymethod to collect server information
+        for specified connection_type.
+
+        Returns:
+            tuple: (
+                servername, server_domain, server_feature,
+                filtered_server_list, server_list
+            )
+        """
         logger.info(
             "Connect type: {} - {}".format(
                 self.connection_type,
@@ -310,7 +367,7 @@ class Connect():
             VIRTUAL_DEVICE_NAME, self.dbus_loop,
             self.ks_manager, self.user_conf_manager,
             self.connection_manager, self.reconector_manager,
-            self.session, dbus_response
+            self.user_session, dbus_response
         )
 
     def __start_dbus_vpn_monitor(self):

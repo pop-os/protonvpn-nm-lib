@@ -170,10 +170,12 @@ class ConnectionManager(ConnectionStateManager):
         logger.info("DNS configs: {} - {}".format(
             dns_status, custom_dns
         ))
-        custom_dns = custom_dns[0]
 
         if dns_status not in CONFIG_STATUSES:
             raise Exception("Incorrect status configuration")
+
+        if dns_status == UserSettingStatusEnum.DISABLED:
+            dns_status = UserSettingStatusEnum.ENABLED
 
         ipv4_config = connection.get_setting_ip4_config()
         ipv6_config = connection.get_setting_ip6_config()
@@ -183,6 +185,7 @@ class ConnectionManager(ConnectionStateManager):
             ipv4_config.props.dns_priority = -50
             ipv6_config.props.dns_priority = -50
         else:
+            custom_dns = custom_dns[0]
             ipv4_config.props.ignore_auto_dns = True
             ipv6_config.props.ignore_auto_dns = True
 
@@ -222,7 +225,7 @@ class ConnectionManager(ConnectionStateManager):
             client=client
         )
 
-        if len(conn) < 2 and conn[0] is False:
+        if len(conn) < 2:
             logger.error(
                 "ConnectionNotFound: Connection not found, "
                 + "raising exception"
@@ -267,7 +270,7 @@ class ConnectionManager(ConnectionStateManager):
             client
         )
 
-        if len(conn) < 2 and conn[0] is False:
+        if len(conn) < 2:
             logger.info("Connection not found")
             return False
 
@@ -303,7 +306,7 @@ class ConnectionManager(ConnectionStateManager):
             client
         )
 
-        if len(conn) < 2 and conn[0] is False:
+        if len(conn) < 2:
             logger.info(
                 "ConnectionNotFound: Connection not found, "
                 + "raising exception"
@@ -499,12 +502,12 @@ class ConnectionManager(ConnectionStateManager):
             client (NM.Client): nm client object (optional)
 
         Returns:
-            tuple: (bool|Empty) or (connection, connection_id)
+            list
         """
         logger.info("Getting VPN from \"{}\" connections".format(
             network_manager_connection_type
         ))
-        return_conn = [False]
+        return_conn = []
 
         if not client:
             client = NM.Client.new(None)
@@ -536,7 +539,7 @@ class ConnectionManager(ConnectionStateManager):
                     break
         logger.info(
             "VPN connection: {}".format(
-                None if return_conn[0] is False else return_conn
+                None if len(return_conn) == 0 else return_conn
             )
         )
-        return tuple(return_conn)
+        return return_conn

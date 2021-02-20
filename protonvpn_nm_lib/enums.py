@@ -37,6 +37,13 @@ class ServerTierEnum(Enum):
     PM = 3
 
 
+class UserTierEnum(Enum):
+    FREE = 0
+    BASIC = 1
+    PLUS_VISIONARY = 2
+    PM = 3
+
+
 class ConnectionMetadataEnum(Enum):
     SERVER = "connected_server"
     CONNECTED_TIME = "connected_time"
