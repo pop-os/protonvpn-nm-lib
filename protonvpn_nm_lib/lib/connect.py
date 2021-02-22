@@ -3,27 +3,42 @@ from gi.repository import GLib
 
 from .. import exceptions
 from ..constants import FLAT_SUPPORTED_PROTOCOLS, VIRTUAL_DEVICE_NAME
-from ..enums import (ConnectionTypeEnum, NetworkManagerConnectionTypeEnum,
-                     ProtocolEnum)
+from ..enums import (ConnectionTypeEnum, DbusMonitorResponseEnum,
+                     NetworkManagerConnectionTypeEnum, ProtocolEnum)
 from ..logger import logger
 from ..services.certificate_manager import CertificateManager
 
 
 class ProtonVPNConnect():
-    """Connect Class
+    """Connect Class.
+    Use it to setup and connect to VPN.
 
     Exposes methods:
-        - _setup_connection()
-        - _connect()
-    Before attempting to connect(), a user should first
-    attempt to setup the connection. Once the connection has
-    been successfully setup, the user can proceed to start
-    the vpn connection.
+        _setup_connection(
+            connection_type: ConnectionTypeEnum,
+            connection_type_extra_arg=None: String,
+            protocol=None: String
+        )
+        _connect()
+
+    Description:
+    _setup_connection()
+        Prepares the connection to be started, by adding it to NetworkManager.
+        It collects are necessary information, including
+        openvpn username and password.
+        This should always be run before _connect().
+
+    _connect()
+        Starts the VPN connection. To follow-up the state of the VPN,
+        a vpn monitor state is started, which is passed a list which will
+        contain the response of the vpn connection state. As soon as the loop
+        is quit, the _connect() will return a response of the status
+        of the VPN in dict form.
     """
 
     def __init__(
-        self, connection, session, server,
-        connection_manager, server_manager,
+        self, connection, session, server, server_list, disconnect,
+        country, connection_manager, server_manager,
         user_manager, user_conf_manager,
         ks_manager, vpn_monitor_connection_start,
         ipv6_lp_manager, reconector_manager
@@ -32,28 +47,31 @@ class ProtonVPNConnect():
         self.connection = connection
         self.session = session
         self.server = server
+        self.server_list = server_list
+        self.disconnect = disconnect
+        self.country = country
 
         # services
-        self.connection_manager = connection_manager
-        self.server_manager = server_manager
-        self.user_manager = user_manager
-        self.user_conf_manager = user_conf_manager
-        self.ks_manager = ks_manager
-        self.vpn_monitor_connection_start = vpn_monitor_connection_start
-        self.ipv6_lp_manager = ipv6_lp_manager
-        self.reconector_manager = reconector_manager
+        self.__connection_manager = connection_manager
+        self.__server_manager = server_manager
+        self.__user_manager = user_manager
+        self.__user_conf_manager = user_conf_manager
+        self.__ks_manager = ks_manager
+        self.__vpn_monitor_connection_start = vpn_monitor_connection_start
+        self.__ipv6_lp_manager = ipv6_lp_manager
+        self.__reconector_manager = reconector_manager
 
-        self.user_session = None
-        self.connect_type = None
-        self.connect_type_extra_arg = None
-        self.CONNECT_TYPE_DICT = {
-            ConnectionTypeEnum.SERVERNAME: self.server_manager.get_config_for_specific_server, # noqa
-            ConnectionTypeEnum.FASTEST: self.server_manager.get_config_for_fastest_server, # noqa
-            ConnectionTypeEnum.RANDOM: self.server_manager.get_config_for_random_server, # noqa
-            ConnectionTypeEnum.COUNTRY: self.server_manager.get_config_for_fastest_server_in_country, # noqa
-            ConnectionTypeEnum.SECURE_CORE: self.server_manager.get_config_for_fastest_server_with_specific_feature, # noqa
-            ConnectionTypeEnum.PEER2PEER: self.server_manager.get_config_for_fastest_server_with_specific_feature, # noqa
-            ConnectionTypeEnum.TOR: self.server_manager.get_config_for_fastest_server_with_specific_feature # noqa
+        self.__user_session = None
+        self.__connect_type = None
+        self.__connect_type_extra_arg = None
+        self.__connect_type_DICT = {
+            ConnectionTypeEnum.SERVERNAME: self.__server_manager.get_config_for_specific_server, # noqa
+            ConnectionTypeEnum.FASTEST: self.__server_manager.get_config_for_fastest_server, # noqa
+            ConnectionTypeEnum.RANDOM: self.__server_manager.get_config_for_random_server, # noqa
+            ConnectionTypeEnum.COUNTRY: self.__server_manager.get_config_for_fastest_server_in_country, # noqa
+            ConnectionTypeEnum.SECURE_CORE: self.__server_manager.get_config_for_fastest_server_with_specific_feature, # noqa
+            ConnectionTypeEnum.PEER2PEER: self.__server_manager.get_config_for_fastest_server_with_specific_feature, # noqa
+            ConnectionTypeEnum.TOR: self.__server_manager.get_config_for_fastest_server_with_specific_feature # noqa
         }
 
     def _connect(self):
@@ -69,13 +87,11 @@ class ProtonVPNConnect():
         Returns:
             string: response from dbus monitor
         """
-        dbus_response = {"dbus_response": ""}
-        self.connection_manager.start_connection()
+        dbus_response = {DbusMonitorResponseEnum.RESPONSE: ""}
+        self.__connection_manager.start_connection()
         self.__setup_dbus_vpn_monitor(dbus_response)
         self.__start_dbus_vpn_monitor()
-        return dbus_response.get(
-            "dbus_response", "Something went wrong (x99)"
-        )
+        return dbus_response.get(DbusMonitorResponseEnum.RESPONSE)
 
     def _setup_connection(
         self,
@@ -109,7 +125,7 @@ class ProtonVPNConnect():
             servername = connection_type_extra_arg
         elif (
             connection_type == ConnectionTypeEnum.COUNTRY
-            and not self.server._check_country_exists(
+            and not self.country._check_country_exists(
                 connection_type_extra_arg
             )
         ):
@@ -124,25 +140,28 @@ class ProtonVPNConnect():
 
         if servername: self.server._ensure_servername_is_valid(servername) # noqa
 
-        self.user_session = self.session._get_session()
-        self.session._ensure_session_is_valid(self.user_session)
+        self.__user_session = self.session._get_session()
+        self.session._ensure_session_is_valid(self.__user_session)
 
         if not self._is_protocol_valid(protocol):
             protocol = ProtocolEnum(
-                self.user_conf_manager.default_protocol
+                self.__user_conf_manager.default_protocol
             )
         else:
             protocol = ProtocolEnum(protocol)
-        
+
         logger.info("Setup protocol: {}".format(protocol))
 
-        self.server_manager.killswitch_status = self.user_conf_manager.killswitch # noqa
+        self.__server_manager.killswitch_status = self.__user_conf_manager.killswitch # noqa
         logger.info("Setup killswitch user setting")
 
-        self.connection._ensure_connectivity()
-        logger.info("Checked for interet and api connectivity")
+        self.session._ensure_connectivity()
+        logger.info("Checked for internet and api connectivity")
 
-        self.connection._remove_protonvpn_connection()
+        try:
+            self.disconnect._disconnect()
+        except exceptions.ConnectionNotFound:
+            pass
         logger.info("Removed any possible existing connection")
 
         openvpn_username, openvpn_password = self.__get_ovpn_credentials()
@@ -186,7 +205,7 @@ class ProtonVPNConnect():
         Returns:
             dict: connection metadata
         """
-        self.server._refresh_servers()
+        self.server_list._refresh_servers()
         (
             servername, domain,
             server_feature,
@@ -200,7 +219,7 @@ class ProtonVPNConnect():
             matching_domain,
             entry_ip,
             server_label
-        ) = self.server_manager.generate_server_certificate(
+        ) = self.__server_manager.generate_server_certificate(
             servername, domain, server_feature,
             protocol, servers, filtered_servers
         )
@@ -236,11 +255,11 @@ class ProtonVPNConnect():
             entry_ip (string): selected subserver entry_ip
         """
         try:
-            self.connection_manager.add_connection(
+            self.__connection_manager.add_connection(
                 certificate_filename, openvpn_username, openvpn_password,
                 CertificateManager.delete_cached_certificate, domain,
-                self.user_conf_manager, self.ks_manager, self.ipv6_lp_manager,
-                entry_ip
+                self.__user_conf_manager, self.__ks_manager,
+                self.__ipv6_lp_manager, entry_ip
             )
         except exceptions.ImportConnectionError as e:
             logger.exception("ImportConnectionError: {}".format(e))
@@ -261,9 +280,9 @@ class ProtonVPNConnect():
 
         try:
             if retry:
-                self.user_manager.cache_user_data()
-            return self.user_manager.get_stored_vpn_credentials( # noqa
-                self.user_session
+                self.__user_manager.cache_user_data()
+            return self.__user_manager.get_stored_vpn_credentials( # noqa
+                self.__user_session
             )
         except exceptions.JSONDataEmptyError:
             raise Exception(
@@ -321,7 +340,7 @@ class ProtonVPNConnect():
             )
         )
         try:
-            return self.CONNECT_TYPE_DICT[self.connection_type](
+            return self.__connect_type_DICT[self.connection_type](
                 self.connection_type_extra_arg
             )
         except (KeyError, TypeError, ValueError) as e:
@@ -363,13 +382,13 @@ class ProtonVPNConnect():
     def __setup_dbus_vpn_monitor(self, dbus_response):
         DBusGMainLoop(set_as_default=True)
         self.dbus_loop = GLib.MainLoop()
-        self.vpn_monitor_connection_start.setup_monitor(
+        self.__vpn_monitor_connection_start.setup_monitor(
             VIRTUAL_DEVICE_NAME, self.dbus_loop,
-            self.ks_manager, self.user_conf_manager,
-            self.connection_manager, self.reconector_manager,
-            self.user_session, dbus_response
+            self.__ks_manager, self.__user_conf_manager,
+            self.__connection_manager, self.__reconector_manager,
+            self.__user_session, dbus_response
         )
 
     def __start_dbus_vpn_monitor(self):
-        self.vpn_monitor_connection_start.start_monitor()
+        self.__vpn_monitor_connection_start.start_monitor()
         self.dbus_loop.run()

@@ -1,7 +1,10 @@
 import dbus
+
+from ..enums import (DbusMonitorResponseEnum, DbusVPNConnectionReasonEnum,
+                     DbusVPNConnectionStateEnum, KillSwitchManagerActionEnum,
+                     KillswitchStatusEnum)
 from ..logger import logger
 from ..services.dbus_get_wrapper import DbusGetWrapper
-from ..enums import KillswitchStatusEnum, KillSwitchManagerActionEnum
 
 
 class MonitorVPNConnectionStart(DbusGetWrapper):
@@ -42,7 +45,13 @@ class MonitorVPNConnectionStart(DbusGetWrapper):
         vpn_interface = self.get_vpn_interface(True)
 
         if not isinstance(vpn_interface, tuple):
-            self.dbus_response["dbus_response"] = "No VPN was found"
+            self.dbus_response[DbusMonitorResponseEnum.RESPONSE] = {
+                DbusMonitorResponseEnum.STATE: DbusVPNConnectionStateEnum(999),
+                DbusMonitorResponseEnum.MESSAGE: "No VPN was found.",
+                DbusMonitorResponseEnum.REASON: DbusVPNConnectionReasonEnum(
+                    999
+                )
+            }
             self.loop.quit()
 
         is_protonvpn, state, conn = self.is_protonvpn_being_prepared()
@@ -50,9 +59,11 @@ class MonitorVPNConnectionStart(DbusGetWrapper):
             self.vpn_signal_handler(conn)
 
     def on_vpn_state_changed(self, state, reason):
+        state = DbusVPNConnectionStateEnum(state)
+        reason = DbusVPNConnectionReasonEnum(reason)
         logger.info("State: {} - Reason: {}".format(state, reason))
 
-        if state == 5:
+        if state == DbusVPNConnectionStateEnum.IS_ACTIVE:
             msg = "Successfully connected to ProtonVPN."
 
             if self.user_conf_manager.killswitch == KillswitchStatusEnum.HARD: # noqa
@@ -66,25 +77,43 @@ class MonitorVPNConnectionStart(DbusGetWrapper):
             self.session.cache_servers()
 
             logger.info(msg)
-            self.dbus_response["dbus_response"] = msg
+            self.dbus_response[DbusMonitorResponseEnum.RESPONSE] = {
+                DbusMonitorResponseEnum.STATE: state,
+                DbusMonitorResponseEnum.MESSAGE: msg,
+                DbusMonitorResponseEnum.REASON: reason
+            }
 
             self.reconector_manager.start_daemon_reconnector()
             self.loop.quit()
-        elif state in [6, 7]:
+        elif state in [
+            DbusVPNConnectionStateEnum.FAILED,
+            DbusVPNConnectionStateEnum.DISCONNECTED
+        ]:
 
             msg = "ProtonVPN connection failed due to "
-            if state == 6:
-                if reason == 6:
+            reason = DbusVPNConnectionReasonEnum.UNKNOWN_ERROR
+            if state == DbusVPNConnectionStateEnum.FAILED:
+                if (
+                    reason
+                    == DbusVPNConnectionReasonEnum.CONN_ATTEMPT_TO_SERVICE_TIMED_OUT # noqa
+                ):
                     msg += "VPN connection time out."
-                if reason == 9:
-                    msg += "incorrect openvpn credentials."
+                if (
+                    reason
+                    == DbusVPNConnectionReasonEnum.SECRETS_WERE_NOT_PROVIDED
+                ):
+                    msg += "Incorrect openvpn credentials."
 
-            if state == 7:
+            if state == DbusVPNConnectionStateEnum.DISCONNECTED:
                 msg = "ProtonVPN connection has been disconnected. "\
                     "Reason: {}".format(reason)
 
             logger.error(msg)
-            self.dbus_response["dbus_response"] = msg
+            self.dbus_response[DbusMonitorResponseEnum.RESPONSE] = {
+                DbusMonitorResponseEnum.STATE: state,
+                DbusMonitorResponseEnum.MESSAGE: msg,
+                DbusMonitorResponseEnum.REASON: reason
+            }
             self.reconector_manager.stop_daemon_reconnector()
             self.loop.quit()
 

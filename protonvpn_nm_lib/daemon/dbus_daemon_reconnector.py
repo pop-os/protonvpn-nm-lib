@@ -33,7 +33,9 @@ import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
 from protonvpn_nm_lib.constants import VIRTUAL_DEVICE_NAME
-from protonvpn_nm_lib.enums import (KillSwitchInterfaceTrackerEnum,
+from protonvpn_nm_lib.enums import (DbusVPNConnectionReasonEnum,
+                                    DbusVPNConnectionStateEnum,
+                                    KillSwitchInterfaceTrackerEnum,
                                     KillSwitchManagerActionEnum,
                                     KillswitchStatusEnum, MetadataEnum)
 from protonvpn_nm_lib.logger import logger
@@ -97,45 +99,18 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
         """VPN status signal handler.
 
         Args:
-            state (int): vpn connection state
-                (NMVpnConnectionState)
-                0: The state of the VPN connection is unknown.
-                1: The VPN connection is preparing to connect.
-                2: The VPN connection needs authorization credentials.
-                3: The VPN connection is being established.
-                4: The VPN connection is getting an IP address.
-                5: The VPN connection is active.
-                6: The VPN connection failed.
-                7: The VPN connection is disconnected.
-            reason (int): vpn connection state reason
-                (NMActiveConnectionStateReason)
-                0:  The reason for the active connection state change
-                        is unknown.
-                1:  No reason was given for the active connection state change.
-                2:  The active connection changed state because the user
-                        disconnected it.
-                3:  The active connection changed state because the device it
-                        was using was disconnected.
-                4:  The service providing the VPN connection was stopped.
-                5:  The IP config of the active connection was invalid.
-                6:  The connection attempt to the VPN service timed out.
-                7:  A timeout occurred while starting the service providing
-                        the VPN connection.
-                8:  Starting the service providing the VPN connection failed.
-                9:  Necessary secrets for the connection were not provided.
-                10: Authentication to the server failed.
-                11: The connection was deleted from settings.
-                12: Master connection of this connection failed to activate.
-                13: Could not create the software device link.
-                14: The device this connection depended on disappeared.
+            state (int): NMVpnConnectionState
+            reason (int): NMActiveConnectionStateReason
         """
+        state = DbusVPNConnectionStateEnum(state)
+        reason = DbusVPNConnectionReasonEnum(reason)
         logger.info(
             "State: {} - ".format(state)
             + "Reason: {}".format(
                 reason
             )
         )
-        if state == 5:
+        if state == DbusVPNConnectionStateEnum.IS_ACTIVE:
             self.failed_attempts = 0
             self.save_connected_time()
 
@@ -166,7 +141,10 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
                         KillSwitchManagerActionEnum.POST_CONNECTION
                     )
 
-        elif state == 7 and reason == 2:
+        elif (
+            state == DbusVPNConnectionStateEnum.DISCONNECTED
+            and reason == DbusVPNConnectionReasonEnum.USER_HAS_DISCONNECTED
+        ):
             logger.info("ProtonVPN connection was manually disconnected.")
             self.failed_attempts = 0
 
@@ -199,7 +177,10 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
             finally:
                 loop.quit()
 
-        elif state in [6, 7]:
+        elif state in [
+            DbusVPNConnectionStateEnum.FAILED,
+            DbusVPNConnectionStateEnum.DISCONNECTED
+        ]:
             # reconnect if haven't reached max_attempts
             if (
                 not self.max_attempts

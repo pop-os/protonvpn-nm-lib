@@ -3,36 +3,57 @@ from .. import exceptions
 
 
 class ProtonVPNLogout:
+    """Logout Class.
+    User it for logout.
 
-    def __init__(self, connection, session, user_manager):
+    Exposes method:
+        _logout(
+            session=None: ProtonSessionWrapper,
+            _pass_check=None: Exception,
+            _removed=None: String,
+        )
+
+    Description:
+    _logout()
+        Gets a user session, ensures that the session is valid,
+        then attempts to logout via api (delete session from
+        proton). If there is no internet connectivity then it will
+        skip this step, and proceed to recursively delete all data
+        that is stored on a users keychain.
+
+    """
+    def __init__(self, connection, session, disconnect, user_manager):
         # library
         self.connection = connection
         self.session = session
+        self.disconnect = disconnect
 
         # services
-        self.user_manager = user_manager
+        self.__user_manager = user_manager
 
     def _logout(self, session=None, _pass_check=None, _removed=None):
         logger.info("Attemping to logout...")
 
         if _pass_check is None and _removed is None:
             logger.info("First logout round")
-            # Public method providade by protonvpn_lib
             session = self.session._get_session()
-            # Public method providade by protonvpn_lib
             self.session._ensure_session_is_valid(session)
             try:
                 session.logout()
             except exceptions.ProtonSessionWrapperError:
                 logger.info("Unable to logout from API")
                 pass
-            # Public method providade by protonvpn_lib
-            self.connection._remove_protonvpn_connection()
+
+            try:
+                self.disconnect._disconnect()
+            except exceptions.ConnectionNotFound:
+                pass
+
             _pass_check = []
             _removed = []
 
         try:
-            self.user_manager.logout(_pass_check, _removed)
+            self.__user_manager.logout(_pass_check, _removed)
         except exceptions.StoredProtonUsernameNotFound:
             logger.info("Recursive logout: StoredProtonUsernameNotFound")
             _pass_check.append(exceptions.StoredProtonUsernameNotFound)

@@ -5,30 +5,50 @@ from ..logger import logger
 
 
 class ProtonVPNLogin:
+    """Login Class.
+    User it to login, with Proton username and password.
 
+    Exposes methods:
+        _login(username: String, password: String)
+        _ensure_username_is_valid(username: String)
+
+    Description:
+    _login()
+        Ensures that there is internet connectivity. If there
+        is access to internet, it ensures that there is access to API.
+        If there is access to the API, then ensures that the provided
+        username is valid, and then attempts to login the user
+        with the provided username and password.
+
+    _ensure_username_is_valid()
+        Ensures that the provided username is valid. All proton usernames
+        derive from ProtonMail, thus all usernames should follow a standard
+        email format. This is done with help of regex.
+    """
     def __init__(
-        self, connection, server_manager,
+        self, connection, session, server_manager,
         user_manager, user_conf_manager
     ):
-        # librart
+        # library
         self.connection = connection
+        self.session = session
 
         # services
-        self.server_manager = server_manager
-        self.user_manager = user_manager
-        self.user_conf_manager = user_conf_manager
+        self.__server_manager = server_manager
+        self.__user_manager = user_manager
+        self.__user_conf_manager = user_conf_manager
 
     def _login(self, username, password):
         """Login user with the provided username and password.
-        
+
         Args:
             protonvpn_username (string)
             protonvpn_password (string)
         """
-        self.server_manager.killswitch_status = self.user_conf_manager.killswitch # noqa
+        self.__server_manager.killswitch_status = self.__user_conf_manager.killswitch # noqa
         logger.info("Checking connectivity")
         # Public method providade by protonvpn_lib
-        self.connection._ensure_connectivity()
+        self.session._ensure_connectivity()
         self._ensure_username_is_valid(username)
         self.__login_user(username, password)
 
@@ -65,7 +85,7 @@ class ProtonVPNLogin:
         """
         logger.info("Attempting to login...")
         try:
-            self.user_manager.login(protonvpn_username, protonvpn_password)
+            self.__user_manager.login(protonvpn_username, protonvpn_password)
         except (TypeError, ValueError) as e:
             logger.info(e)
             raise Exception("Unable to authenticate: {}".format(e))

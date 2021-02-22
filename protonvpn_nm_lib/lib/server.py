@@ -1,120 +1,51 @@
-from .. import exceptions
-from ..constants import SUPPORTED_FEATURES
-from ..enums import (ConnectionMetadataEnum, FeatureEnum, KillswitchStatusEnum,
-                     ServerInfoEnum)
+from ..enums import ServerInfoEnum, FeatureEnum, ConnectionMetadataEnum
 from ..logger import logger
-from ..country_codes import country_codes
+from ..constants import SUPPORTED_FEATURES
+from .. import exceptions
 
 
 class ProtonVPNServer:
+    """Server Class.
+    Use it to get information about a specific server.
 
-    def __init__(self, connection, session, server_manager, user_conf_manager):
-        # library
-        self.connection = connection
-        self.session = session
+    Exposes methods:
+        _ensure_servername_is_valid(servername: String)
+        _get_server_information(server_list: List, servername: String)
 
-        # services
-        self.server_manager = server_manager
-        self.user_conf_manager = user_conf_manager
+    Description:
+    _ensure_servername_is_valid()
+        Ensures that the provided is valid. This is done by matching the
+        provided servername against a regex pattern.
 
-    def _get_country_name(self, country_code):
-        """Get country name of a given country code.
+    _get_server_information()
+        Gets information about a server, based on the provided servername and
+        server list. It returns itself.
 
-        Args:
-            country_code (string): ISO format
-        """
-        return self.server_manager.extract_country_name(country_code)
-
-    def _check_country_exists(self, country_code):
-        """Checks if given country code exists.
-
-        Args:
-            country_code (string): ISO format
-
-        Returns:
-            bool
-        """
-        if country_code not in country_codes:
-            return False
-
-        return True
-
-    def _get_filtered_servers(self, server_list):
-        """Get filtered server list.
-
-        Args:
-            server_list (list(dict))
-
-        Returns:
-            list(dict)
-        """
-        try:
-            return self.server_manager.filter_servers(
-                server_list
-            )
-        except (exceptions.ProtonVPNException, Exception) as e:
-            logger.exception(e)
-            return []
-
-    def _get_server_list(self):
-        """Get server list.
-
-        Returns:
-            list(dict)
-        """
-        try:
-            return self.server_manager.extract_server_list()
-        except (exceptions.ProtonVPNExceptionm, Exception) as e:
-            logger.exception(e)
-            return []
-
-    def _get_dict_with_country_servername(self, server_list):
-        """Generate dict with {country:[servername]}.
-
-        Args:
-            server_list (list)
-        Returns:
-            dict: country_code: [servername]
-                ie {PT: [PT#5, PT#8]}
-        """
-        countries = {}
-        for server in server_list:
-            country = self._get_country_name(server["ExitCountry"]) # noqa
-            if country not in countries.keys():
-                countries[country] = []
-            countries[country].append(server["Name"])
-
-        return countries
-
-    def _get_server_information(self, servername=None):
-        """Get server information.
-
-        Args:
-            servername (string): optional
-            if not specified, then the servername will be fetched
-            from the current connection metadata file.
-
-        Returns:
-            dict:
-                Keys: ServerInfoEnum
-        """
-        if not servername:
-            conn_status = self.connection._get_connection_metadata()
-            try:
-                servername = conn_status[ConnectionMetadataEnum.SERVER.value]
-            except KeyError:
-                servername = None
-
-        return self.__extract_server_info(servername)
-
-    def _refresh_servers(self):
-        """Refresh cached server list."""
-        session = self.session._get_session()
-        if self.user_conf_manager.killswitch != KillswitchStatusEnum.HARD:
-            try:
-                session.cache_servers()
-            except (exceptions.ProtonVPNException, Exception) as e:
-                raise Exception(e)
+    Public properties:
+        SERVERNAME
+        COUNTRY
+        CITY
+        LOAD
+        TIER
+        FEATURE_LIST
+        ENTRY_COUNTRY
+        REGION
+        LATITUDE
+        LONGITUDE
+    """
+    def __init__(self, server_manager, connection):
+        self.__server_manager = server_manager
+        self.__connection = connection
+        self.SERVERNAME = None
+        self.COUNTRY = None
+        self.CITY = None
+        self.LOAD = None
+        self.TIER = None
+        self.FEATURE_LIST = None
+        self.ENTRY_COUNTRY = None
+        self.REGION = None
+        self.LATITUDE = None
+        self.LONGITUDE = None
 
     def _ensure_servername_is_valid(self, servername):
         """Ensures if the provided servername is valid.
@@ -123,7 +54,7 @@ class ProtonVPNServer:
             servername (string)
         """
         if (
-            not self.server_manager.is_servername_valid(servername)
+            not self.__server_manager.is_servername_valid(servername)
         ):
             raise Exception(
                 "IllegalServername: Invalid servername {}".format(
@@ -131,7 +62,30 @@ class ProtonVPNServer:
                 )
             )
 
-    def __extract_server_info(self, servername):
+    def _get_server_information(self, server_list, servername=None):
+        """Get server information.
+
+        Args:
+            servername (string): optional
+            if not specified, then the servername will be fetched
+            from the current connection metadata file.
+
+        Returns:
+            Server
+        """
+        if not servername:
+            conn_status = self.__connection._get_connection_metadata()
+            try:
+                servername = conn_status[ConnectionMetadataEnum.SERVER.value]
+            except KeyError:
+                servername = None
+
+        self._ensure_servername_is_valid(servername)
+        return self.__extract_server_info(
+            servername, server_list
+        )
+
+    def __extract_server_info(self, servername, server_list):
         """Extract server information.
 
         Args:
@@ -141,46 +95,45 @@ class ProtonVPNServer:
             dict:
                 Keys: ServerInfoEnum
         """
-        self._refresh_servers()
-        self._ensure_servername_is_valid(servername)
-        servers = self.server_manager.extract_server_list()
         try:
-            country_code = self.server_manager.extract_server_value(
-                servername, ServerInfoEnum.COUNTRY.value, servers
+            country_code = self.__server_manager.extract_server_value(
+                servername, ServerInfoEnum.COUNTRY.value, server_list
             )
-            country = self.server_manager.extract_country_name(country_code)
+            country = self.__server_manager.extract_country_name(country_code)
 
-            load = self.server_manager.extract_server_value(
-                servername, ServerInfoEnum.LOAD.value, servers
+            load = self.__server_manager.extract_server_value(
+                servername, ServerInfoEnum.LOAD.value, server_list
             )
             features = [
-                self.server_manager.extract_server_value(
-                    servername, ServerInfoEnum.FEATURES.value, servers
+                self.__server_manager.extract_server_value(
+                    servername, ServerInfoEnum.FEATURES.value, server_list
                 )
             ]
 
-            city = self.server_manager.extract_server_value(
-                servername, ServerInfoEnum.CITY.value, servers
+            city = self.__server_manager.extract_server_value(
+                servername, ServerInfoEnum.CITY.value, server_list
             )
 
-            region = self.server_manager.extract_server_value(
-                servername, ServerInfoEnum.REGION.value, servers
+            region = self.__server_manager.extract_server_value(
+                servername, ServerInfoEnum.REGION.value, server_list
             )
 
-            location = self.server_manager.extract_server_value(
-                servername, ServerInfoEnum.LOCATION.value, servers
+            location = self.__server_manager.extract_server_value(
+                servername, ServerInfoEnum.LOCATION.value, server_list
             )
+            lat = location.get("Lat")
+            long = location.get("Long")
 
-            entry_country = self.server_manager.extract_server_value(
-                servername, ServerInfoEnum.ENTRY_COUNTRY.value, servers
+            entry_country = self.__server_manager.extract_server_value(
+                servername, ServerInfoEnum.ENTRY_COUNTRY.value, server_list
             )
-            entry_country = self.server_manager.extract_country_name(
+            entry_country = self.__server_manager.extract_country_name(
                 entry_country
             )
 
             tier = [
-                self.server_manager.extract_server_value(
-                    servername, ServerInfoEnum.TIER.value, servers
+                self.__server_manager.extract_server_value(
+                    servername, ServerInfoEnum.TIER.value, server_list
                 )
             ].pop()
         except IndexError as e:
@@ -201,14 +154,15 @@ class ProtonVPNServer:
             if feature in SUPPORTED_FEATURES:
                 feature_list.append(feature)
 
-        return {
-            ServerInfoEnum.SERVERNAME: servername,
-            ServerInfoEnum.COUNTRY: country,
-            ServerInfoEnum.CITY: city,
-            ServerInfoEnum.LOAD: load,
-            ServerInfoEnum.TIER: tier,
-            ServerInfoEnum.FEATURES: feature_list,
-            ServerInfoEnum.LOCATION: location,
-            ServerInfoEnum.ENTRY_COUNTRY: entry_country,
-            ServerInfoEnum.REGION: region,
-        }
+        self.SERVERNAME = servername
+        self.COUNTRY = country
+        self.CITY = city
+        self.LOAD = load
+        self.TIER = tier
+        self.FEATURE_LIST = feature_list
+        self.ENTRY_COUNTRY = entry_country
+        self.REGION = region
+        self.LATITUDE = lat
+        self.LONGITUDE = long
+
+        return self

@@ -10,19 +10,35 @@ from ..logger import logger
 
 
 class ProtonVPNStatus:
+    """Status Class.
+    Use it to get status information about the current
+    ProtonVPN connection.
 
+    Exposes methods:
+        _get_active_connection_status()
+        _convert_time_from_epoch(seconds_since_epoch: String)
+
+    Description:
+    _get_active_connection_status()
+        Returns a dict with ConnectionStatusEnum keys.
+
+    _convert_time_from_epoch()
+        Converts the provided time in seconds since epoch to
+        human readeable time (24h).
+    """
     def __init__(
-        self, connection, server, ks_manager,
-        user_settings, user_conf_manager
+        self, connection, server, server_list,
+        ks_manager, user_settings, user_conf_manager
     ):
         # library
         self.connection = connection
         self.server = server
+        self.server_list = server_list
+        self.user_settings = user_settings
 
         # services
-        self.ks_manager = ks_manager
-        self.user_settings = user_settings
-        self.user_conf_manager = user_conf_manager
+        self.__ks_manager = ks_manager
+        self.__user_conf_manager = user_conf_manager
 
     def _get_active_connection_status(self, readeable_format):
         """Get active connection status.
@@ -47,16 +63,17 @@ class ProtonVPNStatus:
             exit_server_ip = "(Missing)"
 
         server_information_dict = self.server._get_server_information(
-            servername
+            server_list=self.server_list._get_server_list(),
+            servername=servername
         )
 
-        self.ks_manager.update_connection_status()
+        self.__ks_manager.update_connection_status()
 
         ks_status = KillswitchStatusEnum.HARD
         if (
-            not self.ks_manager.interface_state_tracker[self.ks_manager.ks_conn_name][ # noqa
+            not self.__ks_manager.interface_state_tracker[self.__ks_manager.ks_conn_name][ # noqa
                 KillSwitchInterfaceTrackerEnum.IS_RUNNING
-            ] and self.user_conf_manager.killswitch != KillswitchStatusEnum.DISABLED # noqa
+            ] and self.__user_conf_manager.killswitch != KillswitchStatusEnum.DISABLED # noqa
         ):
             # if DISABLED then KS is currently not running,
             # otherwise it's ENABLED
@@ -76,6 +93,14 @@ class ProtonVPNStatus:
         return self.__transform_status_to_readable_format(raw_dict)
 
     def __transform_status_to_readable_format(self, raw_dict):
+        """Transform raw dict to human redeable vales:
+
+        Args:
+            raw_dict (dict)
+
+        Returns:
+            dict
+        """
         server_information_dict = raw_dict[
             ConnectionStatusEnum.SERVER_INFORMATION
         ]

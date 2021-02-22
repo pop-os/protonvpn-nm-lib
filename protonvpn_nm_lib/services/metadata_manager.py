@@ -17,7 +17,6 @@ class MetadataManager():
 
     def manage_metadata(self, action, metadata_type, metadata=None):
         """Metadata manager."""
-        # metadata_type = metadata_type.value
         logger.info(
             "Metadata manager \"action: {} - Metadata type: {}\"".format(
                 action,
@@ -80,7 +79,6 @@ class MetadataManager():
 
     def check_metadata_exists(self, metadata_type):
         """Check if metadata file exists."""
-        metadata_type = metadata_type.value
         logger.info("Checking if \"{}\" exists".format(metadata_type))
         self.ensure_metadata_type_is_valid(metadata_type)
 

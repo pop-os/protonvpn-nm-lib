@@ -3,20 +3,24 @@ from ..enums import MetadataEnum, ConnectionMetadataEnum, ConnectionTypeEnum
 
 
 class ProtonVPNReconnect:
-    """Reconnect Class
+    """Reconnect Class.
+    Use it to reconnect to previously connected server.
 
-    Exposes one method _setup_reconnect(), that should be
-    used before attempting to connect.
-    To connect to VPN, the exposed method provided
-    by connect._connect(), can be used.
+    Exposes method:
+        _setup_reconnect()
+
+    Description:
+    _setup_reconnect()
+        Simillar to connect._setup_connection(). Use it before
+        attempting to connect to VPN via connect._connect().
     """
     def __init__(self, connect, server_manager, user_conf_manager):
         # library
         self.connect = connect
 
         # services
-        self.server_manager = server_manager
-        self.user_conf_manager = user_conf_manager
+        self.__server_manager = server_manager
+        self.__user_conf_manager = user_conf_manager
 
     def _setup_reconnection(self):
         """Setup connection to reconnect to previously connected server.
@@ -25,7 +29,7 @@ class ProtonVPNReconnect:
             dict: connect._setup_connection()
         """
         logger.info("Attemtping to recconnect to previous server")
-        self.server_manager.killswitch_status = self.user_conf_manager.killswitch # noqa
+        self.__server_manager.killswitch_status = self.__user_conf_manager.killswitch # noqa
         last_connection_metadata = self.__get_last_connection_metadata()
 
         try:
@@ -67,7 +71,7 @@ class ProtonVPNReconnect:
             dict
         """
         try:
-            return self.server_manager.get_connection_metadata(
+            return self.__server_manager.get_connection_metadata(
                 MetadataEnum.LAST_CONNECTION
             )
         except FileNotFoundError as e:

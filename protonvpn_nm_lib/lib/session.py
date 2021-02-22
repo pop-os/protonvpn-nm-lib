@@ -4,9 +4,38 @@ from ..services.proton_session_wrapper import ProtonSessionWrapper
 
 
 class ProtonVPNSession:
+    """Session Class.
+    Use it to get user session, check if session exists,
+    ensure that a session is valid and check for connectivity.
 
-    def __init__(self, user_manager):
-        self.user_manager = user_manager
+    Exposes methods:
+        _get_session()
+        _check_session_exists()
+        _ensure_session_is_valid(session: ProtonSessionWrapper)
+        _ensure_connectivity()
+
+    Description:
+    _get_session()
+        Gets user session (ProtonSessionWrapper instance)
+
+    _check_session_exists()
+        Simillar to _get_session(), but instead of returning
+        and instance, it instead returns a bool, weahter a
+        session exists or not.
+
+    _ensure_session_is_valid()
+        Ensure that the provided session is a valid session.
+        Basically it just checks if the provided session
+        is an instance of ProtonSessionWrapper.
+
+    _ensure_connectivity()
+        Ensures that there is internet connectivity and that
+        Proton API is reacheable.
+    """
+    def __init__(self, user_manager, user_conf_manager, __connection_manager):
+        self.__user_manager = user_manager
+        self.__user_conf_manager = user_conf_manager
+        self.__connection_manager = __connection_manager
 
     def _get_session(self):
         """Get user session.
@@ -55,6 +84,35 @@ class ProtonVPNSession:
             )
             raise TypeError(err_msg)
 
+    def _ensure_connectivity(self):
+        # check if there is internet connectivity
+        try:
+            self.__connection_manager.is_internet_connection_available(
+                self.__user_conf_manager.killswitch
+            )
+        except exceptions.InternetConnectionError as e:
+            raise Exception("\n{}".format(e))
+        except (exceptions.ProtonVPNException, Exception) as e:
+            logger.exception(e)
+            raise Exception(e)
+
+        # check if API is reachable
+        try:
+            self.__connection_manager.is_api_reacheable(
+                self.__user_conf_manager.killswitch
+            )
+        except exceptions.APITimeoutError as e:
+            raise Exception(
+                "{}".format(e)
+            )
+        except exceptions.UnreacheableAPIError as e:
+            raise Exception(
+                "{}".format(e)
+            )
+        except (exceptions.ProtonVPNException, Exception) as e:
+            logger.exception(e)
+            raise Exception("{}".format(e))
+
     def __get_existing_session(
         self, return_bool=False
     ):
@@ -73,7 +131,7 @@ class ProtonVPNSession:
         logger.info("Attempting to get existing session")
         session = None
         try:
-            session = self.user_manager.load_session()
+            session = self.__user_manager.load_session()
         except exceptions.JSONDataEmptyError:
             raise exceptions.IllegalSessionData(
                 "The stored session might be corrupted. "

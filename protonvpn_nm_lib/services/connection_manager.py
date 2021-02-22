@@ -1,4 +1,3 @@
-import os
 from getpass import getuser
 
 import gi
@@ -8,7 +7,7 @@ gi.require_version("NM", "1.0")
 from gi.repository import NM, GLib
 
 from .. import exceptions
-from ..constants import CONFIG_STATUSES, ENV_CI_NAME, VIRTUAL_DEVICE_NAME
+from ..constants import CONFIG_STATUSES, VIRTUAL_DEVICE_NAME
 from ..enums import (ConnectionMetadataEnum, KillSwitchManagerActionEnum,
                      KillswitchStatusEnum, MetadataEnum,
                      NetworkManagerConnectionTypeEnum, UserSettingStatusEnum)
@@ -118,8 +117,6 @@ class ConnectionManager(ConnectionStateManager):
         )
 
         main_loop.run()
-        # if not os.environ.get(ENV_CI_NAME):
-        #     delete_cached_cert(filename)
 
     def make_vpn_user_owned(self, connection_settings):
         # returns NM.SettingConnection

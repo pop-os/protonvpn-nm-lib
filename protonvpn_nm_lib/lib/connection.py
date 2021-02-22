@@ -1,12 +1,33 @@
 import dbus
 
-from .. import exceptions
 from ..enums import MetadataEnum, NetworkManagerConnectionTypeEnum
 from ..logger import logger
 
 
 class ProtonVPNConnection:
+    """Connection Class.
+    User it to fetch the vpn connection object and/or
+    metadata about the VPN connection.
 
+    Exposes methods:
+        _get_connection_metadata(
+            network_manager_connection_type: NetworkManagerConnectionTypeEnum
+        )
+        _get_protonvpn_connection(
+            network_manager_connection_type: NetworkManagerConnectionTypeEnum
+        )
+
+    Description:
+    _get_connection_metadata()
+        Fetch connection metadata. By default, it searches
+        for the VPN within the provided option of connections.
+
+    _get_protonvpn_connection()
+        Get active ProtonVPN connection object. If it does not find
+        and active connection it means tha the VPN is not running.
+        It can though search through all conenctions if
+        NetworkManagerConnectionTypeEnum.ALL is passed.
+    """
     def __init__(
         self,
         connection_manager,
@@ -15,48 +36,31 @@ class ProtonVPNConnection:
         ipv6_lp_manager,
         reconector_manager
     ):
-        self.connection_manager = connection_manager
-        self.user_conf_manager = user_conf_manager
-        self.ks_manager = ks_manager
-        self.ipv6_lp_manager = ipv6_lp_manager
-        self.reconector_manager = reconector_manager
+        self.__connection_manager = connection_manager
+        self.__user_conf_manager = user_conf_manager
+        self.__ks_manager = ks_manager
+        self.__ipv6_lp_manager = ipv6_lp_manager
+        self.__reconector_manager = reconector_manager
 
     def _get_connection_metadata(
         self,
         network_manager_connection_type=NetworkManagerConnectionTypeEnum.ACTIVE
     ):
-        """Get connection metadata.
-
-        Args:
-            network_manager_connection_type (NetworkManagerConnectionTypeEnum)
-                default: ACTIVE, but ALL can be used to access metadata
-                if the current connection is not active.
+        """Get connection metadata of active ProtonVPN connection.
 
         Returns:
             dict
         """
-        connection_exists = self.connection_manager.get_protonvpn_connection(
+        connection_exists = self._get_protonvpn_connection(
             network_manager_connection_type
         )
 
-        if not connection_exists[0]:
+        if len(connection_exists) == 0:
             return {}
 
-        return self.connection_manager.get_connection_metadata(
+        return self.__connection_manager.get_connection_metadata(
             MetadataEnum.CONNECTION
         )
-
-    def _remove_protonvpn_connection(self):
-        """Remove ProtonVPN connection."""
-        try:
-            self.connection_manager.remove_connection(
-                self.user_conf_manager,
-                self.ks_manager,
-                self.ipv6_lp_manager,
-                self.reconector_manager
-            )
-        except exceptions.ConnectionNotFound:
-            pass
 
     def _get_protonvpn_connection(self, network_manager_connection_type):
         """Get ProtonVPN connection.
@@ -68,38 +72,9 @@ class ProtonVPNConnection:
             list
         """
         try:
-            return self.connection_manager.get_protonvpn_connection(
+            return self.__connection_manager.get_protonvpn_connection(
                 network_manager_connection_type
             )
         except (dbus.DBusException, Exception) as e:
             logger.exception(e)
             return []
-
-    def _ensure_connectivity(self):
-        # check if there is internet connectivity
-        try:
-            self.connection_manager.is_internet_connection_available(
-                self.user_conf_manager.killswitch
-            )
-        except exceptions.InternetConnectionError as e:
-            raise Exception("\n{}".format(e))
-        except (exceptions.ProtonVPNException, Exception) as e:
-            logger.exception(e)
-            raise Exception(e)
-
-        # check if API is reachable
-        try:
-            self.connection_manager.is_api_reacheable(
-                self.user_conf_manager.killswitch
-            )
-        except exceptions.APITimeoutError as e:
-            raise Exception(
-                "{}".format(e)
-            )
-        except exceptions.UnreacheableAPIError as e:
-            raise Exception(
-                "{}".format(e)
-            )
-        except (exceptions.ProtonVPNException, Exception) as e:
-            logger.exception(e)
-            raise Exception("{}".format(e))

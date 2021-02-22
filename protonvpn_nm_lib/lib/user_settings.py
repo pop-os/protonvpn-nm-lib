@@ -9,11 +9,76 @@ from ..logger import logger
 
 
 class ProtonVPNUserSetting:
+    """UserSetting Class.
+    Use it to get and set user settings.
 
+    Exposes methods:
+        _get_user_settings()
+        _get_netshield()
+        _set_netshield(netshield_enum: NetshieldTranslationEnum)
+        _get_killswitch()
+        _set_killswitch(killswitch_enum: KillswitchStatusEnum)
+        _get_protocol()
+        _set_protocol(protocol_enum: ProtocolEnum)
+        _get_dns()
+        _get_custom_dns_list()
+        _set_dns(
+            setting_status: UserSettingStatusEnum,
+            custom_dns_ips=[]: List
+        )
+        _get_user_tier()
+        _is_valid_ip(ip: String)
+        _reset_to_default_configs()
+
+    Description:
+        _get_user_settings()
+            Gets user settings, which include NetShield, Kill Switch,
+            protocol and dns. Returns a dict with DisplayUserSettingsEnum keys.
+
+        _get_netshield()
+            Gets user NetShield setting.
+
+        _set_netshield()
+            Sets user NetShield setting.
+
+        _get_killswitch()
+            Gets user Kill Switch setting.
+
+        _set_killswitch()
+            Sets user Kill Switch setting.
+
+        _get_protocol()
+            Gets user protocol setting.
+
+        _set_protocol()
+            Sets user protocol setting.
+
+        _get_dns()
+            Gets user DNS setting.
+
+        _get_custom_dns_list()
+            Gets users custom DNS list.
+
+        _set_dns()
+            Sets user DNS setting. If UserSettingStatusEnum.CUSTOM
+            is provided then a list with custom DNS IP servers
+            should also be passed.
+
+        _get_user_tier()
+            Gets user tier.
+
+        _is_valid_ip()
+            Checks if the provided IP is provided in a correct format.
+            The check is done against a regex expression, where it checks
+            that the IP is within its range 0-255.
+
+        _reset_to_default_configs()
+            Reset users settings to default values.
+    """
     def __init__(self, user_conf_manager, user_manager, ks_manager):
-        self.user_conf_manager = user_conf_manager
-        self.user_manager = user_manager
-        self.ks_manager = ks_manager
+        self.__user_conf_manager = user_conf_manager
+        self.__user_manager = user_manager
+        self.__ks_manager = ks_manager
 
     def _get_user_settings(self, readeable_format):
         """Get user settings.
@@ -32,7 +97,7 @@ class ProtonVPNUserSetting:
             DisplayUserSettingsEnum.PROTOCOL: self._get_protocol(),
             DisplayUserSettingsEnum.KILLSWITCH: self._get_killswitch(),
             DisplayUserSettingsEnum.DNS: self._get_dns(),
-            DisplayUserSettingsEnum.CUSTOM_DNS: self._get_dns(True),
+            DisplayUserSettingsEnum.CUSTOM_DNS: self._get_custom_dns_list(),
             DisplayUserSettingsEnum.NETSHIELD: self._get_netshield(),
         }
 
@@ -97,7 +162,7 @@ class ProtonVPNUserSetting:
         Returns:
             NetshieldTranslationEnum
         """
-        return self.user_conf_manager.netshield
+        return self.__user_conf_manager.netshield
 
     def _set_netshield(self, netshield_enum):
         """Set netshield to specified option.
@@ -107,7 +172,7 @@ class ProtonVPNUserSetting:
         """
         if (
             not netshield_enum
-            and self.user_manager.tier == ServerTierEnum.FREE
+            and self.__user_manager.tier == ServerTierEnum.FREE
         ):
             raise Exception(
                 "\nBrowse the Internet free of malware, ads, "
@@ -116,7 +181,7 @@ class ProtonVPNUserSetting:
                 "https://account.protonvpn.com/dashboard"
             )
 
-        self.user_conf_manager.update_netshield(netshield_enum)
+        self.__user_conf_manager.update_netshield(netshield_enum)
 
     def _get_killswitch(self):
         """Get user Kill Switch setting.
@@ -124,17 +189,17 @@ class ProtonVPNUserSetting:
         Returns:
             KillswitchStatusEnum
         """
-        return self.user_conf_manager.killswitch
+        return self.__user_conf_manager.killswitch
 
-    def _set_killswitch(self, killswitch_option):
+    def _set_killswitch(self, killswitch_enum):
         """Set Kill Switch to specified option.
 
         Args:
-            killswitch_option (KillswitchStatusEnum)
+            killswitch_enum (KillswitchStatusEnum)
         """
         try:
-            self.ks_manager.update_from_user_configuration_menu(
-                killswitch_option
+            self.__ks_manager.update_from_user_configuration_menu(
+                killswitch_enum
             )
         except exceptions.DisableConnectivityCheckError as e:
             logger.exception(e)
@@ -148,7 +213,7 @@ class ProtonVPNUserSetting:
             logger.exception(e)
             raise Exception(e)
         else:
-            self.user_conf_manager.update_killswitch(killswitch_option)
+            self.__user_conf_manager.update_killswitch(killswitch_enum)
 
     def _get_protocol(self):
         """Get user set default protocol.
@@ -156,37 +221,72 @@ class ProtonVPNUserSetting:
         Returns:
             ProtocolEnum
         """
-        return self.user_conf_manager.default_protocol
+        return self.__user_conf_manager.default_protocol
 
-    def _set_protocol(self, protocol):
+    def _set_protocol(self, protocol_enum):
         """Set default protocol setting.
 
         Args:
-            protocol (ProtocolEnum)
+            protocol_enum (ProtocolEnum)
         """
-        logger.info("Setting protocol to: {}".format(protocol))
+        logger.info("Setting protocol to: {}".format(protocol_enum))
 
-        if not isinstance(protocol, ProtocolEnum):
+        if not isinstance(protocol_enum, ProtocolEnum):
             logger.error("Select protocol is incorrect.")
             raise Exception(
                 "\nSelected option \"{}\" is either incorrect ".format(
-                    protocol
+                    protocol_enum
                 ) + "or protocol is (yet) not supported"
             )
 
-        self.user_conf_manager.update_default_protocol(
-            protocol
+        self.__user_conf_manager.update_default_protocol(
+            protocol_enum
         )
 
         logger.info("Default protocol has been updated to \"{}\"".format(
-            protocol
+            protocol_enum
         ))
+
+    def _get_dns(self):
+        """Get user DNS setting.
+
+        Args:
+            custom_dns (bool):
+            (optional) should be set to True
+            if it is desired to get custom DNS values
+            in a list.
+
+        Returns:
+            UserSettingStatusEnum
+        """
+        get_dns = UserSettingConnectionEnum.DNS_STATUS
+
+        user_configs = self.__user_conf_manager.get_user_configurations()
+        dns_settings = user_configs[UserSettingConnectionEnum.DNS][
+            get_dns
+        ]
+        return dns_settings
+
+    def _get_custom_dns_list(self):
+        """Get user DNS setting.
+
+        Returns:
+           list with custom DNS servers.
+        """
+        get_dns = UserSettingConnectionEnum.CUSTOM_DNS
+
+        user_configs = self.__user_conf_manager.get_user_configurations()
+        dns_settings = user_configs[UserSettingConnectionEnum.DNS][
+            get_dns
+        ]
+        return dns_settings
 
     def _set_dns(self, setting_status, custom_dns_ips=[]):
         """Set DNS setting.
 
         Args:
-            Namespace (object): list objects with cli args
+            setting_status (UserSettingStatusEnum)
+            custom_dns_ips (list): optional
         """
         if not isinstance(setting_status, UserSettingStatusEnum):
             raise Exception("Invalid setting status \"{}\"".format(
@@ -205,31 +305,9 @@ class ProtonVPNUserSetting:
                     )
 
         try:
-            self.user_conf_manager.update_dns(setting_status, custom_dns_ips)
+            self.__user_conf_manager.update_dns(setting_status, custom_dns_ips)
         except (exceptions.ProtonVPNException, Exception) as e:
             raise Exception(e)
-
-    def _get_dns(self, custom_dns=False):
-        """Get user DNS setting.
-
-        Args:
-            custom_dns (bool):
-            (optional) should be set to True
-            if it is desired to get custom DNS values
-            in a list.
-
-        Returns:
-            UserSettingStatusEnum | list
-        """
-        get_dns = UserSettingConnectionEnum.DNS_STATUS
-        if custom_dns:
-            get_dns = UserSettingConnectionEnum.CUSTOM_DNS
-
-        user_configs = self.user_conf_manager.get_user_configurations()
-        dns_settings = user_configs[UserSettingConnectionEnum.DNS][
-            get_dns
-        ]
-        return dns_settings
 
     def _get_user_tier(self):
         """Get stored user tier.
@@ -238,7 +316,7 @@ class ProtonVPNUserSetting:
             UserTierEnum
         """
         try:
-            return UserTierEnum(self.user_manager.tier)
+            return UserTierEnum(self.__user_manager.tier)
         except (exceptions.ProtonVPNException, Exception) as e:
             raise Exception(e)
 
@@ -248,12 +326,12 @@ class ProtonVPNUserSetting:
         Returns:
             bool
         """
-        return self.user_conf_manager.is_valid_ip(ip)
+        return self.__user_conf_manager.is_valid_ip(ip)
 
     def _reset_to_default_configs(self):
         """Reset user configuration to default values."""
         # should it disconnect prior to resetting user configurations ?
         try:
-            self.user_conf_manager.reset_default_configs()
+            self.__user_conf_manager.reset_default_configs()
         except (exceptions.ProtonVPNException, Exception) as e:
             raise Exception(e)

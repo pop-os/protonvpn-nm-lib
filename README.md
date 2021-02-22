@@ -70,7 +70,7 @@ If you would like to run the the CLI from within a virtual environment (for eith
 | `protonvpn._ensure_servername_is_valid()` | Ensures if the provided servername is valid. This is checked during protonvpn._setup_connection() and protonvpn._setup_reconnection(). Can be used whenever needed. |
 | `protonvpn._get_country_name()` | Get country name of a given country code. |
 | `protonvpn._check_country_exists(country_code)` | Checks if given country code exists. This is checked during protonvpn._setup_connection() and protonvpn._setup_reconnection(). Can be used whenever needed. |
-| `protonvpn._get_filtered_servers()` | Get filtered server list. This is checked during protonvpn._setup_connection() and protonvpn._setup_reconnection(). Can be used whenever needed. |
+| `protonvpn._get_filtered_server_list()` | Get filtered server list. This is checked during protonvpn._setup_connection() and protonvpn._setup_reconnection(). Can be used whenever needed. |
 |`protonvpn._get_server_list()` | Get server list. This is checked during protonvpn._setup_connection() and protonvpn._setup_reconnection(). Can be used whenever needed. |
 |`protonvpn._get_country_with_matching_servername(server_list)` | Generate dict with {country:[servername]}. |
 |`protonvpn._get_server_information(servername)` | Get server information. |

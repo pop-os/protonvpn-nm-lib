@@ -6,8 +6,10 @@ from .lib.login import ProtonVPNLogin
 from .lib.logout import ProtonVPNLogout
 from .lib.reconnect import ProtonVPNReconnect
 from .lib.server import ProtonVPNServer
+from .lib.server_list import ProtonVPNServerList
 from .lib.session import ProtonVPNSession
 from .lib.status import ProtonVPNStatus
+from .lib.country import ProtonVPNCountry
 from .lib.user_settings import ProtonVPNUserSetting
 from .services.certificate_manager import CertificateManager
 from .services.connection_manager import ConnectionManager
@@ -23,53 +25,63 @@ from .services.user_manager import UserManager
 
 class API():
     # services
-    reconector_manager = ReconnectorManager()
-    user_conf_manager = UserConfigurationManager()
-    ks_manager = KillSwitchManager(user_conf_manager)
-    connection_manager = ConnectionManager()
-    user_manager = UserManager(user_conf_manager)
-    server_manager = ServerManager(
-        CertificateManager(), user_manager
+    __reconector_manager = ReconnectorManager()
+    __user_conf_manager = UserConfigurationManager()
+    __ks_manager = KillSwitchManager(__user_conf_manager)
+    __connection_manager = ConnectionManager()
+    __user_manager = UserManager(__user_conf_manager)
+    __server_manager = ServerManager(
+        CertificateManager(), __user_manager
     )
-    ipv6_lp_manager = IPv6LeakProtectionManager()
+    __ipv6_lp_manager = IPv6LeakProtectionManager()
 
     # library
+    country = ProtonVPNCountry(__server_manager)
     connection = ProtonVPNConnection(
-        connection_manager,
-        user_conf_manager,
-        ks_manager,
-        ipv6_lp_manager,
-        reconector_manager
+        __connection_manager,
+        __user_conf_manager,
+        __ks_manager,
+        __ipv6_lp_manager,
+        __reconector_manager
     )
-    session = ProtonVPNSession(user_manager)
-    server = ProtonVPNServer(
-        connection, session,
-        server_manager, user_conf_manager
+    session = ProtonVPNSession(
+        __user_manager,
+        __user_conf_manager,
+        __connection_manager
     )
-    connect = ProtonVPNConnect(
-        connection, session, server,
-        connection_manager, server_manager,
-        user_manager, user_conf_manager,
-        ks_manager, MonitorVPNConnectionStart(),
-        ipv6_lp_manager, reconector_manager
+    server = ProtonVPNServer(__server_manager, connection)
+    server_list = ProtonVPNServerList(
+        connection, session, server, country,
+        __server_manager, __user_conf_manager
     )
     disconnect = ProtonVPNDisconnect(
-        connection_manager, user_conf_manager,
-        ipv6_lp_manager, reconector_manager,
-        ks_manager
+        __connection_manager, __user_conf_manager,
+        __ipv6_lp_manager, __reconector_manager,
+        __ks_manager
     )
-    reconnect = ProtonVPNReconnect(connect, server_manager, user_conf_manager)
+    connect = ProtonVPNConnect(
+        connection, session,
+        server, server_list, disconnect, country,
+        __connection_manager, __server_manager,
+        __user_manager, __user_conf_manager,
+        __ks_manager, MonitorVPNConnectionStart(),
+        __ipv6_lp_manager, __reconector_manager
+    )
+    reconnect = ProtonVPNReconnect(
+        connect, __server_manager, __user_conf_manager
+    )
     user_settings = ProtonVPNUserSetting(
-        user_conf_manager, user_manager, ks_manager
+        __user_conf_manager, __user_manager, __ks_manager
     )
     status = ProtonVPNStatus(
-        connection, server,
-        ks_manager, user_settings, user_conf_manager
+        connection, server, server_list,
+        __ks_manager, user_settings, __user_conf_manager
     )
     login = ProtonVPNLogin(
-        connection, server_manager, user_manager, user_conf_manager
+        connection, session,
+        __server_manager, __user_manager, __user_conf_manager
     )
-    logout = ProtonVPNLogout(connection, session, user_manager)
+    logout = ProtonVPNLogout(connection, session, disconnect, __user_manager)
 
     # Login
     def _login(self, username, password):
@@ -176,7 +188,7 @@ class API():
         and protonvpn._setup_reconnection().
         Can be used whenever needed.
         """
-        self.connection._ensure_connectivity()
+        self.session._ensure_connectivity()
 
     # Disconnect
     def _disconnect(self):
@@ -253,7 +265,7 @@ class API():
         Args:
             country_code (string): ISO format
         """
-        return self.server.extract_country_name(country_code)
+        return self.country.extract_country_name(country_code)
 
     def _check_country_exists(self, country_code):
         """Checks if given country code exists.
@@ -268,9 +280,9 @@ class API():
         Returns:
             bool
         """
-        return self.server._check_country_exists(country_code)
+        return self.server_list._check_country_exists(country_code)
 
-    def _get_filtered_servers(self, server_list):
+    def _get_filtered_server_list(self, server_list):
         """Get filtered server list.
 
         This is checked during protonvpn._setup_connection()
@@ -283,10 +295,14 @@ class API():
         Returns:
             list(dict)
         """
-        return self.server._get_filtered_servers(server_list)
+        return self.server_list._get_filtered_server_list(server_list)
 
     def _get_server_list(self):
         """Get server list.
+
+        It does not cache servers by itself, so running
+        protonvpn._refresh_servers() beforehand is strongly
+        recommended.
 
         This is checked during protonvpn._setup_connection()
         and protonvpn._setup_reconnection().
@@ -295,7 +311,7 @@ class API():
         Returns:
             list(dict)
         """
-        return self.server._get_server_list()
+        return self.server_list._get_server_list()
 
     def _get_country_with_matching_servername(self, server_list):
         """Generate dict with {country:[servername]}.
@@ -306,12 +322,16 @@ class API():
             dict: country_code: [servername]
                 ie {PT: [PT#5, PT#8]}
         """
-        return self.server._get_dict_with_country_servername(
+        return self.server_list._get_dict_with_country_servername(
             server_list
         )
 
     def _get_server_information(self, servername):
         """Get server information.
+
+        It does not cache servers, so running
+        protonvpn._refresh_servers() should be run
+        beforehand in case there is no previous cache.
 
         Args:
             servername (string)
@@ -320,7 +340,10 @@ class API():
             dict:
                 Keys: ServerInfoEnum
         """
-        return self.server._get_server_information(servername)
+        return self.server._get_server_information(
+            server_list=self._get_server_list(),
+            servername=servername,
+        )
 
     def _refresh_servers(self):
         """Refresh cached server list.
@@ -329,7 +352,7 @@ class API():
         and protonvpn._setup_reconnection().
         Can be used whenever needed.
         """
-        self.server._refresh_servers()
+        self.server_list._refresh_servers()
 
     # Status
     def _get_active_connection_status(self, readeable_format=True):
@@ -411,7 +434,7 @@ class API():
         Returns:
             list
         """
-        return self.user_settings._get_dns(True)
+        return self.user_settings._get_custom_dns_list()
 
     def _get_user_tier(self):
         """Get stored user tier.
