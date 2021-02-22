@@ -7,7 +7,8 @@ import pytest
 from common import (
     MOCK_DATA_JSON, SERVERS, TEST_CERTS,
     CertificateManager, UserConfigurationManager,
-    ProtonSessionWrapper, UserManager, exceptions, PWD
+    ProtonSessionWrapper, UserManager, exceptions, PWD,
+    ProtocolEnum
 )
 
 test_user_config_dir = os.path.join(PWD, "test_config_protonvpn")
@@ -44,15 +45,15 @@ class TestCertificateManager:
         shutil.rmtree(TEST_CERTS)
 
     @pytest.mark.parametrize(
-        "protocol,,servername,servers,cert_path",
+        "protocol,servername,servers,cert_path",
         [
             (
-                "tcp",
+                ProtocolEnum.TCP,
                 "test#5", SERVERS,
                 os.path.join(TEST_CERTS, "test#5.ovpn")
             ),
             (
-                "udp",
+                ProtocolEnum.UDP,
                 "test#6", SERVERS,
                 os.path.join(TEST_CERTS, "test#6.ovpn")
             ),
@@ -72,10 +73,10 @@ class TestCertificateManager:
     @pytest.mark.parametrize(
         "protocol,servername,excp",
         [
-            ("tdp", "test#5", exceptions.IllegalVPNProtocol),
+            ("tdp", "test#5", TypeError),
             ("udp", 5, TypeError),
-            ("ufc", "test#5", exceptions.IllegalVPNProtocol),
-            ("", "test#5", exceptions.IllegalVPNProtocol),
+            ("ufc", "test#5", TypeError),
+            ("", "test#5", TypeError),
             (2, "test#5", TypeError),
             ({}, "test#5", TypeError),
             ([], "test#5", TypeError),
@@ -109,14 +110,15 @@ class TestCertificateManager:
     def test_incorrect_servers_generate_vpn_cert(self, servers, excp):
         with pytest.raises(excp):
             self.cert_man.generate_vpn_cert(
-                "tcp",
+                ProtocolEnum.TCP,
                 "test#5", servers,
                 os.path.join(TEST_CERTS, "test#5.ovpn"),
             )
 
     def test_correct_generate_openvpn_cert(self):
         self.cert_man.generate_openvpn_cert(
-            "test#6", SERVERS, os.path.join(TEST_CERTS, "test#6.ovpn"), "tcp"
+            "test#6", SERVERS, os.path.join(TEST_CERTS, "test#6.ovpn"),
+            ProtocolEnum.TCP
         )
 
     def test_correct_generate_strongswan_cert(self):

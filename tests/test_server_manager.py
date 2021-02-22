@@ -119,15 +119,14 @@ class TestUnitServerManager:
         self, servername, mock_api_request
     ):
         mock_api_request.side_effect = [RAW_SERVER_LIST]
+        self.MOCKED_SESSION.cache_servers()
         (
             _servername,
             server_domain,
             server_feature,
             filtered_servers,
             servers
-        ) = self.server_man.get_config_for_fastest_server(
-            session=self.MOCKED_SESSION,
-        )
+        ) = self.server_man.get_config_for_fastest_server()
         with pytest.raises(IndexError):
             self.server_man.get_physical_server_list(
                 servername, SERVERS, filtered_servers
@@ -142,7 +141,7 @@ class TestUnitServerManager:
             filtered_servers,
             servers
         ) = self.server_man.get_config_for_specific_server(
-            session=self.MOCKED_SESSION, servername="TEST#5"
+            servername="TEST#5"
         )
         servers = self.server_man.get_physical_server_list(
             servername, SERVERS, filtered_servers
@@ -158,7 +157,7 @@ class TestUnitServerManager:
             filtered_servers,
             servers
         ) = self.server_man.get_config_for_specific_server(
-            session=self.MOCKED_SESSION, servername="TEST#5"
+            servername="TEST#5"
         )
         servers = self.server_man.get_physical_server_list(
             servername, servers, filtered_servers
@@ -177,7 +176,7 @@ class TestUnitServerManager:
             filtered_servers,
             servers
         ) = self.server_man.get_config_for_specific_server(
-            session=self.MOCKED_SESSION, servername="TEST#6"
+            servername="TEST#6"
         )
         servers = self.server_man.get_physical_server_list(
             servername, servers, filtered_servers
@@ -196,7 +195,7 @@ class TestUnitServerManager:
             filtered_servers,
             servers
         ) = self.server_man.get_config_for_specific_server(
-            session=self.MOCKED_SESSION, servername="TEST#6"
+            servername="TEST#6"
         )
         servers = self.server_man.get_physical_server_list(
             servername, servers, filtered_servers
@@ -215,7 +214,7 @@ class TestUnitServerManager:
             filtered_servers,
             servers
         ) = self.server_man.get_config_for_specific_server(
-            session=self.MOCKED_SESSION, servername="TEST#6"
+            servername="TEST#6"
         )
         servers = self.server_man.get_physical_server_list(
             servername, servers, filtered_servers
@@ -402,9 +401,7 @@ class TestIntegrationServerManager:
 
     def test_correct_generate_connect_fastest(self, mock_api_request):
         mock_api_request.side_effect = [RAW_SERVER_LIST]
-        servername, *rest = self.server_man.get_config_for_fastest_server(
-            self.MOCKED_SESSION,
-        )
+        servername, *rest = self.server_man.get_config_for_fastest_server()
         assert servername == "TEST_IPV6#11"
 
     def test_correct_generate_connect_country(self):
@@ -412,7 +409,6 @@ class TestIntegrationServerManager:
             servername,
             *rest
         ) = self.server_man.get_config_for_fastest_server_in_country(
-            session=self.MOCKED_SESSION,
             country_code="PT",
         )
         assert servername == "TEST#6"
@@ -424,7 +420,6 @@ class TestIntegrationServerManager:
             servername,
             *rest
         ) = self.server_man.get_config_for_specific_server(
-            session=self.MOCKED_SESSION,
             servername=server,
         )
         assert servername == server
@@ -443,15 +438,12 @@ class TestIntegrationServerManager:
             _servername,
             *rest
         ) = self.server_man.get_config_for_fastest_server_with_specific_feature( # noqa
-            session=self.MOCKED_SESSION,
             feature=feature,
         )
         assert servername == _servername
 
     def test_correct_generate_connect_random(self):
-        servername, *rest = self.server_man.get_config_for_random_server(
-            session=self.MOCKED_SESSION,
-        )
+        servername, *rest = self.server_man.get_config_for_random_server()
         assert servername in [server["Name"] for server in SERVERS]
 
     def test_correct_generate_server_certificate(self):
@@ -461,9 +453,7 @@ class TestIntegrationServerManager:
             server_feature,
             filtered_servers,
             servers
-        ) = self.server_man.get_config_for_fastest_server(
-            session=self.MOCKED_SESSION,
-        )
+        ) = self.server_man.get_config_for_fastest_server()
         (
             cert_fp,
             matching_domain,

@@ -97,4 +97,4 @@ class TestMetadataManager():
         ]
     )
     def test_check_correct_metadata_type(self, metadata_type):
-        self.mm.check_metadata_type(metadata_type)
+        self.mm.ensure_metadata_type_is_valid(metadata_type)

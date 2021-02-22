@@ -5,11 +5,16 @@ from protonvpn_nm_lib import exceptions
 from protonvpn_nm_lib.constants import (CACHED_OPENVPN_CERTIFICATE,
                                         ENV_CI_NAME, NETSHIELD_STATUS_DICT)
 from protonvpn_nm_lib.enums import (ClientSuffixEnum, ConnectionMetadataEnum,
-                                    KillswitchStatusEnum, MetadataActionEnum,
-                                    MetadataEnum, NetshieldStatusEnum,
-                                    ProtocolEnum, ProtonSessionAPIMethodEnum,
-                                    UserSettingConnectionEnum, UserSettingEnum,
-                                    UserSettingStatusEnum, NetshieldTranslationEnum)
+                                    KillswitchStatusEnum,
+                                    LastConnectionMetadataEnum,
+                                    MetadataActionEnum, MetadataEnum,
+                                    NetshieldStatusEnum,
+                                    NetshieldTranslationEnum,
+                                    NetworkManagerConnectionTypeEnum,
+                                    ProtocolEnum, ProtocolImplementationEnum,
+                                    ProtonSessionAPIMethodEnum,
+                                    UserSettingConnectionEnum,
+                                    UserSettingStatusEnum)
 from protonvpn_nm_lib.services.certificate_manager import CertificateManager
 from protonvpn_nm_lib.services.connection_manager import ConnectionManager
 from protonvpn_nm_lib.services.connection_state_manager import \

@@ -6,12 +6,13 @@ import pytest
 gi.require_version("NM", "1.0")
 from gi.repository import NM
 
-from common import (CERT_FOLDER, ENV_CI_NAME, PWD, MOCK_SESSIONDATA,
-                    PLUGIN_CERT_FOLDER, CertificateManager, ConnectionManager,
-                    IPv6LeakProtectionManager, KillSwitchManager,
-                    UserConfigurationManager,
-                    KillswitchStatusEnum, ReconnectorManager, UserManager,
-                    UserSettingStatusEnum, exceptions)
+from common import (CERT_FOLDER, ENV_CI_NAME, MOCK_SESSIONDATA,
+                    PLUGIN_CERT_FOLDER, PWD, CertificateManager,
+                    ConnectionManager, IPv6LeakProtectionManager,
+                    KillSwitchManager, KillswitchStatusEnum,
+                    NetworkManagerConnectionTypeEnum, ReconnectorManager,
+                    UserConfigurationManager, UserManager,
+                    UserSettingStatusEnum, exceptions, ProtocolEnum)
 
 TEST_KEYRING_SERVICE = "TestConnManager"
 TEST_KEYRING_SESSIONDATA = "TestConnManSessionData"
@@ -77,6 +78,9 @@ class TestIntegrationConnectionManager():
     @classmethod
     def setup_class(cls):
         um = UserManager(user_conf_manager=ucm)
+        cm = ConnectionManager(virtual_device_name="testTunnel0")
+        cm.save_servername("TESTCONNMANAGER#1")
+        cm.save_protocol(ProtocolEnum.TCP)
         um.keyring_service = TEST_KEYRING_SERVICE
         um.keyring_sessiondata = TEST_KEYRING_SESSIONDATA
         um.keyring_userdata = TEST_KEYRING_USERDATA
@@ -176,7 +180,9 @@ class TestIntegrationConnectionManager():
             "192.168.0.1"
         )
         assert isinstance(
-            conn_man.get_proton_connection("all_connections")[0],
+            conn_man.get_protonvpn_connection(
+                NetworkManagerConnectionTypeEnum.ALL
+            )[0],
             NM.RemoteConnection
         )
 
@@ -226,7 +232,7 @@ class TestIntegrationConnectionManager():
         self, conn_man, openvpn_user, openvpn_pass, random_domain,
         fake_user_conf_man, ks_man, ipv6_lp_man
     ):
-        with pytest.raises(NotImplementedError):
+        with pytest.raises(FileNotFoundError):
             conn_man.add_connection(
                 os.path.join(CERT_FOLDER, "TestProtonVPN.ovpn"),
                 openvpn_user,

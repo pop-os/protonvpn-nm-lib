@@ -4,7 +4,7 @@ import os
 import pytest
 
 from common import (PWD, ConnectionMetadataEnum, ConnectionStateManager,
-                    MetadataEnum, exceptions)
+                    MetadataEnum, exceptions, ProtocolEnum, LastConnectionMetadataEnum)
 
 conn_state_filepath = os.path.join(
     PWD, "test_conn_state_manager.json"
@@ -67,7 +67,7 @@ class TestConnectionStateManager:
     )
     def test_get_correct_metadata(self, metadata_type, output):
         metadata = self.csm.get_connection_metadata(metadata_type)
-        assert output == metadata[ConnectionMetadataEnum.SERVER]
+        assert output == metadata[ConnectionMetadataEnum.SERVER.value]
 
     @pytest.mark.parametrize(
         "metadata_type, e",
@@ -87,33 +87,33 @@ class TestConnectionStateManager:
         servername = "test_servername"
         self.csm.save_servername(servername)
         metadata = self.csm.get_connection_metadata(MetadataEnum.CONNECTION)
-        assert servername == metadata[ConnectionMetadataEnum.SERVER]
+        assert servername == metadata[ConnectionMetadataEnum.SERVER.value]
 
     def test_last_conn_save_servername(self):
         servername = "test_last_conn_servername"
         self.csm.save_servername(servername)
         metadata = self.csm.get_connection_metadata(MetadataEnum.LAST_CONNECTION) # noqa
-        assert servername == metadata[ConnectionMetadataEnum.SERVER]
+        assert servername == metadata[ConnectionMetadataEnum.SERVER.value]
 
     def test_conn_save_timestamp(self):
         self.csm.save_connected_time()
         metadata = self.csm.get_connection_metadata(MetadataEnum.CONNECTION)
         assert isinstance(
-            int(metadata[ConnectionMetadataEnum.CONNECTED_TIME]),
+            int(metadata[ConnectionMetadataEnum.CONNECTED_TIME.value]),
             int
         )
 
     def test_conn_save_protocol(self):
-        protocol = "test_protocol"
+        protocol = ProtocolEnum.TCP
         self.csm.save_protocol(protocol)
         metadata = self.csm.get_connection_metadata(MetadataEnum.CONNECTION)
-        assert protocol == metadata[ConnectionMetadataEnum.PROTOCOL]
+        assert protocol.value == metadata[ConnectionMetadataEnum.PROTOCOL.value]
 
     def test_conn_save_server_ip(self):
         ip = "192.168.1.192"
         self.csm.save_server_ip(ip)
         metadata = self.csm.get_connection_metadata(MetadataEnum.LAST_CONNECTION) # noqa
-        assert ip == metadata["last_connect_ip"]
+        assert ip == metadata[LastConnectionMetadataEnum.SERVER_IP.value]
 
     def test_conn_get_server_ip(self):
         ip = "192.168.1.192"

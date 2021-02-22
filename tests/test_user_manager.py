@@ -193,8 +193,8 @@ class TestUnitUserManager():
         openvpn_password = MOCK_USER_DATA["VPN"]["Password"]
         assert (resp_user, resp_pwd) == (
             openvn_username
-            + "+" + ClientSuffixEnum.PLATFORM
-            + "+" + NetshieldStatusEnum.DISABLED,
+            + "+" + ClientSuffixEnum.PLATFORM.value
+            + "+" + NetshieldStatusEnum.DISABLED.value,
             openvpn_password
         )
 
