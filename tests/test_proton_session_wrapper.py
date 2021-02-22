@@ -65,7 +65,7 @@ class TestProtonSessionWrapperAPIRequest():
     @pytest.fixture
     def mock_api_request(self):
         mock_get_patcher = patch(
-            "protonvpn_nm_lib.services.proton_session_wrapper."
+            "protonvpn_nm_lib.core.proton_session_wrapper."
             "Session.api_request"
         )
         yield mock_get_patcher.start()
@@ -255,7 +255,7 @@ class TestProtonSessionWrapperAuthenticate():
     @pytest.fixture
     def mock_authenticate_request(self):
         mock_get_patcher = patch(
-            "protonvpn_nm_lib.services.proton_session_wrapper."
+            "protonvpn_nm_lib.core.proton_session_wrapper."
             "Session.authenticate"
         )
         yield mock_get_patcher.start()
@@ -369,7 +369,7 @@ class TestProtonSessionWrapperLogout():
     @pytest.fixture
     def mock_logout_request(self):
         mock_get_patcher = patch(
-            "protonvpn_nm_lib.services.proton_session_wrapper."
+            "protonvpn_nm_lib.core.proton_session_wrapper."
             "Session.logout"
         )
         yield mock_get_patcher.start()
@@ -524,7 +524,7 @@ class TestProtonSessionWrapperFullCache():
     @pytest.fixture
     def mock_api_request(self):
         mock_get_patcher = patch(
-            "protonvpn_nm_lib.services.proton_session_wrapper."
+            "protonvpn_nm_lib.core.proton_session_wrapper."
             "Session.api_request"
         )
         yield mock_get_patcher.start()
@@ -593,7 +593,7 @@ class TestProtonSessionWrapperLoadsCache():
     @pytest.fixture
     def mock_api_request(self):
         mock_get_patcher = patch(
-            "protonvpn_nm_lib.services.proton_session_wrapper."
+            "protonvpn_nm_lib.core.proton_session_wrapper."
             "Session.api_request"
         )
         yield mock_get_patcher.start()

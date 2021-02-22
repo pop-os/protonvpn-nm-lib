@@ -12,7 +12,7 @@ from ..enums import (ConnectionMetadataEnum, KillSwitchManagerActionEnum,
                      KillswitchStatusEnum, MetadataEnum,
                      NetworkManagerConnectionTypeEnum, UserSettingStatusEnum)
 from ..logger import logger
-from ..services.connection_state_manager import ConnectionStateManager
+from .connection_state_manager import ConnectionStateManager
 from . import capture_exception
 from .plugin_manager import PluginManager
 

@@ -63,7 +63,7 @@ class TestUnitUserManager():
     @pytest.fixture
     def mock_authenticate(self):
         mock_get_patcher = patch(
-            "protonvpn_nm_lib.services.proton_session_wrapper."
+            "protonvpn_nm_lib.core.proton_session_wrapper."
             "Session.authenticate"
         )
         yield mock_get_patcher.start()
@@ -72,7 +72,7 @@ class TestUnitUserManager():
     @pytest.fixture
     def mock_api_request(self):
         mock_get_patcher = patch(
-            "protonvpn_nm_lib.services.proton_session_wrapper."
+            "protonvpn_nm_lib.core.proton_session_wrapper."
             "Session.api_request"
         )
         yield mock_get_patcher.start()

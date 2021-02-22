@@ -1,6 +1,6 @@
 %define unmangled_name protonvpn-nm-lib
-%define version 0.4.0
-%define release 2
+%define version 0.5.0
+%define release 1
 
 Prefix: %{_prefix}
 
@@ -56,6 +56,11 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
+* Mon Feb 22 2021 Proton Technologies AG <opensource@proton.me> 0.5.0-1
+- Refactor library
+- Create public API
+- Improved library overall stability 
+
 * Mon Feb 01 2021 Proton Technologies AG <opensource@proton.me> 0.4.0-2
 - Improved Kill Switch logic
 - Improved reconnection logic after suspend/hibernate

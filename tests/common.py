@@ -15,23 +15,23 @@ from protonvpn_nm_lib.enums import (ClientSuffixEnum, ConnectionMetadataEnum,
                                     ProtonSessionAPIMethodEnum,
                                     UserSettingConnectionEnum,
                                     UserSettingStatusEnum)
-from protonvpn_nm_lib.services.certificate_manager import CertificateManager
-from protonvpn_nm_lib.services.connection_manager import ConnectionManager
-from protonvpn_nm_lib.services.connection_state_manager import \
+from protonvpn_nm_lib.core.certificate_manager import CertificateManager
+from protonvpn_nm_lib.core.connection_manager import ConnectionManager
+from protonvpn_nm_lib.core.connection_state_manager import \
     ConnectionStateManager
-from protonvpn_nm_lib.services.ipv6_leak_protection_manager import \
+from protonvpn_nm_lib.core.ipv6_leak_protection_manager import \
     IPv6LeakProtectionManager
-from protonvpn_nm_lib.services.killswitch_manager import KillSwitchManager
-from protonvpn_nm_lib.services.metadata_manager import MetadataManager
-from protonvpn_nm_lib.services.plugin_manager import PluginManager
-from protonvpn_nm_lib.services.proton_session_wrapper import \
+from protonvpn_nm_lib.core.killswitch_manager import KillSwitchManager
+from protonvpn_nm_lib.core.metadata_manager import MetadataManager
+from protonvpn_nm_lib.core.plugin_manager import PluginManager
+from protonvpn_nm_lib.core.proton_session_wrapper import \
     ProtonSessionWrapper
-from protonvpn_nm_lib.services.reconnector_manager import ReconnectorManager
-from protonvpn_nm_lib.services.server_manager import ServerManager
-from protonvpn_nm_lib.services.user_configuration_manager import \
+from protonvpn_nm_lib.core.reconnector_manager import ReconnectorManager
+from protonvpn_nm_lib.core.server_manager import ServerManager
+from protonvpn_nm_lib.core.user_configuration_manager import \
     UserConfigurationManager
-from protonvpn_nm_lib.services.user_manager import UserManager
-from protonvpn_nm_lib.services.user_session_manager import UserSessionManager
+from protonvpn_nm_lib.core.user_manager import UserManager
+from protonvpn_nm_lib.core.user_session_manager import UserSessionManager
 
 MOCK_SESSIONDATA = {
     "api_url": "https://localhost",
@@ -72,7 +72,7 @@ MOCK_USER_DATA = {
         'MaxTier': 0,
         'MaxConnect': 2
     },
-    'Services': 5,
+    'core': 5,
     'Subscribed': 0,
     'Delinquent': 0,
     'HasPaymentMethod': 1,

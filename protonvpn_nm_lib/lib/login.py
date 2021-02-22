@@ -33,7 +33,7 @@ class ProtonVPNLogin:
         self.connection = connection
         self.session = session
 
-        # services
+        # core
         self.__server_manager = server_manager
         self.__user_manager = user_manager
         self.__user_conf_manager = user_conf_manager

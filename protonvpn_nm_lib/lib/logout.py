@@ -28,7 +28,7 @@ class ProtonVPNLogout:
         self.session = session
         self.disconnect = disconnect
 
-        # services
+        # core
         self.__user_manager = user_manager
 
     def _logout(self, session=None, _pass_check=None, _removed=None):

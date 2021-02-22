@@ -18,7 +18,7 @@ OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
 IN NO EVENT SHALL DOMEN KOZAR OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
 INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+core; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
 HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
 IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
@@ -39,13 +39,13 @@ from protonvpn_nm_lib.enums import (DbusVPNConnectionReasonEnum,
                                     KillSwitchManagerActionEnum,
                                     KillswitchStatusEnum, MetadataEnum)
 from protonvpn_nm_lib.logger import logger
-from protonvpn_nm_lib.services.connection_state_manager import \
+from protonvpn_nm_lib.core.connection_state_manager import \
     ConnectionStateManager
-from protonvpn_nm_lib.services.dbus_get_wrapper import DbusGetWrapper
-from protonvpn_nm_lib.services.ipv6_leak_protection_manager import \
+from protonvpn_nm_lib.core.dbus_get_wrapper import DbusGetWrapper
+from protonvpn_nm_lib.core.ipv6_leak_protection_manager import \
     IPv6LeakProtectionManager
-from protonvpn_nm_lib.services.killswitch_manager import KillSwitchManager
-from protonvpn_nm_lib.services.user_configuration_manager import \
+from protonvpn_nm_lib.core.killswitch_manager import KillSwitchManager
+from protonvpn_nm_lib.core.user_configuration_manager import \
     UserConfigurationManager
 
 
@@ -102,7 +102,7 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
             state (int): NMVpnConnectionState
             reason (int): NMActiveConnectionStateReason
         """
-        state = DbusVPNConnectionStateEnum(state)
+            state = DbusVPNConnectionStateEnum(state)
         reason = DbusVPNConnectionReasonEnum(reason)
         logger.info(
             "State: {} - ".format(state)

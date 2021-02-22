@@ -37,7 +37,7 @@ class ProtonVPNServerList:
         self.server = server
         self.country = country
 
-        # services
+        # core
         self.__server_manager = server_manager
         self.__user_conf_manager = user_conf_manager
 

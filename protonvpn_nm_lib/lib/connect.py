@@ -6,7 +6,7 @@ from ..constants import FLAT_SUPPORTED_PROTOCOLS, VIRTUAL_DEVICE_NAME
 from ..enums import (ConnectionTypeEnum, DbusMonitorResponseEnum,
                      NetworkManagerConnectionTypeEnum, ProtocolEnum)
 from ..logger import logger
-from ..services.certificate_manager import CertificateManager
+from ..core.certificate_manager import CertificateManager
 
 
 class ProtonVPNConnect():
@@ -51,7 +51,7 @@ class ProtonVPNConnect():
         self.disconnect = disconnect
         self.country = country
 
-        # services
+        # core
         self.__connection_manager = connection_manager
         self.__server_manager = server_manager
         self.__user_manager = user_manager

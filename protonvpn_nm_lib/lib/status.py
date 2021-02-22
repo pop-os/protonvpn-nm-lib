@@ -36,7 +36,7 @@ class ProtonVPNStatus:
         self.server_list = server_list
         self.user_settings = user_settings
 
-        # services
+        # core
         self.__ks_manager = ks_manager
         self.__user_conf_manager = user_conf_manager
 

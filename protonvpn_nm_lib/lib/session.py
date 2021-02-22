@@ -1,6 +1,6 @@
 from .. import exceptions
 from ..logger import logger
-from ..services.proton_session_wrapper import ProtonSessionWrapper
+from ..core.proton_session_wrapper import ProtonSessionWrapper
 
 
 class ProtonVPNSession:

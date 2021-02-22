@@ -4,7 +4,7 @@ from ..enums import (DbusMonitorResponseEnum, DbusVPNConnectionReasonEnum,
                      DbusVPNConnectionStateEnum, KillSwitchManagerActionEnum,
                      KillswitchStatusEnum)
 from ..logger import logger
-from ..services.dbus_get_wrapper import DbusGetWrapper
+from .dbus_get_wrapper import DbusGetWrapper
 
 
 class MonitorVPNConnectionStart(DbusGetWrapper):

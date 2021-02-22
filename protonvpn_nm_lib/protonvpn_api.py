@@ -1,6 +1,17 @@
+from .core.certificate_manager import CertificateManager
+from .core.connection_manager import ConnectionManager
+from .core.dbus_dbus_monitor_vpn_connection_start import \
+    MonitorVPNConnectionStart
+from .core.ipv6_leak_protection_manager import IPv6LeakProtectionManager
+from .core.killswitch_manager import KillSwitchManager
+from .core.reconnector_manager import ReconnectorManager
+from .core.server_manager import ServerManager
+from .core.user_configuration_manager import UserConfigurationManager
+from .core.user_manager import UserManager
 from .enums import UserSettingStatusEnum
 from .lib.connect import ProtonVPNConnect
 from .lib.connection import ProtonVPNConnection
+from .lib.country import ProtonVPNCountry
 from .lib.disconnect import ProtonVPNDisconnect
 from .lib.login import ProtonVPNLogin
 from .lib.logout import ProtonVPNLogout
@@ -9,22 +20,11 @@ from .lib.server import ProtonVPNServer
 from .lib.server_list import ProtonVPNServerList
 from .lib.session import ProtonVPNSession
 from .lib.status import ProtonVPNStatus
-from .lib.country import ProtonVPNCountry
 from .lib.user_settings import ProtonVPNUserSetting
-from .services.certificate_manager import CertificateManager
-from .services.connection_manager import ConnectionManager
-from .services.dbus_dbus_monitor_vpn_connection_start import \
-    MonitorVPNConnectionStart
-from .services.ipv6_leak_protection_manager import IPv6LeakProtectionManager
-from .services.killswitch_manager import KillSwitchManager
-from .services.reconnector_manager import ReconnectorManager
-from .services.server_manager import ServerManager
-from .services.user_configuration_manager import UserConfigurationManager
-from .services.user_manager import UserManager
 
 
 class API():
-    # services
+    # core
     __reconector_manager = ReconnectorManager()
     __user_conf_manager = UserConfigurationManager()
     __ks_manager = KillSwitchManager(__user_conf_manager)
