@@ -82,13 +82,14 @@ class ProtonVPNServerList:
         """
         countries = {}
         for server in server_list:
+            servername = server["Name"]
             server = self.server._get_server_information(
-                server, server_list
+                server_list, servername
             )
             country = self.country._get_country_name(server.COUNTRY)
             if country not in countries.keys():
                 countries[country] = []
-            countries[country].append(server["Name"])
+            countries[country].append(servername)
 
         return countries
 

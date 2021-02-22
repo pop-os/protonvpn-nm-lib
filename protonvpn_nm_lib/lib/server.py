@@ -80,7 +80,6 @@ class ProtonVPNServer:
             except KeyError:
                 servername = None
 
-        self._ensure_servername_is_valid(servername)
         return self.__extract_server_info(
             servername, server_list
         )

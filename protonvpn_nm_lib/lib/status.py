@@ -62,6 +62,7 @@ class ProtonVPNStatus:
         except KeyError:
             exit_server_ip = "(Missing)"
 
+        self.server._ensure_servername_is_valid(servername)
         server_information_dict = self.server._get_server_information(
             server_list=self.server_list._get_server_list(),
             servername=servername

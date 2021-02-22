@@ -569,10 +569,10 @@ class ServerManager(ConnectionStateManager):
 
         servername = servername.upper()
 
-        re_short = re.compile(r"^((\w\w)(-|#)?(\d{1,3})-?(TOR)?)$")
+        re_short = re.compile(r"^((\w\w)(-|#)?(\w+)-?(\w+)?)$")
         # For long format (IS-DE-01 | Secure-Core/Free/US Servers)
         re_long = re.compile(
-            r"^(((\w\w)(-|#)?([A-Z]{2}|FREE))(-|#)?(\d{1,3})-?(TOR)?)$"
+            r"^(((\w\w)(-|#)?([A-Z]{2}|FREE))(-|#)?(\w+)-?(\w+)?)$"
         )
         return_servername = False
 
