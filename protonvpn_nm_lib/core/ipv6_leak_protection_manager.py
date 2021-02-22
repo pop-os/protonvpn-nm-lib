@@ -1,4 +1,4 @@
-import subprocess
+from .subprocess_wrapper import subprocess
 
 import dbus
 from dbus.mainloop.glib import DBusGMainLoop

@@ -103,7 +103,8 @@ class MonitorVPNConnectionStart(DbusGetWrapper):
                     == DbusVPNConnectionReasonEnum.SECRETS_WERE_NOT_PROVIDED
                 ):
                     msg += "Incorrect openvpn credentials."
-
+            else:
+                msg = msg + "unknown reasons."
             if state == DbusVPNConnectionStateEnum.DISCONNECTED:
                 msg = "ProtonVPN connection has been disconnected. "\
                     "Reason: {}".format(reason)

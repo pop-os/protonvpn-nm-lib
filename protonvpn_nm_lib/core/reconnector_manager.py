@@ -1,5 +1,5 @@
 import os
-import subprocess
+from .subprocess_wrapper import subprocess
 import sys
 
 import protonvpn_nm_lib
