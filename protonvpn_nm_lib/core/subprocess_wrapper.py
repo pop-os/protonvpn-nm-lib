@@ -91,6 +91,7 @@ class SubprocessWrapper():
         self, *popenargs, input=None, capture_output=False,
         timeout=None, check=False, **kwargs
     ):
+        """Wrapper method for subprocess.run()."""
         if len(popenargs) == 0:
             raise TypeError("missing 1 required positional argument: 'args'")
 
