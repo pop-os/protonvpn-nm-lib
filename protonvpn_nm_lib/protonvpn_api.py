@@ -108,7 +108,8 @@ class API():
     # Connect
     def _setup_connection(
         self, connection_type,
-        connection_type_extra_arg, protocol
+        connection_type_extra_arg=None,
+        protocol=None
     ):
         """Setup and configure VPN connection prior
         calling protonvpn._connect().
@@ -173,7 +174,7 @@ class API():
         Args:
             nm_connection_type (NetworkManagerConnectionTypeEnum)
         Returns:
-            tuple
+            list
         """
         return self.connection._get_protonvpn_connection(nm_connection_type)
 
@@ -337,8 +338,7 @@ class API():
             servername (string)
 
         Returns:
-            dict:
-                Keys: ServerInfoEnum
+            Server instance
         """
         return self.server._get_server_information(
             server_list=self._get_server_list(),
@@ -360,7 +360,7 @@ class API():
 
         Args:
             readeable_format (bool):
-                If true then all content will be returnes in
+                If true then all content will be returned in
                 human readeable format, else all content is returned in
                 enum objects.
 

@@ -102,7 +102,7 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
             state (int): NMVpnConnectionState
             reason (int): NMActiveConnectionStateReason
         """
-            state = DbusVPNConnectionStateEnum(state)
+        state = DbusVPNConnectionStateEnum(state)
         reason = DbusVPNConnectionReasonEnum(reason)
         logger.info(
             "State: {} - ".format(state)
