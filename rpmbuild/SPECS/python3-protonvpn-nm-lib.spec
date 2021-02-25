@@ -56,10 +56,17 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
-* Mon Feb 22 2021 Proton Technologies AG <opensource@proton.me> 0.5.0-1
+* Thu Feb 25 2021 Proton Technologies AG <opensource@proton.me> 0.5.0-1
 - Refactor library
 - Create public API
 - Improved library overall stability 
+
+* Thu Feb 25 2021 Proton Technologies AG <opensource@proton.me> 0.4.2-1
+- Correctly apply server domain for TLS authentication
+
+* Wed Feb 24 2021 Proton Technologies AG <opensource@proton.me> 0.4.1-1
+- Fix bug when connecting to P2P, Secure-Core and TOR due to incorrect subject name for TLS authentication
+
 
 * Mon Feb 01 2021 Proton Technologies AG <opensource@proton.me> 0.4.0-2
 - Improved Kill Switch logic

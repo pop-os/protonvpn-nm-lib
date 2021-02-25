@@ -19,7 +19,7 @@ class ServerManager(ConnectionStateManager):
         self.user_manager = user_manager
 
     def generate_server_certificate(
-        self, servername, domain,
+        self, servername,
         server_feature, protocol,
         servers, filtered_servers
     ):
@@ -27,7 +27,6 @@ class ServerManager(ConnectionStateManager):
 
         Args:
             servername (string): servername (ie PT#8, CH#6)
-            domain (string): server domain
             server_feature (FeatureEnum): FeatureEnum object
             protocol (string): selected protocol
             servers (list): server list
@@ -50,6 +49,8 @@ class ServerManager(ConnectionStateManager):
         server_label = self.get_server_label(
             physical_server
         )
+
+        domain = self.get_server_domain(physical_server)
 
         matching_domain = self.get_matching_domain(
             servers, exit_IP, server_feature
@@ -78,10 +79,7 @@ class ServerManager(ConnectionStateManager):
         """Get configuration for fastest server.
 
         Returns:
-            tuple: (
-                servername, server_domain, server_feature,
-                filtered_servers, servers
-            )
+            tuple
         """
         logger.info("Generating config for fastest server")
         servers = self.extract_server_list()
@@ -114,10 +112,7 @@ class ServerManager(ConnectionStateManager):
             country_code (string): country code [PT|SE|CH ...]
 
         Returns:
-            tuple: (
-                servername, server_domain, server_feature,
-                filtered_servers, servers
-            )
+            tuple
         """
         logger.info("Generating config for fastest server in \"{}\"".format(
             country_code
@@ -156,10 +151,7 @@ class ServerManager(ConnectionStateManager):
             servername (string): servername to connect
 
         Returns:
-            tuple: (
-                servername, server_domain, server_feature,
-                filtered_servers, servers
-            )
+            tuple
         """
         if isinstance(servername, list):
             servername = servername[1]
@@ -204,10 +196,7 @@ class ServerManager(ConnectionStateManager):
             feature (string): literal feature [p2p|tor|sc]
 
         Returns:
-            tuple: (
-                servername, server_domain, server_feature,
-                filtered_servers, servers
-            )
+            tuple
         """
         servers = self.extract_server_list()
 
@@ -256,10 +245,7 @@ class ServerManager(ConnectionStateManager):
         """Get configuration to random server.
 
         Returns:
-            tuple: (
-                servername, server_domain, server_feature,
-                filtered_servers, servers
-            )
+            tuple
         """
         servers = self.extract_server_list()
 
@@ -370,6 +356,17 @@ class ServerManager(ConnectionStateManager):
 
         return server_label or None
 
+    def get_server_domain(self, physical_server):
+        """Get physical server domain name.
+
+        Args:
+            physical_server (dict): physical server
+
+        Returns:
+            string
+        """
+        return physical_server.get("Domain")
+
     def get_server_entry_exit_ip(self, physical_server):
         """Get physical IPs from sub-servers.
 
@@ -473,7 +470,7 @@ class ServerManager(ConnectionStateManager):
             filtered_servers (list): filtered servers
 
         Returns:
-            string: servername with the highest score (fastest)
+            tuple: same output as from get_random_server()
         """
         logger.info("Getting fastest server")
 
@@ -505,17 +502,19 @@ class ServerManager(ConnectionStateManager):
             server_pool (list): pool with logical servers
 
         Returns:
-            tuple: (servername, domain, server_feature)
+            tuple: (
+                servername(string),
+                server_feature(string),
+                server_feature(FeatureEnum)
+            )
         """
         random_server = random.choice(server_pool)
         servername = random_server["Name"]
-        server_domain = random_server["Domain"]
         server_feature = 0
         random_server_feature = random_server["Features"] or 0
         server_feature = FeatureEnum(int(random_server_feature))
-        # server_feature = random_server["Features"]
 
-        return servername, server_domain, server_feature
+        return servername, server_feature
 
     def extract_server_value(
         self, servername,

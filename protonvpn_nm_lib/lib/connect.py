@@ -207,7 +207,7 @@ class ProtonVPNConnect():
         """
         self.server_list._refresh_servers()
         (
-            servername, domain,
+            servername,
             server_feature,
             filtered_servers, servers
         ) = self.__collect_server_information()
@@ -220,7 +220,7 @@ class ProtonVPNConnect():
             entry_ip,
             server_label
         ) = self.__server_manager.generate_server_certificate(
-            servername, domain, server_feature,
+            servername, server_feature,
             protocol, servers, filtered_servers
         )
         logger.info("Generated certificate.")

@@ -122,7 +122,6 @@ class TestUnitServerManager:
         self.MOCKED_SESSION.cache_servers()
         (
             _servername,
-            server_domain,
             server_feature,
             filtered_servers,
             servers
@@ -136,7 +135,6 @@ class TestUnitServerManager:
         mock_api_request.side_effect = [RAW_SERVER_LIST]
         (
             servername,
-            server_domain,
             server_feature,
             filtered_servers,
             servers
@@ -152,7 +150,6 @@ class TestUnitServerManager:
         mock_api_request.side_effect = [RAW_SERVER_LIST]
         (
             servername,
-            server_domain,
             server_feature,
             filtered_servers,
             servers
@@ -171,7 +168,6 @@ class TestUnitServerManager:
         mock_api_request.side_effect = [RAW_SERVER_LIST]
         (
             servername,
-            server_domain,
             server_feature,
             filtered_servers,
             servers
@@ -190,7 +186,6 @@ class TestUnitServerManager:
         mock_api_request.side_effect = [RAW_SERVER_LIST]
         (
             servername,
-            server_domain,
             server_feature,
             filtered_servers,
             servers
@@ -209,7 +204,6 @@ class TestUnitServerManager:
         mock_api_request.side_effect = [RAW_SERVER_LIST]
         (
             servername,
-            server_domain,
             server_feature,
             filtered_servers,
             servers
@@ -449,7 +443,6 @@ class TestIntegrationServerManager:
     def test_correct_generate_server_certificate(self):
         (
             servername,
-            server_domain,
             server_feature,
             filtered_servers,
             servers
@@ -460,7 +453,7 @@ class TestIntegrationServerManager:
             entry_IP,
             server_label
         ) = self.server_man.generate_server_certificate(
-            servername, server_domain, server_feature,
+            servername, server_feature,
             ProtocolEnum.TCP, servers, filtered_servers
         )
 
