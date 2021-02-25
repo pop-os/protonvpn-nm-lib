@@ -7,16 +7,16 @@ class DbusGetWrapper():
     NETWORK_MANAGER_INTERFACE_NAME = "/org/freedesktop/NetworkManager"
 
     def search_for_connection(
-        self, name, is_active=False, is_interface=False,
+        self, conn_name, interface_name=None, is_active=False,
         return_settings_path=False, return_device_path=False,
-        return_active_conn_path=False
+        return_active_conn_path=False,
     ):
         """Search for specified connection.
 
         Args:
-            name (string): connection name
+            conn_name (string): connection/interface conn_name
+            interface_name (string): (optional) Interface name.
             is_active (bool): check for active conns
-            is_interface (bool): if name is an interface
             return_settings_path (bool): return settings path
             return_device_path (bool): return device path
             return_active_conn_path (bool): return active connection
@@ -44,36 +44,37 @@ class DbusGetWrapper():
             all_connection_properties = self.get_all_conn_settings(
                 iterated_connection
             )
+
             connection_id = str(all_connection_properties["connection"]["id"])
 
-            try:
-                dbus_interface = None
-                if is_interface:
-                    dbus_interface = str(
-                        all_connection_properties[
-                            "connection"
-                        ]["interface-name"]
-                    )
-            except KeyError:
-                pass
-            else:
-                if (
-                    name == connection_id
-                    or name == dbus_interface
-                ):
-                    return_list = {"connection_id": connection_id}
-                    if return_settings_path:
-                        return_list["settings_path"] = iterated_connection
-                    if return_device_path:
-                        return_list["device_path"] = self.get_connection_device_path( # noqa
-                            iterated_connection
-                        )
-                    if return_active_conn_path and is_active:
-                        return_list["active_conn_path"] = self.get_active_connection( # noqa
-                            get_by_settings_path=iterated_connection
-                        )
+            dev_name = None
+            if "vpn" in all_connection_properties:
+                dev_name = all_connection_properties["vpn"].get("data")
+                if dev_name:
+                    dev_name = dev_name.get("dev")
 
-                    return return_list
+            if (
+                (
+                    conn_name == connection_id
+                ) or (
+                    conn_name.lower() in connection_id.lower()
+                    and interface_name != None
+                    and interface_name == dev_name
+                )
+            ):
+                return_dict = {"connection_id": connection_id}
+                if return_settings_path:
+                    return_dict["settings_path"] = iterated_connection
+                if return_device_path:
+                    return_dict["device_path"] = self.get_connection_device_path( # noqa
+                        iterated_connection
+                    )
+                if return_active_conn_path and is_active:
+                    return_dict["active_conn_path"] = self.get_active_connection( # noqa
+                        get_by_settings_path=iterated_connection
+                    )
+
+                return return_dict
 
         return {}
 
@@ -132,6 +133,17 @@ class DbusGetWrapper():
         """
         nm_interface = self.get_network_manager_interface()
         nm_interface.DeactivateConnection(connection_path)
+
+    def delete_connection(self, connection_settings_path):
+        """Disconnect active connection.
+
+        Args:
+            connection_path (string): path to active connection
+        """
+        connection_settings_interface = self.get_all_conn_settings_interface(
+            connection_settings_path
+        )
+        connection_settings_interface.Delete()
 
     def check_active_vpn_conn(self, active_conn):
         """Check if active connection is VPN.
@@ -213,8 +225,9 @@ class DbusGetWrapper():
         connections = self.get_all_conns()
         for connection in connections:
             try:
-                all_settings, iface = self.get_all_conn_settings(
-                    connection, return_iface=True
+                iface = self.get_all_conn_settings_interface(connection)
+                all_settings = self.get_all_conn_settings(
+                    connection
                 )
             except dbus.exceptions.DBusException as e:
                 logger.exception(e)
@@ -326,7 +339,16 @@ class DbusGetWrapper():
 
         return None
 
-    def get_all_conn_settings(self, conn, return_iface=False):
+    def get_all_conn_settings_interface(self, connection_object):
+        proxy = self.bus.get_object(
+            "org.freedesktop.NetworkManager", connection_object
+        )
+        iface = dbus.Interface(
+            proxy, "org.freedesktop.NetworkManager.Settings.Connection"
+        )
+        return iface
+
+    def get_all_conn_settings(self, conn):
         """Get all settings of a connection.
 
         Args:
@@ -334,20 +356,12 @@ class DbusGetWrapper():
             return_iface (bool): also return the interface
 
         Returns:
-            dict | tuple:
+            dict | interface:
                 dict: only properties are returned
                 tuple: dict with properties is returned
                     and also the interface to the connection
         """
-        proxy = self.bus.get_object(
-            "org.freedesktop.NetworkManager", conn
-        )
-        iface = dbus.Interface(
-            proxy, "org.freedesktop.NetworkManager.Settings.Connection"
-        )
-        if return_iface:
-            return (iface.GetSettings(), iface)
-
+        iface = self.get_all_conn_settings_interface(conn)
         return iface.GetSettings()
 
     def get_active_conn_props(self, active_conn):
@@ -397,44 +411,6 @@ class DbusGetWrapper():
         for active_conn in all_active_conns_list:
             yield active_conn
 
-    def get_network_manager_proxy_object(self):
-        """Get network manager proxy object.
-
-        Returns:
-            dbus.proxies.ProxyObject: network manager proxy object
-        """
-        proxy = self.bus.get_object(
-            "org.freedesktop.NetworkManager",
-            self.NETWORK_MANAGER_INTERFACE_NAME
-        )
-        return proxy
-
-    def get_network_manager_interface(self):
-        """Get network manager interface.
-
-        Returns:
-            dbus.proxies.Interface: network manager interface
-        """
-        nm_proxy_object = self.get_network_manager_proxy_object()
-
-        logger.info("Getting NetworkManager interface")
-        nm_interface = dbus.Interface(
-            nm_proxy_object, "org.freedesktop.NetworkManager"
-        )
-        return nm_interface
-
-    def get_network_manager_properties_interface(self):
-        """Get network manager properties interface.
-
-        Returns:
-            dbus.proxies.Interface: network manager proprties interface
-        """
-        nm_proxy_object = self.get_network_manager_proxy_object()
-        nm_interface = dbus.Interface(
-            nm_proxy_object, "org.freedesktop.DBus.Properties"
-        )
-        return nm_interface
-
     def get_network_manager_properties(self):
         """Get all network manager properties.
 
@@ -448,6 +424,25 @@ class DbusGetWrapper():
         )
 
         return nm_properties
+
+    def get_network_manager_settings_interface(self):
+        proxy = self.bus.get_object(
+            "org.freedesktop.NetworkManager",
+            "/org/freedesktop/NetworkManager/Settings"
+        )
+        return proxy
+
+    def get_network_manager_properties_interface(self):
+        """Get network manager properties interface.
+
+        Returns:
+            dbus.proxies.Interface: network manager proprties interface
+        """
+        nm_proxy_object = self.get_network_manager_proxy_object()
+        nm_interface = dbus.Interface(
+            nm_proxy_object, "org.freedesktop.DBus.Properties"
+        )
+        return nm_interface
 
     def get_dbus_object_proprties_interface(self, object_path):
         """Get properties interface for specified object_path.
@@ -464,5 +459,62 @@ class DbusGetWrapper():
 
         properties_interface = dbus.Interface(
             proxy_object, "org.freedesktop.DBus.Properties"
+        )
+        return properties_interface
+
+    def get_network_manager_interface(self):
+        """Get network manager interface.
+
+        Returns:
+            dbus.proxies.Interface: network manager interface
+        """
+        nm_proxy_object = self.get_network_manager_proxy_object()
+        logger.info("Getting NetworkManager interface")
+        nm_interface = dbus.Interface(
+            nm_proxy_object, "org.freedesktop.NetworkManager"
+        )
+        return nm_interface
+
+    def get_network_manager_settings_proxy_object(self):
+        """Get network manager proxy object.
+
+        Returns:
+            dbus.proxies.ProxyObject: network manager proxy object
+        """
+        proxy = self.bus.get_object(
+            "org.freedesktop.NetworkManager",
+            self.NETWORK_MANAGER_INTERFACE_NAME
+        )
+        return proxy
+
+    def get_network_manager_proxy_object(self):
+        """Get network manager proxy object.
+
+        Returns:
+            dbus.proxies.ProxyObject: network manager proxy object
+        """
+        proxy = self.bus.get_object(
+            "org.freedesktop.NetworkManager",
+            self.NETWORK_MANAGER_INTERFACE_NAME
+        )
+        return proxy
+
+    def get_dbus_object_device_interface(self, object_path):
+        """Get Device interface for specified object_path.
+
+        Should only be used on Device type objects.
+
+        Args:
+            object_path (str): path to object
+
+        Returns:
+            dbus.proxies.Interface: properties interface of specified object
+        """
+        proxy_object = self.bus.get_object(
+            "org.freedesktop.NetworkManager", object_path
+        )
+
+        properties_interface = dbus.Interface(
+            proxy_object, "org.freedesktop.NetworkManager.Device"
         )
         return properties_interface

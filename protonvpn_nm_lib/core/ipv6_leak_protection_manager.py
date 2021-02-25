@@ -1,7 +1,7 @@
 import subprocess
 
-import gi
-
+import dbus
+from dbus.mainloop.glib import DBusGMainLoop
 from .. import exceptions
 from ..constants import (IPv6_DUMMY_ADDRESS, IPv6_DUMMY_GATEWAY,
                          IPv6_LEAK_PROTECTION_CONN_NAME,
@@ -9,14 +9,20 @@ from ..constants import (IPv6_DUMMY_ADDRESS, IPv6_DUMMY_GATEWAY,
 from ..enums import KillSwitchInterfaceTrackerEnum, KillSwitchManagerActionEnum
 from ..logger import logger
 from .abstract_interface_manager import AbstractInterfaceManager
-
-gi.require_version("NM", "1.0")
-from gi.repository import NM
+from .dbus_get_wrapper import DbusGetWrapper
 
 
 class IPv6LeakProtectionManager(AbstractInterfaceManager):
     """Manages IPv6 leak protection connection/interfaces."""
     enable_ipv6_leak_protection = True
+
+    # Additional loop needs to be create since SystemBus automatically
+    # picks the default loop, which is intialized with the CLI.
+    # Thus, to refrain SystemBus from using the default loop,
+    # one extra loop is needed only to be passed, while it is never used.
+    # https://dbus.freedesktop.org/doc/dbus-python/tutorial.html#setting-up-an-event-loop
+    dbus_loop = DBusGMainLoop()
+    bus = dbus.SystemBus(mainloop=dbus_loop)
 
     def __init__(
         self,
@@ -35,6 +41,8 @@ class IPv6LeakProtectionManager(AbstractInterfaceManager):
                 KillSwitchInterfaceTrackerEnum.IS_RUNNING: False
             }
         }
+        self.dbus_get_wrapper = DbusGetWrapper()
+        self.dbus_get_wrapper.bus = self.bus
         logger.info("Intialized IPv6 leak protection manager")
 
     def manage(self, action):
@@ -129,33 +137,41 @@ class IPv6LeakProtectionManager(AbstractInterfaceManager):
 
     def update_connection_status(self):
         """Update connection/interface status."""
-        client = NM.Client.new(None)
-        all_conns = client.get_connections()
-        active_conns = client.get_active_connections()
+        all_conns = self.dbus_get_wrapper.get_all_conns()
+        active_conns = self.dbus_get_wrapper.get_all_active_conns()
 
         self.interface_state_tracker[self.conn_name][
             KillSwitchInterfaceTrackerEnum.EXISTS
         ] = False
+
         self.interface_state_tracker[self.conn_name][
             KillSwitchInterfaceTrackerEnum.IS_RUNNING
         ] = False
 
         for conn in all_conns:
             try:
-                self.interface_state_tracker[conn.get_id()]
-            except KeyError:
-                pass
-            else:
-                self.interface_state_tracker[conn.get_id()][
+                conn_name = str(self.dbus_get_wrapper.get_all_conn_settings(
+                    conn
+                )["connection"]["id"])
+            except dbus.exceptions.DBusException:
+                conn_name = "None"
+
+            if conn_name in self.interface_state_tracker:
+                self.interface_state_tracker[conn_name][
                     KillSwitchInterfaceTrackerEnum.EXISTS
                 ] = True
 
         for active_conn in active_conns:
             try:
-                self.interface_state_tracker[active_conn.get_id()]
-            except KeyError:
-                pass
-            else:
-                self.interface_state_tracker[active_conn.get_id()][KillSwitchInterfaceTrackerEnum.IS_RUNNING] = True # noqa
+                conn_name = str(self.dbus_get_wrapper.get_active_conn_props(
+                    conn
+                )["connection"]["id"])
+            except dbus.exceptions.DBusException:
+                conn_name = "None"
+
+            if conn_name in self.interface_state_tracker:
+                self.interface_state_tracker[conn_name][
+                    KillSwitchInterfaceTrackerEnum.IS_RUNNING
+                ] = True
 
         logger.info("IPv6 status: {}".format(self.interface_state_tracker))

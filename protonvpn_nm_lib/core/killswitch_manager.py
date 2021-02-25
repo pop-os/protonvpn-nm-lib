@@ -332,7 +332,7 @@ class KillSwitchManager(AbstractInterfaceManager):
         """
         self.update_connection_status()
         conn_dict = self.dbus_get_wrapper.search_for_connection( # noqa
-            name=conn_name,
+            conn_name,
             return_device_path=True,
             return_settings_path=True
         )
@@ -375,7 +375,7 @@ class KillSwitchManager(AbstractInterfaceManager):
         """
         self.update_connection_status()
         active_conn_dict = self.dbus_get_wrapper.search_for_connection( # noqa
-            name=conn_name, is_active=True,
+            conn_name, is_active=True,
             return_active_conn_path=True
         )
         if (
@@ -432,9 +432,12 @@ class KillSwitchManager(AbstractInterfaceManager):
         self.interface_state_tracker[self.routed_conn_name][KillSwitchInterfaceTrackerEnum.IS_RUNNING] = False  # noqa
 
         for conn in all_conns:
-            conn_name = str(self.dbus_get_wrapper.get_all_conn_settings(
-                conn
-            )["connection"]["id"])
+            try:
+                conn_name = str(self.dbus_get_wrapper.get_all_conn_settings(
+                    conn
+                )["connection"]["id"])
+            except dbus.exceptions.DBusException:
+                conn_name = "None"
 
             if conn_name in self.interface_state_tracker:
                 self.interface_state_tracker[conn_name][
@@ -442,12 +445,17 @@ class KillSwitchManager(AbstractInterfaceManager):
                 ] = True
 
         for active_conn in active_conns:
-            conn_name = str(self.dbus_get_wrapper.get_active_conn_props(
-                active_conn
-            )["Id"])
+            try:
+                conn_name = str(self.dbus_get_wrapper.get_active_conn_props(
+                    conn
+                )["connection"]["id"])
+            except dbus.exceptions.DBusException:
+                conn_name = "None"
 
             if conn_name in self.interface_state_tracker:
-                self.interface_state_tracker[conn_name][KillSwitchInterfaceTrackerEnum.IS_RUNNING] = True # noqa
+                self.interface_state_tracker[conn_name][
+                    KillSwitchInterfaceTrackerEnum.IS_RUNNING
+                ] = True
 
         logger.info("Tracker info: {}".format(self.interface_state_tracker))
 
