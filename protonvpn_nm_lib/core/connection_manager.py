@@ -222,7 +222,7 @@ class ConnectionManager(ConnectionStateManager):
             client=client
         )
 
-        if len(conn) < 2:
+        if len(conn) < 1:
             logger.error(
                 "ConnectionNotFound: Connection not found, "
                 + "raising exception"
@@ -267,7 +267,7 @@ class ConnectionManager(ConnectionStateManager):
             client
         )
 
-        if len(conn) < 2:
+        if len(conn) < 1:
             logger.info("Connection not found")
             return False
 
@@ -303,7 +303,7 @@ class ConnectionManager(ConnectionStateManager):
             client
         )
 
-        if len(conn) < 2:
+        if len(conn) < 1:
             logger.info(
                 "ConnectionNotFound: Connection not found, "
                 + "raising exception"
