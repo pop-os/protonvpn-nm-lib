@@ -121,8 +121,11 @@ class KillSwitchManager(AbstractInterfaceManager):
             server_ip (list | string): ProtonVPN server IP
             pre_attempts (int): number of setup attempts
         """
-        if pre_attempts >= 3:
-            raise Exception("Unable to setup pre-connection ks.")
+        if pre_attempts >= 5:
+            raise exceptions.KillswitchError(
+                "Unable to setup pre-connection ks. "
+                "Exceeded maximum attempts."
+            )
 
         # happy path
         if (
@@ -148,11 +151,11 @@ class KillSwitchManager(AbstractInterfaceManager):
         ):
             self.delete_connection(self.routed_conn_name)
 
-        # check if ks exist start it if it does
+        # check if ks exists. Start it if it does
         if (
-            not self.interface_state_tracker[
+            self.interface_state_tracker[
                 self.ks_conn_name
-            ][KillSwitchInterfaceTrackerEnum.IS_RUNNING]
+            ][KillSwitchInterfaceTrackerEnum.EXISTS]
         ):
             self.activate_connection(self.ks_conn_name)
 
@@ -176,8 +179,11 @@ class KillSwitchManager(AbstractInterfaceManager):
         Args:
             post_attempts (int): number of setup attempts
         """
-        if post_attempts >= 3:
-            raise Exception("Unable to setup post-connection ks.")
+        if post_attempts >= 5:
+            raise exceptions.KillswitchError(
+                "Unable to setup post-connection ks. "
+                "Exceeded maximum attempts."
+            )
 
         # happy path
         if (
@@ -425,7 +431,6 @@ class KillSwitchManager(AbstractInterfaceManager):
         """Update connection/interface status."""
         all_conns = self.dbus_get_wrapper.get_all_conns()
         active_conns = self.dbus_get_wrapper.get_all_active_conns()
-
         self.interface_state_tracker[self.ks_conn_name][KillSwitchInterfaceTrackerEnum.EXISTS] = False # noqa
         self.interface_state_tracker[self.routed_conn_name][KillSwitchInterfaceTrackerEnum.EXISTS] = False  # noqa
         self.interface_state_tracker[self.ks_conn_name][KillSwitchInterfaceTrackerEnum.IS_RUNNING] = False # noqa
@@ -447,8 +452,8 @@ class KillSwitchManager(AbstractInterfaceManager):
         for active_conn in active_conns:
             try:
                 conn_name = str(self.dbus_get_wrapper.get_active_conn_props(
-                    conn
-                )["connection"]["id"])
+                    active_conn
+                )["Id"])
             except dbus.exceptions.DBusException:
                 conn_name = "None"
 
