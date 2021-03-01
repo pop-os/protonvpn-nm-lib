@@ -1,4 +1,3 @@
-import subprocess
 from ipaddress import ip_network
 
 import dbus
@@ -14,6 +13,7 @@ from ..enums import (KillSwitchInterfaceTrackerEnum,
 from ..logger import logger
 from .abstract_interface_manager import AbstractInterfaceManager
 from .dbus_get_wrapper import DbusGetWrapper
+from .subprocess_wrapper import subprocess
 
 
 class KillSwitchManager(AbstractInterfaceManager):
