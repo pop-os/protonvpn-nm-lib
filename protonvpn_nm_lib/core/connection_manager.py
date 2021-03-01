@@ -22,6 +22,9 @@ class ConnectionManager(ConnectionStateManager):
         self,
         virtual_device_name=VIRTUAL_DEVICE_NAME
     ):
+        # https://lazka.github.io/pgi-docs/NM-1.0/classes/Client.html
+        self.client = NM.Client.new(None)
+        self.main_loop = GLib.MainLoop()
         self.virtual_device_name = virtual_device_name
 
     def add_connection(
@@ -80,10 +83,6 @@ class ConnectionManager(ConnectionStateManager):
             )
             raise ValueError(err_msg)
 
-        # https://lazka.github.io/pgi-docs/NM-1.0/classes/Client.html
-        client = NM.Client.new(None)
-        main_loop = GLib.MainLoop()
-
         connection = PluginManager.import_connection_from_file(
             filename
         )
@@ -104,19 +103,19 @@ class ConnectionManager(ConnectionStateManager):
                 server_ip=entry_ip
             )
 
-        client.add_connection_async(
+        self.client.add_connection_async(
             connection,
             True,
             None,
             self.dynamic_callback,
             dict(
                 callback_type="add",
-                main_loop=main_loop,
+                # main_loop=self.main_loop,
                 conn_name=connection.get_id(),
             )
         )
 
-        main_loop.run()
+        self.main_loop.run()
 
     def make_vpn_user_owned(self, connection_settings):
         # returns NM.SettingConnection
@@ -214,12 +213,9 @@ class ConnectionManager(ConnectionStateManager):
     def start_connection(self):
         """Start ProtonVPN connection."""
         logger.info("Starting VPN connection")
-        client = NM.Client.new(None)
-        main_loop = GLib.MainLoop()
 
         conn = self.get_protonvpn_connection(
-            NetworkManagerConnectionTypeEnum.ALL,
-            client=client
+            NetworkManagerConnectionTypeEnum.ALL
         )
 
         if len(conn) < 1:
@@ -234,7 +230,7 @@ class ConnectionManager(ConnectionStateManager):
         conn_name = conn[1]
         conn = conn[0]
 
-        client.activate_connection_async(
+        self.client.activate_connection_async(
             conn,
             None,
             None,
@@ -242,29 +238,23 @@ class ConnectionManager(ConnectionStateManager):
             self.dynamic_callback,
             dict(
                 callback_type="start",
-                main_loop=main_loop,
+                # main_loop=self.main_loop,
                 conn_name=conn_name
             )
         )
 
-        main_loop.run()
+        self.main_loop.run()
         self.save_connected_time()
 
-    def stop_connection(self, client=None):
+    def stop_connection(self):
         """Stop ProtonVPN connection.
 
         Args(optional):
             client (NM.Client): new NetworkManager Client object
         """
         logger.info("Stopping VPN connection")
-        if not client:
-            client = NM.Client.new(None)
-
-        main_loop = GLib.MainLoop()
-
         conn = self.get_protonvpn_connection(
-            NetworkManagerConnectionTypeEnum.ACTIVE,
-            client
+            NetworkManagerConnectionTypeEnum.ACTIVE
         )
 
         if len(conn) < 1:
@@ -274,18 +264,18 @@ class ConnectionManager(ConnectionStateManager):
         conn_name = conn[1]
         conn = conn[0]
 
-        client.deactivate_connection_async(
+        self.client.deactivate_connection_async(
             conn,
             None,
             self.dynamic_callback,
             dict(
                 callback_type="stop",
-                main_loop=main_loop,
+                # main_loop=self.main_loop,
                 conn_name=conn_name
             )
         )
 
-        main_loop.run()
+        self.main_loop.run()
 
     def remove_connection(
         self,
@@ -296,11 +286,8 @@ class ConnectionManager(ConnectionStateManager):
     ):
         """Stop and remove ProtonVPN connection."""
         logger.info("Removing VPN connection")
-        client = NM.Client.new(None)
-        main_loop = GLib.MainLoop()
         conn = self.get_protonvpn_connection(
-            NetworkManagerConnectionTypeEnum.ALL,
-            client
+            NetworkManagerConnectionTypeEnum.ALL
         )
 
         if len(conn) < 1:
@@ -312,7 +299,7 @@ class ConnectionManager(ConnectionStateManager):
                 "ProtonVPN connection was not found"
             )
 
-        self.stop_connection(client)
+        self.stop_connection()
 
         conn_name = conn[1]
         conn = conn[0]
@@ -331,12 +318,12 @@ class ConnectionManager(ConnectionStateManager):
             self.dynamic_callback,
             dict(
                 callback_type="remove",
-                main_loop=main_loop,
+                # main_loop=self.main_loop,
                 conn_name=conn_name
             )
         )
 
-        main_loop.run()
+        self.main_loop.run()
 
     def is_internet_connection_available(self, ks_status):
         logger.info("Checking internet connectivity")
@@ -393,28 +380,28 @@ class ConnectionManager(ConnectionStateManager):
         """
         callback_type = data.get("callback_type")
         logger.info("Callback type: \"{}\"".format(callback_type))
-        main_loop = data.get("main_loop")
+        # main_loop = data.get("main_loop")
         conn_name = data.get("conn_name")
 
         try:
             callback_type_dict = dict(
                 remove=dict(
-                    finish_function=client.delete_finish,
+                    finish_function=NM.Client.delete_finish,
                     msg="removed"
                 )
             )
         except AttributeError:
             callback_type_dict = dict(
                 add=dict(
-                    finish_function=client.add_connection_finish,
+                    finish_function=NM.Client.add_connection_finish,
                     msg="added"
                 ),
                 start=dict(
-                    finish_function=client.activate_connection_finish,
+                    finish_function=NM.Client.activate_connection_finish,
                     msg="started"
                 ),
                 stop=dict(
-                    finish_function=client.deactivate_connection_finish,
+                    finish_function=NM.Client.deactivate_connection_finish,
                     msg="stopped"
                 )
             )
@@ -429,7 +416,7 @@ class ConnectionManager(ConnectionStateManager):
         except Exception as e:
             logger.exception("Exception: {}".format(e))
 
-        main_loop.quit()
+        self.main_loop.quit()
 
     def extract_virtual_device_type(self, filename):
         """Extract virtual device type from .ovpn file.
@@ -486,8 +473,9 @@ class ConnectionManager(ConnectionStateManager):
         vpn_settings.add_data_item("dev", self.virtual_device_name)
         vpn_settings.add_data_item("dev-type", virtual_device_type)
 
+
     def get_protonvpn_connection(
-        self, network_manager_connection_type, client=None
+        self, network_manager_connection_type
     ):
         """Get ProtonVPN connection.
 
@@ -506,12 +494,9 @@ class ConnectionManager(ConnectionStateManager):
         ))
         return_conn = []
 
-        if not client:
-            client = NM.Client.new(None)
-
         connection_types = {
-            NetworkManagerConnectionTypeEnum.ALL: client.get_connections,
-            NetworkManagerConnectionTypeEnum.ACTIVE: client.get_active_connections # noqa
+            NetworkManagerConnectionTypeEnum.ALL: self.client.get_connections,
+            NetworkManagerConnectionTypeEnum.ACTIVE: self.client.get_active_connections # noqa
         }
 
         connections_list = connection_types[network_manager_connection_type]()
