@@ -8,7 +8,8 @@ from proton import ProtonError
 
 from common import (PWD, RAW_LOADS_LIST, RAW_SERVER_LIST, MetadataEnum,
                     ProtonSessionAPIMethodEnum, ProtonSessionWrapper,
-                    UserManager, UserConfigurationManager, exceptions)
+                    TestServernameEnum, UserConfigurationManager, UserManager,
+                    exceptions)
 
 TEST_KEYRING_SERVICE = "TestServerManager"
 TEST_KEYRING_SESSIONDATA = "TestServerManSessionData"
@@ -538,7 +539,9 @@ class TestProtonSessionWrapperFullCache():
         with open(TEST_CACHED_SERVERLIST) as f:
             file = json.load(f)
 
-            assert file["LogicalServers"][0]["Name"] == "TEST#5"
+            assert file[
+                "LogicalServers"
+            ][0]["Name"] == TestServernameEnum.TEST_5.value
 
     @pytest.mark.parametrize(
         "error", [

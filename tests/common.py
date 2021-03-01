@@ -1,20 +1,10 @@
 import json
 import os
+from enum import Enum
 
 from protonvpn_nm_lib import exceptions
 from protonvpn_nm_lib.constants import (CACHED_OPENVPN_CERTIFICATE,
                                         ENV_CI_NAME, NETSHIELD_STATUS_DICT)
-from protonvpn_nm_lib.enums import (ClientSuffixEnum, ConnectionMetadataEnum,
-                                    KillswitchStatusEnum,
-                                    LastConnectionMetadataEnum,
-                                    MetadataActionEnum, MetadataEnum,
-                                    NetshieldStatusEnum,
-                                    NetshieldTranslationEnum,
-                                    NetworkManagerConnectionTypeEnum,
-                                    ProtocolEnum, ProtocolImplementationEnum,
-                                    ProtonSessionAPIMethodEnum,
-                                    UserSettingConnectionEnum,
-                                    UserSettingStatusEnum)
 from protonvpn_nm_lib.core.certificate_manager import CertificateManager
 from protonvpn_nm_lib.core.connection_manager import ConnectionManager
 from protonvpn_nm_lib.core.connection_state_manager import \
@@ -24,14 +14,36 @@ from protonvpn_nm_lib.core.ipv6_leak_protection_manager import \
 from protonvpn_nm_lib.core.killswitch_manager import KillSwitchManager
 from protonvpn_nm_lib.core.metadata_manager import MetadataManager
 from protonvpn_nm_lib.core.plugin_manager import PluginManager
-from protonvpn_nm_lib.core.proton_session_wrapper import \
-    ProtonSessionWrapper
+from protonvpn_nm_lib.core.proton_session_wrapper import ProtonSessionWrapper
 from protonvpn_nm_lib.core.reconnector_manager import ReconnectorManager
 from protonvpn_nm_lib.core.server_manager import ServerManager
 from protonvpn_nm_lib.core.user_configuration_manager import \
     UserConfigurationManager
 from protonvpn_nm_lib.core.user_manager import UserManager
 from protonvpn_nm_lib.core.user_session_manager import UserSessionManager
+from protonvpn_nm_lib.enums import (ClientSuffixEnum, ConnectionMetadataEnum,
+                                    ConnectionTypeEnum, KillswitchStatusEnum,
+                                    LastConnectionMetadataEnum,
+                                    MetadataActionEnum, MetadataEnum,
+                                    NetshieldStatusEnum,
+                                    NetshieldTranslationEnum,
+                                    NetworkManagerConnectionTypeEnum,
+                                    ProtocolEnum, ProtocolImplementationEnum,
+                                    ProtonSessionAPIMethodEnum,
+                                    UserSettingConnectionEnum,
+                                    UserSettingStatusEnum)
+
+
+class TestServernameEnum(Enum):
+    TEST_5 = "TE-TEST#5"
+    TEST_6 = "TE-TEST#6"
+    TEST_SC_7 = "TE-SECURECORE#7"
+    TEST_TOR_8 = "TE-TOR#8"
+    TEST_P2P_9 = "TE-P2P#9"
+    TEST_STREAM_10 = "TE-STREAMING#10"
+    TEST_IPV6_11 = "TE-IPV6#11"
+    TEST_DISABLED_11 = "TE-DISABLED#12"
+
 
 MOCK_SESSIONDATA = {
     "api_url": "https://localhost",
@@ -60,6 +72,7 @@ MOCK_SESSIONDATA = {
     }
 }
 
+
 MOCK_USER_DATA = {
     'Code': 1000,
     'VPN': {
@@ -82,7 +95,7 @@ MOCK_USER_DATA = {
 
 SERVERS = [
     {
-        "Name": "TEST#5",
+        "Name": TestServernameEnum.TEST_5.value,
         "EntryCountry": "PT",
         "ExitCountry": "PT",
         "Domain": "pt-89.webtest.com",
@@ -109,7 +122,7 @@ SERVERS = [
         "Load": 11, "Score": 1.00316551
     },
     {
-        "Name": "TEST#6",
+        "Name": TestServernameEnum.TEST_6.value,
         "EntryCountry": "PT",
         "ExitCountry": "PT",
         "Domain": "pt-99.webtest.com",
@@ -132,7 +145,7 @@ SERVERS = [
         ], "Load": 6, "Score": 1.00283101
     },
     {
-        "Name": "TEST_SECURE_CORE#7",
+        "Name": TestServernameEnum.TEST_SC_7.value,
         "EntryCountry": "PT",
         "ExitCountry": "PT",
         "Domain": "pt-99.webtest.com",
@@ -155,7 +168,7 @@ SERVERS = [
         ], "Load": 6, "Score": 1.00183101
     },
     {
-        "Name": "TEST_TOR#8",
+        "Name": TestServernameEnum.TEST_TOR_8.value,
         "EntryCountry": "CH",
         "ExitCountry": "CH",
         "Domain": "ch-99.webtest.com",
@@ -178,7 +191,7 @@ SERVERS = [
         ], "Load": 6, "Score": 1.00083101
     },
     {
-        "Name": "TEST_P2P#9",
+        "Name": TestServernameEnum.TEST_P2P_9.value,
         "EntryCountry": "CH",
         "ExitCountry": "CH",
         "Domain": "ch-99.webtest.com",
@@ -201,7 +214,7 @@ SERVERS = [
         ], "Load": 6, "Score": 1.00073101
     },
     {
-        "Name": "TEST_STREAMING#10",
+        "Name": TestServernameEnum.TEST_STREAM_10.value,
         "EntryCountry": "CH",
         "ExitCountry": "CH",
         "Domain": "ch-99.webtest.com",
@@ -224,7 +237,7 @@ SERVERS = [
         ], "Load": 6, "Score": 1.00063101
     },
     {
-        "Name": "TEST_IPV6#11",
+        "Name": TestServernameEnum.TEST_IPV6_11.value,
         "EntryCountry": "CH",
         "ExitCountry": "CH",
         "Domain": "ch-99.webtest.com",
@@ -247,7 +260,7 @@ SERVERS = [
         ], "Load": 6, "Score": 1.00053101
     },
     {
-        "Name": "TEST_DISABLED#12",
+        "Name": TestServernameEnum.TEST_DISABLED_11.value,
         "EntryCountry": "CH",
         "ExitCountry": "CH",
         "Domain": "ch-99.webtest.com",

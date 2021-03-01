@@ -5,11 +5,12 @@ from unittest.mock import patch
 
 import pytest
 
-from common import (PWD, CACHED_OPENVPN_CERTIFICATE, MOCK_DATA_JSON,
-                    MOCK_SESSIONDATA, RAW_SERVER_LIST, SERVERS,
+from common import (CACHED_OPENVPN_CERTIFICATE, MOCK_DATA_JSON,
+                    MOCK_SESSIONDATA, PWD, RAW_SERVER_LIST, SERVERS,
                     TEST_CACHED_SERVERFILE, CertificateManager,
-                    ProtonSessionWrapper, ServerManager, UserManager,
-                    UserConfigurationManager, MetadataEnum, ProtocolEnum)
+                    ConnectionTypeEnum, MetadataEnum, ProtocolEnum,
+                    ProtonSessionWrapper, ServerManager, TestServernameEnum,
+                    UserConfigurationManager, UserManager)
 
 TEST_KEYRING_SERVICE = "TestServerManager"
 TEST_KEYRING_SESSIONDATA = "TestServerManSessionData"
@@ -139,7 +140,7 @@ class TestUnitServerManager:
             filtered_servers,
             servers
         ) = self.server_man.get_config_for_specific_server(
-            servername="TEST#5"
+            servername=TestServernameEnum.TEST_5.value
         )
         servers = self.server_man.get_physical_server_list(
             servername, SERVERS, filtered_servers
@@ -154,7 +155,7 @@ class TestUnitServerManager:
             filtered_servers,
             servers
         ) = self.server_man.get_config_for_specific_server(
-            servername="TEST#5"
+            servername=TestServernameEnum.TEST_5.value
         )
         servers = self.server_man.get_physical_server_list(
             servername, servers, filtered_servers
@@ -172,7 +173,7 @@ class TestUnitServerManager:
             filtered_servers,
             servers
         ) = self.server_man.get_config_for_specific_server(
-            servername="TEST#6"
+            servername=TestServernameEnum.TEST_6.value
         )
         servers = self.server_man.get_physical_server_list(
             servername, servers, filtered_servers
@@ -190,7 +191,7 @@ class TestUnitServerManager:
             filtered_servers,
             servers
         ) = self.server_man.get_config_for_specific_server(
-            servername="TEST#6"
+            servername=TestServernameEnum.TEST_6.value
         )
         servers = self.server_man.get_physical_server_list(
             servername, servers, filtered_servers
@@ -208,7 +209,7 @@ class TestUnitServerManager:
             filtered_servers,
             servers
         ) = self.server_man.get_config_for_specific_server(
-            servername="TEST#6"
+            servername=TestServernameEnum.TEST_6.value
         )
         servers = self.server_man.get_physical_server_list(
             servername, servers, filtered_servers
@@ -239,7 +240,7 @@ class TestUnitServerManager:
     @pytest.mark.parametrize(
         "servername",
         [
-            "TEST#6", "TEST#5",
+            TestServernameEnum.TEST_6.value, TestServernameEnum.TEST_5.value,
         ]
     )
     def test_correct_extract_server_value(self, servername):
@@ -396,7 +397,7 @@ class TestIntegrationServerManager:
     def test_correct_generate_connect_fastest(self, mock_api_request):
         mock_api_request.side_effect = [RAW_SERVER_LIST]
         servername, *rest = self.server_man.get_config_for_fastest_server()
-        assert servername == "TEST_IPV6#11"
+        assert servername == TestServernameEnum.TEST_IPV6_11.value
 
     def test_correct_generate_connect_country(self):
         (
@@ -405,11 +406,11 @@ class TestIntegrationServerManager:
         ) = self.server_man.get_config_for_fastest_server_in_country(
             country_code="PT",
         )
-        assert servername == "TEST#6"
+        assert servername == TestServernameEnum.TEST_6.value
 
     def test_correct_generate_connect_direct(self, mock_api_request):
         mock_api_request.side_effect = [RAW_SERVER_LIST]
-        server = "TEST#6"
+        server = TestServernameEnum.TEST_6.value
         (
             servername,
             *rest
@@ -420,11 +421,14 @@ class TestIntegrationServerManager:
 
     @pytest.mark.parametrize(
         "feature,servername", [
-            ("sc", "TEST_SECURE_CORE#7"),
-            ("tor", "TEST_TOR#8"),
-            ("p2p", "TEST_P2P#9"),
-            ("stream", "TEST_STREAMING#10"),
-            ("ipv6", "TEST_IPV6#11")
+            (
+                ConnectionTypeEnum.SECURE_CORE,
+                TestServernameEnum.TEST_SC_7.value
+            ),
+            (ConnectionTypeEnum.TOR, TestServernameEnum.TEST_TOR_8.value),
+            (ConnectionTypeEnum.PEER2PEER, TestServernameEnum.TEST_P2P_9.value),
+            ("to-add-streaming", TestServernameEnum.TEST_STREAM_10.value),
+            ("to-add-ipv6", TestServernameEnum.TEST_IPV6_11.value)
         ]
     )
     def test_correct_generate_connect_feature(self, feature, servername):
