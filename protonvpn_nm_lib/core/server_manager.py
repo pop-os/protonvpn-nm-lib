@@ -4,7 +4,7 @@ import re
 
 from .. import exceptions
 from ..constants import CACHED_SERVERLIST
-from ..enums import FeatureEnum, UserSettingStatusEnum, ProtocolEnum
+from ..enums import FeatureEnum, UserSettingStatusEnum, ProtocolEnum, ConnectionTypeEnum
 from ..logger import logger
 from . import capture_exception
 from .connection_state_manager import ConnectionStateManager
@@ -156,7 +156,14 @@ class ServerManager(ConnectionStateManager):
         if isinstance(servername, list):
             servername = servername[1]
 
-        servername = servername.upper()
+        try:
+            servername = servername.upper()
+        except AttributeError:
+            raise ValueError(
+                "Expected string for servername (not {})".format(
+                    type(servername)
+                )
+            )
 
         if not self.is_servername_valid(servername):
             err_msg = "Invalid servername {}".format(servername)
@@ -193,7 +200,7 @@ class ServerManager(ConnectionStateManager):
         """Get configuration to fastest server based on specified feature.
 
         Args:
-            feature (string): literal feature [p2p|tor|sc]
+            feature (ConnectionTypeEnum)
 
         Returns:
             tuple
@@ -201,12 +208,12 @@ class ServerManager(ConnectionStateManager):
         servers = self.extract_server_list()
 
         allowed_features = {
-            "normal": FeatureEnum.NORMAL,
-            "sc": FeatureEnum.SECURE_CORE,
-            "tor": FeatureEnum.TOR,
-            "p2p": FeatureEnum.P2P,
-            "stream": FeatureEnum.STREAMING,
-            "ipv6": FeatureEnum.IPv6
+            "none": FeatureEnum.NORMAL,
+            ConnectionTypeEnum.SECURE_CORE: FeatureEnum.SECURE_CORE,
+            ConnectionTypeEnum.TOR: FeatureEnum.TOR,
+            ConnectionTypeEnum.PEER2PEER: FeatureEnum.P2P,
+            "to-add-streaming": FeatureEnum.STREAMING,
+            "to-add-ipv6": FeatureEnum.IPv6
         }
 
         if feature not in allowed_features:
@@ -215,14 +222,10 @@ class ServerManager(ConnectionStateManager):
             ))
             raise ValueError("Feature is non-existent")
 
-        # exclude all other features except the selected one
+        feature = allowed_features[feature]
         filtered_servers = self.filter_servers(
             servers,
-            exclude_features=[
-                v
-                for k, v in allowed_features.items()
-                if not allowed_features[feature] == v
-            ]
+            include_features=[feature],
         )
 
         if len(filtered_servers) == 0:
@@ -382,13 +385,16 @@ class ServerManager(ConnectionStateManager):
 
     def filter_servers(
         self, servers,
-        exclude_features=None, connect_to_country=None, servername=None
+        exclude_features=None, include_features=None,
+        connect_to_country=None, servername=None
     ):
         """Filter servers based specified input.
 
         Args:
             servers (list(dict)): a list containing raw servers info
             exclude_features (list): [FeatureEnum.TOR, ...] (optional)
+            include_features (list): [FeatureEnum.TOR, ...] (optional)
+                exclude_features and include_features are mutually exclusive.
             connect_to_country (string): country code PT|SE|CH (optional)
             servername (string): servername PT#1|SE#5|CH#10 (optional)
 
@@ -397,10 +403,18 @@ class ServerManager(ConnectionStateManager):
         """
         logger.info("Filtering servers")
         user_tier = self.fetch_user_tier()
+        if (
+            exclude_features and include_features
+            or exclude_features != None and include_features != None
+        ):
+            raise ValueError(
+                "Pass features to either exclude or "
+                "include, but not both."
+            )
 
         filtered_servers = []
         for server in servers:
-            random_server_feature = FeatureEnum(server["Features"] or 0)
+            server_feature = FeatureEnum(server["Features"] or 0)
             if (
                 server["Tier"] <= user_tier
             ) and (
@@ -408,9 +422,13 @@ class ServerManager(ConnectionStateManager):
             ) and (
                 (
                     not exclude_features
+                    and not include_features
                 ) or (
                     exclude_features
-                    and random_server_feature not in exclude_features
+                    and server_feature not in exclude_features
+                ) or (
+                    include_features
+                    and server_feature in include_features
                 )
             ) and (
                 (
@@ -566,36 +584,6 @@ class ServerManager(ConnectionStateManager):
             )
             raise TypeError(err_msg)
 
-        servername = servername.upper()
+        re_compile = re.compile(r"^(\w\w)(-\w+)?#(\w+-)?(\w+)$")
 
-        re_short = re.compile(r"^((\w\w)(-|#)?(\w+)-?(\w+)?)$")
-        # For long format (IS-DE-01 | Secure-Core/Free/US Servers)
-        re_long = re.compile(
-            r"^(((\w\w)(-|#)?([A-Z]{2}|FREE))(-|#)?(\w+)-?(\w+)?)$"
-        )
-        return_servername = False
-
-        if re_short.search(servername):
-            user_server = re_short.search(servername)
-
-            country_code = user_server.group(2)
-            number = user_server.group(4).lstrip("0")
-            tor = user_server.group(5)
-            servername = "{0}#{1}".format(country_code, number)
-            return_servername = servername + "{0}".format(
-                '-' + tor if tor is not None else ''
-            )
-
-        elif re_long.search(servername):
-            user_server = re_long.search(servername)
-            country_code = user_server.group(3)
-            country_code2 = user_server.group(5)
-            number = user_server.group(7).lstrip("0")
-            tor = user_server.group(8)
-            return_servername = "{0}-{1}#{2}".format(
-                country_code, country_code2, number
-            ) + "{0}".format(
-                '-' + tor if tor is not None else ''
-            )
-
-        return False if not return_servername else True
+        return False if not re_compile.search(servername) else True
