@@ -268,20 +268,21 @@ class API():
         """
         return self.country.extract_country_name(country_code)
 
-    def _check_country_exists(self, country_code):
+    def _ensure_country_exists(self, country_code):
         """Checks if given country code exists.
 
         This is checked during protonvpn._setup_connection()
         and protonvpn._setup_reconnection().
         Can be used whenever needed.
 
+        Throws ValueError if country is not found for the
+        given country code.
+
         Args:
             country_code (string): ISO format
 
-        Returns:
-            bool
         """
-        return self.server_list._check_country_exists(country_code)
+        return self.server_list._ensure_country_exists(country_code)
 
     def _get_filtered_server_list(self, server_list):
         """Get filtered server list.
