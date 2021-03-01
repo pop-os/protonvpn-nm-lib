@@ -120,28 +120,18 @@ class ProtonVPNConnect():
         Returns:
             dict: contains connection information to be displayed for the user.
         """
-        servername = None
+        if connection_type == ConnectionTypeEnum.COUNTRY:
+            self.country._ensure_country_exists(connection_type_extra_arg)
         if connection_type == ConnectionTypeEnum.SERVERNAME:
-            servername = connection_type_extra_arg
-        elif (
-            connection_type == ConnectionTypeEnum.COUNTRY
-            and not self.country._check_country_exists(
+            self.server._ensure_servername_is_valid(
                 connection_type_extra_arg
-            )
-        ):
-            raise exceptions.InvalidCountryCode(
-                "The provided country code \"{}\" is invalid.".format(
-                    connection_type_extra_arg
-                )
             )
 
         self.connection_type = connection_type
         self.connection_type_extra_arg = connection_type_extra_arg
 
-        if servername: self.server._ensure_servername_is_valid(servername) # noqa
-
-        self.__user_session = self.session._get_session()
-        self.session._ensure_session_is_valid(self.__user_session)
+        if connection_type not in [ConnectionTypeEnum.SERVERNAME, ConnectionTypeEnum.COUNTRY]:
+            self.connection_type_extra_arg = connection_type
 
         if not self._is_protocol_valid(protocol):
             protocol = ProtocolEnum(
@@ -152,9 +142,10 @@ class ProtonVPNConnect():
 
         logger.info("Setup protocol: {}".format(protocol))
 
+        self.__user_session = self.session._get_session()
+        self.session._ensure_session_is_valid(self.__user_session)
         self.__server_manager.killswitch_status = self.__user_conf_manager.killswitch # noqa
         logger.info("Setup killswitch user setting")
-
         self.session._ensure_connectivity()
         logger.info("Checked for internet and api connectivity")
 
