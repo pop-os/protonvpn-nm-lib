@@ -17,7 +17,7 @@ class MetadataManager():
 
     def manage_metadata(self, action, metadata_type, metadata=None):
         """Metadata manager."""
-        logger.info(
+        logger.debug(
             "Metadata manager \"action: {} - Metadata type: {}\"".format(
                 action,
                 metadata_type
@@ -47,17 +47,17 @@ class MetadataManager():
         Returns:
             json/dict
         """
-        logger.info("Getting metadata from \"{}\"".format(metadata_type))
+        logger.debug("Getting metadata from \"{}\"".format(metadata_type))
         with open(self.METADATA_DICT[metadata_type]) as f:
             metadata = json.load(f)
-            logger.info("Successfully fetched metadata from file")
+            logger.debug("Successfully fetched metadata from file")
             return metadata
 
     def write_metadata_to_file(self, metadata_type, metadata):
         """Save metadata to file."""
         with open(self.METADATA_DICT[metadata_type], "w") as f:
             json.dump(metadata, f)
-            logger.info(
+            logger.debug(
                 "Successfully saved metadata to \"{}\"".format(metadata_type)
             )
 
@@ -70,23 +70,23 @@ class MetadataManager():
 
     def ensure_metadata_type_is_valid(self, metadata_type):
         """Check metedata type."""
-        logger.info("Checking if {} is valid".format(metadata_type))
+        logger.debug("Checking if {} is valid".format(metadata_type))
         if metadata_type not in self.METADATA_DICT:
             raise exceptions.IllegalMetadataTypeError(
                 "Metadata type not found"
             )
-        logger.info("\"{}\" is valid metadata type".format(metadata_type))
+        logger.debug("\"{}\" is valid metadata type".format(metadata_type))
 
     def check_metadata_exists(self, metadata_type):
         """Check if metadata file exists."""
-        logger.info("Checking if \"{}\" exists".format(metadata_type))
+        logger.debug("Checking if \"{}\" exists".format(metadata_type))
         self.ensure_metadata_type_is_valid(metadata_type)
 
         metadata_exists = False
         if os.path.isfile(self.METADATA_DICT[metadata_type]):
             metadata_exists = True
 
-        logger.info(
+        logger.debug(
             "Metadata \"{}\" \"{}\"".format(
                 metadata_type,
                 ("exists" if metadata_exists else "does not exist")
