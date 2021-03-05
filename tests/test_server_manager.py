@@ -75,12 +75,12 @@ class TestUnitServerManager:
             shutil.rmtree(TEST_CACHED_SERVERFILE)
             os.mkdir(TEST_CACHED_SERVERFILE)
 
-        um.store_data(
+        um.user_session.store_data(
             data=MOCK_SESSIONDATA,
             keyring_username=TEST_KEYRING_SESSIONDATA,
             keyring_service=TEST_KEYRING_SERVICE
         )
-        um.store_data(
+        um.user_session.store_data(
             data=dict(
                 VPN=dict(
                     Name="test_username",
@@ -92,7 +92,7 @@ class TestUnitServerManager:
             keyring_service=TEST_KEYRING_SERVICE,
             store_user_data=True
         )
-        um.store_data(
+        um.user_session.store_data(
             data={"test_proton_username": "test_server_man_user"},
             keyring_username=TEST_KEYRING_PROTON_USER,
             keyring_service=TEST_KEYRING_SERVICE,
@@ -102,9 +102,9 @@ class TestUnitServerManager:
     @classmethod
     def teardown_class(cls):
         shutil.rmtree(TEST_CACHED_SERVERFILE)
-        um.delete_stored_data(TEST_KEYRING_PROTON_USER, TEST_KEYRING_SERVICE)
-        um.delete_stored_data(TEST_KEYRING_SESSIONDATA, TEST_KEYRING_SERVICE)
-        um.delete_stored_data(TEST_KEYRING_USERDATA, TEST_KEYRING_SERVICE)
+        um.user_session.delete_stored_data(TEST_KEYRING_PROTON_USER, TEST_KEYRING_SERVICE)
+        um.user_session.delete_stored_data(TEST_KEYRING_SESSIONDATA, TEST_KEYRING_SERVICE)
+        um.user_session.delete_stored_data(TEST_KEYRING_USERDATA, TEST_KEYRING_SERVICE)
 
     @pytest.fixture
     def mock_api_request(self):
@@ -348,12 +348,12 @@ class TestIntegrationServerManager:
 
     @classmethod
     def setup_class(cls):
-        um.store_data(
+        um.user_session.store_data(
             data=MOCK_SESSIONDATA,
             keyring_username=TEST_KEYRING_SESSIONDATA,
             keyring_service=TEST_KEYRING_SERVICE
         )
-        um.store_data(
+        um.user_session.store_data(
             data=dict(
                 VPN=dict(
                     Name="test_username",
@@ -365,7 +365,7 @@ class TestIntegrationServerManager:
             keyring_service=TEST_KEYRING_SERVICE,
             store_user_data=True
         )
-        um.store_data(
+        um.user_session.store_data(
             data={"test_proton_username": "test_server_man_user"},
             keyring_username=TEST_KEYRING_PROTON_USER,
             keyring_service=TEST_KEYRING_SERVICE,
@@ -380,9 +380,9 @@ class TestIntegrationServerManager:
             os.remove(CACHED_OPENVPN_CERTIFICATE)
         except FileNotFoundError:
             pass
-        um.delete_stored_data(TEST_KEYRING_PROTON_USER, TEST_KEYRING_SERVICE)
-        um.delete_stored_data(TEST_KEYRING_SESSIONDATA, TEST_KEYRING_SERVICE)
-        um.delete_stored_data(TEST_KEYRING_USERDATA, TEST_KEYRING_SERVICE)
+        um.user_session.delete_stored_data(TEST_KEYRING_PROTON_USER, TEST_KEYRING_SERVICE)
+        um.user_session.delete_stored_data(TEST_KEYRING_SESSIONDATA, TEST_KEYRING_SERVICE)
+        um.user_session.delete_stored_data(TEST_KEYRING_USERDATA, TEST_KEYRING_SERVICE)
         os.remove(TEST_CACHED_SERVERLIST)
 
     @pytest.fixture

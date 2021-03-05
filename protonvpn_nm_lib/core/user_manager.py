@@ -7,10 +7,10 @@ from ..constants import (
 from ..enums import ClientSuffixEnum, KeyringEnum
 from ..logger import logger
 from .. import exceptions
-from .user_session_manager import UserSessionManager
+from .user_session import UserSession
 
 
-class UserManager(UserSessionManager):
+class UserManager:
     def __init__(
         self,
         user_conf_manager,
@@ -24,6 +24,7 @@ class UserManager(UserSessionManager):
         self.keyring_userdata = keyring_userdata
         self.keyring_proton_user = keyring_proton_user
         self.user_conf_manager = user_conf_manager
+        self.user_session = UserSession()
 
         logger.info(
 
@@ -58,14 +59,14 @@ class UserManager(UserSessionManager):
         user_data = session.api_request("/vpn")
 
         # Store session data
-        self.store_data(
+        self.user_session.store_data(
             session.dump(),
             self.keyring_sessiondata,
             self.keyring_service
         )
 
         # Store user data
-        self.store_data(
+        self.user_session.store_data(
             user_data,
             self.keyring_userdata,
             self.keyring_service,
@@ -73,7 +74,7 @@ class UserManager(UserSessionManager):
         )
 
         # Store proton username
-        self.store_data(
+        self.user_session.store_data(
             {"proton_username": username},
             self.keyring_proton_user,
             self.keyring_service
@@ -104,7 +105,7 @@ class UserManager(UserSessionManager):
 
         if exceptions.StoredProtonUsernameNotFound not in _pass_check:
             try:
-                self.delete_stored_data(
+                self.user_session.delete_stored_data(
                     self.keyring_proton_user, self.keyring_service
                 )
                 _removed.append("StoredProtonUsername")
@@ -115,7 +116,7 @@ class UserManager(UserSessionManager):
 
         if exceptions.StoredUserDataNotFound not in _pass_check:
             try:
-                self.delete_stored_data(
+                self.user_session.delete_stored_data(
                     self.keyring_userdata, self.keyring_service
                 )
                 _removed.append("StoredUserData")
@@ -126,7 +127,7 @@ class UserManager(UserSessionManager):
 
         if exceptions.StoredSessionNotFound not in _pass_check:
             try:
-                self.delete_stored_data(
+                self.user_session.delete_stored_data(
                     self.keyring_sessiondata, self.keyring_service
                 )
                 _removed.append("StoredSession")
@@ -135,7 +136,7 @@ class UserManager(UserSessionManager):
 
     def get_stored_vpn_credentials(self, session=False):
         """Get OpenVPN credentials from keyring."""
-        stored_user_data = self.get_stored_data(
+        stored_user_data = self.user_session.get_stored_data(
             self.keyring_userdata,
             self.keyring_service,
         )
@@ -155,7 +156,7 @@ class UserManager(UserSessionManager):
         logger.info("Calling api")
         user_data = session.api_request("/vpn")
 
-        self.store_data(
+        self.user_session.store_data(
             user_data,
             self.keyring_userdata,
             self.keyring_service,
@@ -177,7 +178,7 @@ class UserManager(UserSessionManager):
 
     def load_session(self):
         """Load ProtonVPN user session."""
-        return self.load_stored_user_session(
+        return self.user_session.load_stored_user_session(
             self.keyring_sessiondata,
             self.keyring_service
         )
@@ -213,7 +214,7 @@ class UserManager(UserSessionManager):
     @property
     def tier(self):
         """Tier property."""
-        stored_user_data = self.get_stored_data(
+        stored_user_data = self.user_session.get_stored_data(
             self.keyring_userdata,
             self.keyring_service,
         )
@@ -223,7 +224,7 @@ class UserManager(UserSessionManager):
     @property
     def protonvpn_username(self):
         """ProtonVPN username property."""
-        stored_user_data = self.get_stored_data(
+        stored_user_data = self.user_session.get_stored_data(
             self.keyring_proton_user,
             self.keyring_service,
         )

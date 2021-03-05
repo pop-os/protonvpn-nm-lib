@@ -29,13 +29,13 @@ class TestUnitUserManager():
     @classmethod
     def setup_class(cls):
         um = UserManager(user_conf_manager=ucm)
-        um.store_data(
+        um.user_session.store_data(
             data=MOCK_SESSIONDATA,
             keyring_username=TEST_KEYRING_SESSIONDATA,
             keyring_service=TEST_KEYRING_SERVICE,
             store_user_data=False
         )
-        um.store_data(
+        um.user_session.store_data(
             data=dict(
                 VPN=dict(
                     Name="test_username",
@@ -47,7 +47,7 @@ class TestUnitUserManager():
             keyring_service=TEST_KEYRING_SERVICE,
             store_user_data=True
         )
-        um.store_data(
+        um.user_session.store_data(
             data={"test_proton_username": "test_server_man_user"},
             keyring_username=TEST_KEYRING_PROTON_USER,
             keyring_service=TEST_KEYRING_SERVICE,
@@ -57,7 +57,7 @@ class TestUnitUserManager():
     @classmethod
     def teardown_class(cls):
         um = UserManager(user_conf_manager=ucm)
-        um.delete_stored_data(TEST_KEYRING_PROTON_USER, TEST_KEYRING_SERVICE)
+        um.user_session.delete_stored_data(TEST_KEYRING_PROTON_USER, TEST_KEYRING_SERVICE)
         shutil.rmtree(test_user_config_dir)
 
     @pytest.fixture

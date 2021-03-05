@@ -344,7 +344,7 @@ class ProtonSessionWrapper:
 
         # Store session data
         logger.info("Storing new session data")
-        self.user_manager.store_data(
+        self.user_manager.user_session.store_data(
             self.proton_session.dump(),
             self.user_manager.keyring_sessiondata,
             self.user_manager.keyring_service

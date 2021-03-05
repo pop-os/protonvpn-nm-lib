@@ -13,7 +13,11 @@ from ..logger import logger
 from . import capture_exception
 
 
-class UserSessionManager:
+class UserSession:
+    """User Sesssion
+
+    Stores and loads a users session.
+    """
     KEYRING_BACKENDS = [
         keyring.backends.kwallet.DBusKeyring,
         keyring.backends.SecretService.Keyring,
