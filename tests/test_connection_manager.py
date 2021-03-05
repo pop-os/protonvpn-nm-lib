@@ -8,7 +8,7 @@ from gi.repository import NM
 
 from common import (CERT_FOLDER, ENV_CI_NAME, MOCK_SESSIONDATA,
                     PLUGIN_CERT_FOLDER, PWD, CertificateManager,
-                    ConnectionManager, IPv6LeakProtectionManager,
+                    ConnectionManager, IPv6LeakProtection,
                     KillSwitch, KillswitchStatusEnum,
                     NetworkManagerConnectionTypeEnum, ReconnectorManager,
                     UserConfigurationManager, UserManager,
@@ -155,7 +155,7 @@ class TestIntegrationConnectionManager():
 
     @pytest.fixture
     def ipv6_lp_man(self):
-        return IPv6LeakProtectionManager(
+        return IPv6LeakProtection(
             conn_name="test-ipv6-leak-prot",
             iface_name="testipv6intrf0",
         )

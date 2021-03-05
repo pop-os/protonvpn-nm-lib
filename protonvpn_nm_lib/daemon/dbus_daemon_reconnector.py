@@ -42,8 +42,8 @@ from protonvpn_nm_lib.logger import logger
 from protonvpn_nm_lib.core.connection_state_manager import \
     ConnectionStateManager
 from protonvpn_nm_lib.core.dbus_get_wrapper import DbusGetWrapper
-from protonvpn_nm_lib.core.ipv6_leak_protection_manager import \
-    IPv6LeakProtectionManager
+from protonvpn_nm_lib.core.ipv6_leak_protection import \
+    IPv6LeakProtection
 from protonvpn_nm_lib.core.killswitch import KillSwitch
 from protonvpn_nm_lib.core.user_configuration_manager import \
     UserConfigurationManager
@@ -69,7 +69,7 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusGetWrapper):
         )
         self.user_conf_manager = UserConfigurationManager()
         self.ks_manager = KillSwitch(self.user_conf_manager)
-        self.ipv6_leak_manager = IPv6LeakProtectionManager()
+        self.ipv6_leak_manager = IPv6LeakProtection()
         self.virtual_device_name = virtual_device_name
         self.loop = loop
         self.max_attempts = max_attempts

@@ -2,7 +2,7 @@ from .core.certificate_manager import CertificateManager
 from .core.connection_manager import ConnectionManager
 from .core.dbus_dbus_monitor_vpn_connection_start import \
     MonitorVPNConnectionStart
-from .core.ipv6_leak_protection_manager import IPv6LeakProtectionManager
+from .core.ipv6_leak_protection import IPv6LeakProtection
 from .core.killswitch import KillSwitch
 from .core.reconnector_manager import ReconnectorManager
 from .core.server_manager import ServerManager
@@ -33,7 +33,7 @@ class API():
     __server_manager = ServerManager(
         CertificateManager(), __user_manager
     )
-    __ipv6_lp_manager = IPv6LeakProtectionManager()
+    __ipv6_leak_protection = IPv6LeakProtection()
 
     # library
     country = ProtonVPNCountry(__server_manager)
@@ -41,7 +41,7 @@ class API():
         __connection_manager,
         __user_conf_manager,
         __killswitch,
-        __ipv6_lp_manager,
+        __ipv6_leak_protection,
         __reconector_manager
     )
     session = ProtonVPNSession(
@@ -56,7 +56,7 @@ class API():
     )
     disconnect = ProtonVPNDisconnect(
         __connection_manager, __user_conf_manager,
-        __ipv6_lp_manager, __reconector_manager,
+        __ipv6_leak_protection, __reconector_manager,
         __killswitch
     )
     connect = ProtonVPNConnect(
@@ -65,7 +65,7 @@ class API():
         __connection_manager, __server_manager,
         __user_manager, __user_conf_manager,
         __killswitch, MonitorVPNConnectionStart(),
-        __ipv6_lp_manager, __reconector_manager
+        __ipv6_leak_protection, __reconector_manager
     )
     reconnect = ProtonVPNReconnect(
         connect, __server_manager, __user_conf_manager

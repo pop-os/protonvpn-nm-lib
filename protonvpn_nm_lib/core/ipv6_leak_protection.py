@@ -11,7 +11,7 @@ from ..logger import logger
 from .dbus_get_wrapper import DbusGetWrapper
 
 
-class IPv6LeakProtectionManager:
+class IPv6LeakProtection:
     """Manages IPv6 leak protection connection/interfaces."""
     enable_ipv6_leak_protection = True
 
