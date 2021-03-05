@@ -284,7 +284,12 @@ class API():
         """
         return self.server_list._ensure_country_exists(country_code)
 
-    def _get_filtered_server_list(self, server_list):
+    def _get_filtered_server_list(
+        self, server_list, exclude_features=None, include_features=None,
+        country_code=None, ignore_tier=False,
+        ignore_server_status=False
+
+    ):
         """Get filtered server list.
 
         This is checked during protonvpn._setup_connection()
@@ -293,11 +298,27 @@ class API():
 
         Args:
             server_list (list(dict))
+            exclude_features (list): [FeatureEnum.TOR, ...] (optional)
+            include_features (list): [FeatureEnum.TOR, ...] (optional)
+                exclude_features and include_features are mutually exclusive.
+            country_code (string): country code PT|SE|CH (optional)
+                returns servers belonging to specifiec country list.
+            ignore_tier (bool): if user tier should be ignored. Filtering
+                will not take into consideration the user tier. (optional)
+            ignore_server_status (bool): if logical server status is to be
+                ignored. If it is ignored, then servers that are unavaliable
+                will be returned. (optional)
 
         Returns:
             list(dict)
         """
-        return self.server_list._get_filtered_server_list(server_list)
+        return self.server_list._get_filtered_server_list(
+            server_list, exclude_features=exclude_features,
+            include_features=include_features,
+            country_code=country_code,
+            ignore_tier=ignore_tier,
+            ignore_server_status=ignore_server_status
+        )
 
     def _get_server_list(self):
         """Get server list.

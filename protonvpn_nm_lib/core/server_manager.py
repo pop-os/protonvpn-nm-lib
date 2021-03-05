@@ -125,9 +125,9 @@ class ServerManager(ConnectionStateManager):
         filtered_servers = self.filter_servers(
             servers,
             exclude_features=excluded_features,
-            connect_to_country=country_code
+            country_code=country_code
         )
-
+        print(filtered_servers)
         if len(filtered_servers) == 0:
             err_msg = "No available servers could be found for \"{}\".".format(
                 country_code
@@ -386,7 +386,8 @@ class ServerManager(ConnectionStateManager):
     def filter_servers(
         self, servers,
         exclude_features=None, include_features=None,
-        connect_to_country=None, servername=None
+        country_code=None, servername=None, ignore_tier=False,
+        ignore_server_status=False
     ):
         """Filter servers based specified input.
 
@@ -395,14 +396,24 @@ class ServerManager(ConnectionStateManager):
             exclude_features (list): [FeatureEnum.TOR, ...] (optional)
             include_features (list): [FeatureEnum.TOR, ...] (optional)
                 exclude_features and include_features are mutually exclusive.
-            connect_to_country (string): country code PT|SE|CH (optional)
+            country_code (string): country code PT|SE|CH (optional)
+                returns servers belonging to specifiec country list.
+                country_code and servername are mutually exclusive.
             servername (string): servername PT#1|SE#5|CH#10 (optional)
+                ignore_tier (bool): if user tier should be ignored. Filtering
+                will not take into consideration the user tier. (optional)
+            ignore_server_status (bool): if logical server status is to be
+                ignored. If it is ignored, then servers that are unavaliable
+                will be returned. (optional)
 
         Returns:
             list: serverlist extracted from raw json
         """
         logger.info("Filtering servers")
-        user_tier = self.fetch_user_tier()
+        user_tier = None
+        if not ignore_tier:
+            user_tier = self.fetch_user_tier()
+
         if (
             exclude_features and include_features
             or exclude_features != None and include_features != None
@@ -412,13 +423,24 @@ class ServerManager(ConnectionStateManager):
                 "include, but not both."
             )
 
+        if (
+            country_code and servername
+            or country_code != None and servername != None
+        ):
+            raise ValueError(
+                "Servers can be filtered by either servername "
+                "or country code, but not both."
+            )
+
         filtered_servers = []
         for server in servers:
             server_feature = FeatureEnum(server["Features"] or 0)
             if (
-                server["Tier"] <= user_tier
+                not user_tier
+                or user_tier and server["Tier"] <= user_tier
             ) and (
-                server["Status"] == 1
+                not ignore_server_status
+                or ignore_server_status and server["Status"] == 1
             ) and (
                 (
                     not exclude_features
@@ -432,10 +454,10 @@ class ServerManager(ConnectionStateManager):
                 )
             ) and (
                 (
-                    not connect_to_country
+                    not country_code
                 ) or (
-                    connect_to_country
-                    and server["ExitCountry"] == connect_to_country
+                    country_code
+                    and server["ExitCountry"] == country_code
                 )
             ) and (
                 (
@@ -549,7 +571,7 @@ class ServerManager(ConnectionStateManager):
             list: dict with server information
         """
         for server in servers:
-            if server["Name"] == servername and server["Status"]:
+            if server["Name"] == servername:
                 return server[key]
 
         raise IndexError

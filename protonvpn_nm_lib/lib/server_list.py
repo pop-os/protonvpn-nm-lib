@@ -41,18 +41,37 @@ class ProtonVPNServerList:
         self.__server_manager = server_manager
         self.__user_conf_manager = user_conf_manager
 
-    def _get_filtered_server_list(self, server_list):
+    def _get_filtered_server_list(
+        self,
+        server_list, exclude_features,
+        include_features, country_code,
+        ignore_tier, ignore_server_status
+    ):
         """Get filtered server list.
 
         Args:
             server_list (list(dict))
+            exclude_features (list): [FeatureEnum.TOR, ...] (optional)
+            include_features (list): [FeatureEnum.TOR, ...] (optional)
+                exclude_features and include_features are mutually exclusive.
+            country_code (string): country code PT|SE|CH (optional)
+                returns servers belonging to specifiec country list.
+            ignore_tier (bool): if user tier should be ignored. Filtering
+                will not take into consideration the user tier. (optional)
+            ignore_server_status (bool): if logical server status is to be
+                ignored. If it is ignored, then servers that are unavaliable
+                will be returned. (optional)
 
         Returns:
             list(dict)
         """
         try:
             return self.__server_manager.filter_servers(
-                server_list
+                server_list, exclude_features=exclude_features,
+                include_features=include_features,
+                country_code=country_code,
+                ignore_tier=ignore_tier,
+                ignore_server_status=ignore_server_status
             )
         except (exceptions.ProtonVPNException, Exception) as e:
             logger.exception(e)
