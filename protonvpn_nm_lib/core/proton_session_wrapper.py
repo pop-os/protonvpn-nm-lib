@@ -13,10 +13,10 @@ from ..constants import CACHED_SERVERLIST
 from ..enums import (MetadataActionEnum, MetadataEnum,
                      ProtonSessionAPIMethodEnum)
 from ..logger import logger
-from .metadata_manager import MetadataManager
+from .metadata import Metadata
 
 
-class ProtonSessionWrapper(MetadataManager):
+class ProtonSessionWrapper:
     """Proton-client wrapper for improved error handling.
 
     If any HTTP status code is to be managed in a specific way,
@@ -59,6 +59,7 @@ class ProtonSessionWrapper(MetadataManager):
         self.setup_exception_handling()
         self.user_manager = kwargs.pop("user_manager")
         self.proton_session = Session(**kwargs)
+        self.metadata = Metadata()
 
     def api_request(self, *args, **api_kwargs):
         """Wrapper for proton-client api_request.
@@ -101,13 +102,13 @@ class ProtonSessionWrapper(MetadataManager):
     def cache_servers(self):
         """"Cache servers."""
         if (
-            not self.check_metadata_exists(MetadataEnum.SERVER_CACHE)
+            not self.metadata.check_metadata_exists(MetadataEnum.SERVER_CACHE)
             or not os.path.isfile(self.CACHED_SERVERLIST)
         ):
             self.full_cache()
             return
 
-        cache_metadata = self.manage_metadata(
+        cache_metadata = self.metadata.manage_metadata(
             MetadataActionEnum.GET, MetadataEnum.SERVER_CACHE
         )
 
@@ -138,7 +139,7 @@ class ProtonSessionWrapper(MetadataManager):
                 "full_cache_timestamp": str(self.calculate_next_full_cache()),
                 "loads_cache_timestamp": str(self.calculate_next_loads_cache())
             }
-            self.manage_metadata(
+            self.metadata.manage_metadata(
                 MetadataActionEnum.WRITE,
                 MetadataEnum.SERVER_CACHE,
                 metadata
@@ -162,14 +163,14 @@ class ProtonSessionWrapper(MetadataManager):
             "/vpn/loads"
         )
         if not error:
-            metadata = self.manage_metadata(
+            metadata = self.metadata.manage_metadata(
                 MetadataActionEnum.GET, MetadataEnum.SERVER_CACHE
             )
 
             metadata["loads_cache_timestamp"] = str(
                 self.calculate_next_loads_cache()
             )
-            self.manage_metadata(
+            self.metadata.manage_metadata(
                 MetadataActionEnum.WRITE,
                 MetadataEnum.SERVER_CACHE,
                 metadata

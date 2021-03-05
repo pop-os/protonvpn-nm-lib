@@ -3,22 +3,22 @@ import os
 
 import pytest
 
-from common import (PWD, MetadataActionEnum, MetadataEnum, MetadataManager,
+from common import (PWD, MetadataActionEnum, MetadataEnum, Metadata,
                     exceptions)
 
 conn_state_filepath = os.path.join(
-    PWD, "test_metadata_manager.json"
+    PWD, "test_metadata.json"
 )
 last_conn_state_filepath = os.path.join(
-    PWD, "test_last_metadata_manager.json"
+    PWD, "test_last_metadata.json"
 )
 test_create_filepath = os.path.join(
-    PWD, "test_create_metadata_manager.json"
+    PWD, "test_create_metadata.json"
 )
 
 
-class TestMetadataManager():
-    mm = MetadataManager()
+class TestMetadata():
+    mm = Metadata()
     mm.METADATA_DICT = {
         MetadataEnum.CONNECTION: conn_state_filepath,
         MetadataEnum.LAST_CONNECTION: last_conn_state_filepath,

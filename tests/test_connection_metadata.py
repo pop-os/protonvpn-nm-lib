@@ -20,7 +20,7 @@ remove_test_filepath = os.path.join(
 
 class TestConnectionMetadata:
     csm = ConnectionMetadata()
-    csm.METADATA_DICT = {
+    csm.metadata.METADATA_DICT = {
         MetadataEnum.CONNECTION: conn_state_filepath,
         MetadataEnum.LAST_CONNECTION: last_conn_state_filepath,
         MetadataEnum.SERVER_CACHE: remove_test_filepath

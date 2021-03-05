@@ -3,17 +3,19 @@ import time
 
 from ..enums import (ConnectionMetadataEnum, LastConnectionMetadataEnum,
                      MetadataActionEnum, MetadataEnum)
-from .metadata_manager import MetadataManager
+from .metadata import Metadata
 from ..logger import logger
 
 
-class ConnectionMetadata(MetadataManager):
+class ConnectionMetadata:
     """
     Read/Write connection metadata. Stores
     metadata about the current connection
     for displaying connection status and also
     stores for metadata for future reconnections.
     """
+    def __init__(self):
+        self.metadata = Metadata()
 
     def save_servername(self, servername):
         """Save connected servername metadata.
@@ -128,7 +130,7 @@ class ConnectionMetadata(MetadataManager):
         Returns:
             dict: connection metadata
         """
-        return self.manage_metadata(
+        return self.metadata.manage_metadata(
             MetadataActionEnum.GET, metadata_type
         )
 
@@ -139,7 +141,7 @@ class ConnectionMetadata(MetadataManager):
             metadata_type (MetadataEnum): type of metadata to save
             metadata (dict): metadata content
         """
-        self.manage_metadata(
+        self.metadata.manage_metadata(
             MetadataActionEnum.WRITE,
             metadata_type,
             metadata
@@ -151,7 +153,7 @@ class ConnectionMetadata(MetadataManager):
         Args:
             metadata_type (MetadataEnum): type of metadata to save
         """
-        self.manage_metadata(
+        self.metadata.manage_metadata(
             MetadataActionEnum.REMOVE,
             metadata_type
         )

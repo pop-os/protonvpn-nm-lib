@@ -8,7 +8,7 @@ from .. import exceptions
 from ..logger import logger
 
 
-class MetadataManager:
+class Metadata:
     METADATA_DICT = {
         MetadataEnum.CONNECTION: CONNECTION_STATE_FILEPATH,
         MetadataEnum.LAST_CONNECTION: LAST_CONNECTION_METADATA_FILEPATH,

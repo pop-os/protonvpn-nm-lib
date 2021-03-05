@@ -12,7 +12,7 @@ from protonvpn_nm_lib.core.connection_metadata import \
 from protonvpn_nm_lib.core.ipv6_leak_protection import \
     IPv6LeakProtection
 from protonvpn_nm_lib.core.killswitch import KillSwitch
-from protonvpn_nm_lib.core.metadata_manager import MetadataManager
+from protonvpn_nm_lib.core.metadata import Metadata
 from protonvpn_nm_lib.core.plugin_manager import PluginManager
 from protonvpn_nm_lib.core.proton_session_wrapper import ProtonSessionWrapper
 from protonvpn_nm_lib.core.reconnector_manager import ReconnectorManager
