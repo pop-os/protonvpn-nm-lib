@@ -11,7 +11,7 @@ from ..constants import (KILLSWITCH_CONN_NAME, KILLSWITCH_INTERFACE_NAME,
 from ..enums import (KillSwitchInterfaceTrackerEnum,
                      KillSwitchActionEnum, KillswitchStatusEnum)
 from ..logger import logger
-from .dbus_get_wrapper import DbusGetWrapper
+from .dbus_wrapper import DbusWrapper
 from .subprocess_wrapper import subprocess
 
 
@@ -46,7 +46,7 @@ class KillSwitch:
         self.ipv6_dummy_addrs = ipv6_dummy_addrs
         self.ipv6_dummy_gateway = ipv6_dummy_gateway
         self.user_conf_manager = user_conf_manager
-        self.dbus_get_wrapper = DbusGetWrapper()
+        self.dbus_get_wrapper = DbusWrapper()
         self.dbus_get_wrapper.bus = self.bus
         self.interface_state_tracker = {
             self.ks_conn_name: {

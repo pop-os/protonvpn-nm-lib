@@ -3,7 +3,7 @@ import dbus
 from ..logger import logger
 
 
-class DbusGetWrapper():
+class DbusWrapper:
     NETWORK_MANAGER_INTERFACE_NAME = "/org/freedesktop/NetworkManager"
 
     def search_for_connection(

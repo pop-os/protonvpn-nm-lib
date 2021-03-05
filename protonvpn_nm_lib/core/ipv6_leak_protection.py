@@ -8,7 +8,7 @@ from ..constants import (IPv6_DUMMY_ADDRESS, IPv6_DUMMY_GATEWAY,
                          IPv6_LEAK_PROTECTION_IFACE_NAME)
 from ..enums import KillSwitchInterfaceTrackerEnum, KillSwitchActionEnum
 from ..logger import logger
-from .dbus_get_wrapper import DbusGetWrapper
+from .dbus_wrapper import DbusWrapper
 
 
 class IPv6LeakProtection:
@@ -40,7 +40,7 @@ class IPv6LeakProtection:
                 KillSwitchInterfaceTrackerEnum.IS_RUNNING: False
             }
         }
-        self.dbus_get_wrapper = DbusGetWrapper()
+        self.dbus_get_wrapper = DbusWrapper()
         self.dbus_get_wrapper.bus = self.bus
         logger.info("Intialized IPv6 leak protection manager")
 

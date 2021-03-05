@@ -4,10 +4,10 @@ from ..enums import (DbusMonitorResponseEnum, DbusVPNConnectionReasonEnum,
                      DbusVPNConnectionStateEnum, KillSwitchActionEnum,
                      KillswitchStatusEnum)
 from ..logger import logger
-from .dbus_get_wrapper import DbusGetWrapper
+from .dbus_wrapper import DbusWrapper
 
 
-class MonitorVPNConnectionStart(DbusGetWrapper):
+class MonitorVPNConnectionStart(DbusWrapper):
     def __init__(self):
         self.max_attempts = 5
         self.delay = 5000
