@@ -11,10 +11,10 @@ from ..constants import (
 from ..enums import ProtocolEnum, ProtocolPortEnum
 from ..logger import logger
 from . import capture_exception
-from .connection_state_manager import ConnectionStateManager
+from .connection_metadata import ConnectionMetadata
 
 
-class Certificate(ConnectionStateManager):
+class Certificate(ConnectionMetadata):
     def __init__(self):
         super().__init__()
 

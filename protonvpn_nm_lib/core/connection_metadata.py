@@ -7,7 +7,13 @@ from .metadata_manager import MetadataManager
 from ..logger import logger
 
 
-class ConnectionStateManager(MetadataManager):
+class ConnectionMetadata(MetadataManager):
+    """
+    Read/Write connection metadata. Stores
+    metadata about the current connection
+    for displaying connection status and also
+    stores for metadata for future reconnections.
+    """
 
     def save_servername(self, servername):
         """Save connected servername metadata.

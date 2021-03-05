@@ -3,8 +3,9 @@ import os
 
 import pytest
 
-from common import (PWD, ConnectionMetadataEnum, ConnectionStateManager,
-                    MetadataEnum, exceptions, ProtocolEnum, LastConnectionMetadataEnum)
+from common import (PWD, ConnectionMetadata, ConnectionMetadataEnum,
+                    LastConnectionMetadataEnum, MetadataEnum, ProtocolEnum,
+                    exceptions)
 
 conn_state_filepath = os.path.join(
     PWD, "test_conn_state_manager.json"
@@ -17,8 +18,8 @@ remove_test_filepath = os.path.join(
 )
 
 
-class TestConnectionStateManager:
-    csm = ConnectionStateManager()
+class TestConnectionMetadata:
+    csm = ConnectionMetadata()
     csm.METADATA_DICT = {
         MetadataEnum.CONNECTION: conn_state_filepath,
         MetadataEnum.LAST_CONNECTION: last_conn_state_filepath,

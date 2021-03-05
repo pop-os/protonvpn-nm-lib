@@ -7,12 +7,11 @@ gi.require_version("NM", "1.0")
 from gi.repository import NM
 
 from common import (CERT_FOLDER, ENV_CI_NAME, MOCK_SESSIONDATA,
-                    PLUGIN_CERT_FOLDER, PWD, Certificate,
-                    ConnectionManager, IPv6LeakProtection,
-                    KillSwitch, KillswitchStatusEnum,
-                    NetworkManagerConnectionTypeEnum, ReconnectorManager,
-                    UserConfigurationManager, UserManager,
-                    UserSettingStatusEnum, exceptions, ProtocolEnum)
+                    PLUGIN_CERT_FOLDER, PWD, Certificate, ConnectionManager,
+                    ConnectionMetadata, IPv6LeakProtection, KillSwitch,
+                    KillswitchStatusEnum, NetworkManagerConnectionTypeEnum,
+                    ProtocolEnum, ReconnectorManager, UserConfigurationManager,
+                    UserManager, UserSettingStatusEnum, exceptions)
 
 TEST_KEYRING_SERVICE = "TestConnManager"
 TEST_KEYRING_SESSIONDATA = "TestConnManSessionData"
@@ -77,10 +76,10 @@ class TestUnitConnectionManager:
 class TestIntegrationConnectionManager():
     @classmethod
     def setup_class(cls):
+        connection_metadata = ConnectionMetadata()
         um = UserManager(user_conf_manager=ucm)
-        cm = ConnectionManager(virtual_device_name="testTunnel0")
-        cm.save_servername("TESTCONNMANAGER#1")
-        cm.save_protocol(ProtocolEnum.TCP)
+        connection_metadata.save_servername("TESTCONNMANAGER#1")
+        connection_metadata.save_protocol(ProtocolEnum.TCP)
         um.keyring_service = TEST_KEYRING_SERVICE
         um.keyring_sessiondata = TEST_KEYRING_SESSIONDATA
         um.keyring_userdata = TEST_KEYRING_USERDATA

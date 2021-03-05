@@ -12,12 +12,12 @@ from ..enums import (ConnectionMetadataEnum, KillSwitchActionEnum,
                      KillswitchStatusEnum, MetadataEnum,
                      NetworkManagerConnectionTypeEnum, UserSettingStatusEnum)
 from ..logger import logger
-from .connection_state_manager import ConnectionStateManager
+from .connection_metadata import ConnectionMetadata
 from . import capture_exception
 from .plugin_manager import PluginManager
 
 
-class ConnectionManager(ConnectionStateManager):
+class ConnectionManager:
     def __init__(
         self,
         virtual_device_name=VIRTUAL_DEVICE_NAME
@@ -26,6 +26,7 @@ class ConnectionManager(ConnectionStateManager):
         self.client = NM.Client.new(None)
         self.main_loop = GLib.MainLoop()
         self.virtual_device_name = virtual_device_name
+        self.connection_metadata = ConnectionMetadata()
 
     def add_connection(
         self, filename, username, password,
@@ -128,7 +129,9 @@ class ConnectionManager(ConnectionStateManager):
         )
 
     def set_custom_connection_id(self, connection_settings):
-        id_suffix_dict = self.get_connection_metadata(MetadataEnum.CONNECTION)
+        id_suffix_dict = self.connection_metadata.get_connection_metadata(
+            MetadataEnum.CONNECTION
+        )
         id_suffix = id_suffix_dict[ConnectionMetadataEnum.SERVER.value]
         connection_settings.props.id = "ProtonVPN " + id_suffix
 
@@ -244,7 +247,7 @@ class ConnectionManager(ConnectionStateManager):
         )
 
         self.main_loop.run()
-        self.save_connected_time()
+        self.connection_metadata.save_connected_time()
 
     def stop_connection(self):
         """Stop ProtonVPN connection.
@@ -304,7 +307,9 @@ class ConnectionManager(ConnectionStateManager):
         conn_name = conn[1]
         conn = conn[0]
         reconector_manager.stop_daemon_reconnector()
-        self.remove_connection_metadata(MetadataEnum.CONNECTION)
+        self.connection_metadata.remove_connection_metadata(
+            MetadataEnum.CONNECTION
+        )
 
         # conn is a NM.RemoteConnection
         # https://lazka.github.io/pgi-docs/NM-1.0/classes/RemoteConnection.html#NM.RemoteConnection
@@ -472,7 +477,6 @@ class ConnectionManager(ConnectionStateManager):
         # Changes virtual tunnel name
         vpn_settings.add_data_item("dev", self.virtual_device_name)
         vpn_settings.add_data_item("dev-type", virtual_device_type)
-
 
     def get_protonvpn_connection(
         self, network_manager_connection_type

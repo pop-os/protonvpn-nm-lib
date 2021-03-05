@@ -2,6 +2,7 @@ from .core.certificate import Certificate
 from .core.connection_manager import ConnectionManager
 from .core.dbus_dbus_monitor_vpn_connection_start import \
     MonitorVPNConnectionStart
+from .core.connection_metadata import ConnectionMetadata
 from .core.ipv6_leak_protection import IPv6LeakProtection
 from .core.killswitch import KillSwitch
 from .core.reconnector_manager import ReconnectorManager
@@ -25,6 +26,7 @@ from .lib.user_settings import ProtonVPNUserSetting
 
 class API():
     # core
+    __connection_metadata = ConnectionMetadata()
     __reconector_manager = ReconnectorManager()
     __user_conf_manager = UserConfigurationManager()
     __killswitch = KillSwitch(__user_conf_manager)
@@ -38,11 +40,7 @@ class API():
     # library
     country = ProtonVPNCountry(__server_manager)
     connection = ProtonVPNConnection(
-        __connection_manager,
-        __user_conf_manager,
-        __killswitch,
-        __ipv6_leak_protection,
-        __reconector_manager
+        __connection_manager, __connection_metadata
     )
     session = ProtonVPNSession(
         __user_manager,

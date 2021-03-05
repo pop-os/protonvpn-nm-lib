@@ -31,16 +31,10 @@ class ProtonVPNConnection:
     def __init__(
         self,
         connection_manager,
-        user_conf_manager,
-        ks_manager,
-        ipv6_lp_manager,
-        reconector_manager
+        connection_metadata
     ):
         self.__connection_manager = connection_manager
-        self.__user_conf_manager = user_conf_manager
-        self.__ks_manager = ks_manager
-        self.__ipv6_lp_manager = ipv6_lp_manager
-        self.__reconector_manager = reconector_manager
+        self.__connection_metadata = connection_metadata
 
     def _get_connection_metadata(
         self,
@@ -58,7 +52,7 @@ class ProtonVPNConnection:
         if len(connection_exists) == 0:
             return {}
 
-        return self.__connection_manager.get_connection_metadata(
+        return self.__connection_metadata.get_connection_metadata(
             MetadataEnum.CONNECTION
         )
 

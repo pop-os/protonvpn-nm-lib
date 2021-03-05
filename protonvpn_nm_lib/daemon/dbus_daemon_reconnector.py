@@ -39,8 +39,8 @@ from protonvpn_nm_lib.enums import (DbusVPNConnectionReasonEnum,
                                     KillSwitchActionEnum,
                                     KillswitchStatusEnum, MetadataEnum)
 from protonvpn_nm_lib.logger import logger
-from protonvpn_nm_lib.core.connection_state_manager import \
-    ConnectionStateManager
+from protonvpn_nm_lib.core.connection_metadata import \
+    ConnectionMetadata
 from protonvpn_nm_lib.core.dbus_wrapper import DbusWrapper
 from protonvpn_nm_lib.core.ipv6_leak_protection import \
     IPv6LeakProtection
@@ -49,9 +49,9 @@ from protonvpn_nm_lib.core.user_configuration_manager import \
     UserConfigurationManager
 
 
-class ProtonVPNReconnector(ConnectionStateManager, DbusWrapper):
+class ProtonVPNReconnector(DbusWrapper):
     """Reconnects to VPN if disconnected not by user
-    or when connecting to a new network.
+        or when connecting to a new network.
 
     Params:
         virtual_device_name (string): Name of virtual device that will be used
@@ -76,6 +76,7 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusWrapper):
         self.delay = delay
         self.failed_attempts = 0
         self.bus = dbus.SystemBus()
+        self.connection_metadata = ConnectionMetadata()
         # Auto connect at startup (Listen for StateChanged going forward)
         self.vpn_activator()
         try:
@@ -112,7 +113,7 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusWrapper):
         )
         if state == DbusVPNConnectionStateEnum.IS_ACTIVE:
             self.failed_attempts = 0
-            self.save_connected_time() # HERE
+            self.connection_metadata.save_connected_time()
 
             logger.info(
                 "ProtonVPN with virtual device '{}' is running.".format(
@@ -153,7 +154,9 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusWrapper):
             except TypeError as e:
                 logger.exception(e)
 
-            self.remove_connection_metadata(MetadataEnum.CONNECTION) # HERE
+            self.connection_metadata.remove_connection_metadata(
+                MetadataEnum.CONNECTION
+            )
 
             try:
                 vpn_iface.Delete()
@@ -308,8 +311,7 @@ class ProtonVPNReconnector(ConnectionStateManager, DbusWrapper):
 
         is_protonvpn, state, conn = self.is_protonvpn_being_prepared()
         # Check if connection is being prepared
-        server_ip = self.get_server_ip() # HERE
-        server_ip = server_ip[0]
+        server_ip = self.connection_metadata.get_server_ip()
         logger.info("Reconnecting to server IP \"{}\"".format(server_ip))
 
         if is_protonvpn and state == 1:

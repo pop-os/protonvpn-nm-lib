@@ -4,19 +4,21 @@ import re
 
 from .. import exceptions
 from ..constants import CACHED_SERVERLIST
-from ..enums import FeatureEnum, UserSettingStatusEnum, ProtocolEnum, ConnectionTypeEnum
+from ..enums import (ConnectionTypeEnum, FeatureEnum, ProtocolEnum,
+                     UserSettingStatusEnum)
 from ..logger import logger
 from . import capture_exception
-from .connection_state_manager import ConnectionStateManager
+from .connection_metadata import ConnectionMetadata
 
 
-class ServerManager(ConnectionStateManager):
+class ServerManager:
     killswitch_status = UserSettingStatusEnum.DISABLED
     CACHED_SERVERLIST = CACHED_SERVERLIST
 
     def __init__(self, cert_manager, user_manager):
         self.cert_manager = cert_manager
         self.user_manager = user_manager
+        self.connection_metadata = ConnectionMetadata()
 
     def generate_server_certificate(
         self, servername,
@@ -60,16 +62,16 @@ class ServerManager(ConnectionStateManager):
             domain = matching_domain
 
         logger.info("Saving servername: \"{}\"".format(servername))
-        self.save_servername(servername)
+        self.connection_metadata.save_servername(servername) # HERE
 
         logger.info("Saving protocol: \"{}\"".format(protocol))
-        self.save_protocol(protocol)
+        self.connection_metadata.save_protocol(protocol) # HERE
 
         logger.info("Saving server entry IP: \"{}\"".format(entry_IP))
-        self.save_server_ip(entry_IP)
+        self.connection_metadata.save_server_ip(entry_IP) # HERE
 
         logger.info("Saving server exit IP: \"{}\"".format(exit_IP))
-        self.save_display_server_ip(exit_IP)
+        self.connection_metadata.save_display_server_ip(exit_IP) # HERE
 
         return self.cert_manager.generate_vpn_cert(
             protocol, servername, [entry_IP], exit_IP
@@ -127,7 +129,6 @@ class ServerManager(ConnectionStateManager):
             exclude_features=excluded_features,
             country_code=country_code
         )
-        print(filtered_servers)
         if len(filtered_servers) == 0:
             err_msg = "No available servers could be found for \"{}\".".format(
                 country_code
