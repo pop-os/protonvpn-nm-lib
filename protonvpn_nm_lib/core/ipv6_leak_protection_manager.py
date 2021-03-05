@@ -8,11 +8,10 @@ from ..constants import (IPv6_DUMMY_ADDRESS, IPv6_DUMMY_GATEWAY,
                          IPv6_LEAK_PROTECTION_IFACE_NAME)
 from ..enums import KillSwitchInterfaceTrackerEnum, KillSwitchManagerActionEnum
 from ..logger import logger
-from .abstract_interface_manager import AbstractInterfaceManager
 from .dbus_get_wrapper import DbusGetWrapper
 
 
-class IPv6LeakProtectionManager(AbstractInterfaceManager):
+class IPv6LeakProtectionManager:
     """Manages IPv6 leak protection connection/interfaces."""
     enable_ipv6_leak_protection = True
 

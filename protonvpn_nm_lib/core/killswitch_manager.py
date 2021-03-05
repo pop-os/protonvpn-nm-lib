@@ -11,12 +11,11 @@ from ..constants import (KILLSWITCH_CONN_NAME, KILLSWITCH_INTERFACE_NAME,
 from ..enums import (KillSwitchInterfaceTrackerEnum,
                      KillSwitchManagerActionEnum, KillswitchStatusEnum)
 from ..logger import logger
-from .abstract_interface_manager import AbstractInterfaceManager
 from .dbus_get_wrapper import DbusGetWrapper
 from .subprocess_wrapper import subprocess
 
 
-class KillSwitchManager(AbstractInterfaceManager):
+class KillSwitchManager:
     # Additional loop needs to be create since SystemBus automatically
     # picks the default loop, which is intialized with the CLI.
     # Thus, to refrain SystemBus from using the default loop,
