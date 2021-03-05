@@ -9,13 +9,13 @@ from ..constants import (KILLSWITCH_CONN_NAME, KILLSWITCH_INTERFACE_NAME,
                          IPv4_DUMMY_ADDRESS, IPv4_DUMMY_GATEWAY,
                          IPv6_DUMMY_ADDRESS, IPv6_DUMMY_GATEWAY)
 from ..enums import (KillSwitchInterfaceTrackerEnum,
-                     KillSwitchManagerActionEnum, KillswitchStatusEnum)
+                     KillSwitchActionEnum, KillswitchStatusEnum)
 from ..logger import logger
 from .dbus_get_wrapper import DbusGetWrapper
 from .subprocess_wrapper import subprocess
 
 
-class KillSwitchManager:
+class KillSwitch:
     # Additional loop needs to be create since SystemBus automatically
     # picks the default loop, which is intialized with the CLI.
     # Thus, to refrain SystemBus from using the default loop,
@@ -88,10 +88,12 @@ class KillSwitchManager:
         self.update_connection_status()
 
         actions_dict = {
-            KillSwitchManagerActionEnum.PRE_CONNECTION: self.setup_pre_connection_ks, # noqa
-            KillSwitchManagerActionEnum.POST_CONNECTION: self.setup_post_connection_ks, # noqa
-            KillSwitchManagerActionEnum.SOFT: self.setup_soft_connection,
-            KillSwitchManagerActionEnum.DISABLE: self.delete_all_connections
+            KillSwitchActionEnum.PRE_CONNECTION:
+            self.setup_pre_connection_ks,
+            KillSwitchActionEnum.POST_CONNECTION:
+            self.setup_post_connection_ks,
+            KillSwitchActionEnum.SOFT: self.setup_soft_connection,
+            KillSwitchActionEnum.DISABLE: self.delete_all_connections
 
         }[action](server_ip)
 

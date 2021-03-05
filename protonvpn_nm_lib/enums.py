@@ -180,7 +180,7 @@ class KillSwitchInterfaceTrackerEnum(Enum):
     IS_RUNNING = 1
 
 
-class KillSwitchManagerActionEnum(Enum):
+class KillSwitchActionEnum(Enum):
     PRE_CONNECTION = "pre_connection",
     POST_CONNECTION = "post_connection",
     SOFT = "soft_connection"

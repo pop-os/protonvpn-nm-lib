@@ -1,7 +1,7 @@
 import dbus
 
 from ..enums import (DbusMonitorResponseEnum, DbusVPNConnectionReasonEnum,
-                     DbusVPNConnectionStateEnum, KillSwitchManagerActionEnum,
+                     DbusVPNConnectionStateEnum, KillSwitchActionEnum,
                      KillswitchStatusEnum)
 from ..logger import logger
 from .dbus_get_wrapper import DbusGetWrapper
@@ -68,11 +68,11 @@ class MonitorVPNConnectionStart(DbusGetWrapper):
 
             if self.user_conf_manager.killswitch == KillswitchStatusEnum.HARD: # noqa
                 self.ks_manager.manage(
-                    KillSwitchManagerActionEnum.POST_CONNECTION
+                    KillSwitchActionEnum.POST_CONNECTION
                 )
 
             if self.user_conf_manager.killswitch == KillswitchStatusEnum.SOFT: # noqa
-                self.ks_manager.manage(KillSwitchManagerActionEnum.SOFT)
+                self.ks_manager.manage(KillSwitchActionEnum.SOFT)
 
             self.session.cache_servers()
 

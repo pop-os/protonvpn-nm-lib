@@ -9,7 +9,7 @@ from gi.repository import NM
 from common import (CERT_FOLDER, ENV_CI_NAME, MOCK_SESSIONDATA,
                     PLUGIN_CERT_FOLDER, PWD, CertificateManager,
                     ConnectionManager, IPv6LeakProtectionManager,
-                    KillSwitchManager, KillswitchStatusEnum,
+                    KillSwitch, KillswitchStatusEnum,
                     NetworkManagerConnectionTypeEnum, ReconnectorManager,
                     UserConfigurationManager, UserManager,
                     UserSettingStatusEnum, exceptions, ProtocolEnum)
@@ -145,7 +145,7 @@ class TestIntegrationConnectionManager():
 
     @pytest.fixture
     def ks_man(self, fake_user_conf_man):
-        return KillSwitchManager(
+        return KillSwitch(
             fake_user_conf_man,
             ks_conn_name="testks",
             ks_interface_name="testksintrf0",

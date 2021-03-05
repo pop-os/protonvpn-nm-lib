@@ -11,7 +11,7 @@ from protonvpn_nm_lib.core.connection_state_manager import \
     ConnectionStateManager
 from protonvpn_nm_lib.core.ipv6_leak_protection_manager import \
     IPv6LeakProtectionManager
-from protonvpn_nm_lib.core.killswitch_manager import KillSwitchManager
+from protonvpn_nm_lib.core.killswitch import KillSwitch
 from protonvpn_nm_lib.core.metadata_manager import MetadataManager
 from protonvpn_nm_lib.core.plugin_manager import PluginManager
 from protonvpn_nm_lib.core.proton_session_wrapper import ProtonSessionWrapper

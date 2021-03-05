@@ -8,7 +8,7 @@ from gi.repository import NM, GLib
 
 from .. import exceptions
 from ..constants import CONFIG_STATUSES, VIRTUAL_DEVICE_NAME
-from ..enums import (ConnectionMetadataEnum, KillSwitchManagerActionEnum,
+from ..enums import (ConnectionMetadataEnum, KillSwitchActionEnum,
                      KillswitchStatusEnum, MetadataEnum,
                      NetworkManagerConnectionTypeEnum, UserSettingStatusEnum)
 from ..logger import logger
@@ -96,10 +96,10 @@ class ConnectionManager(ConnectionStateManager):
         self.apply_virtual_device_type(vpn_settings, filename)
         self.dns_manager(connection, user_conf_manager)
         if ipv6_lp_manager.enable_ipv6_leak_protection:
-            ipv6_lp_manager.manage(KillSwitchManagerActionEnum.ENABLE)
+            ipv6_lp_manager.manage(KillSwitchActionEnum.ENABLE)
         if user_conf_manager.killswitch == KillswitchStatusEnum.HARD: # noqa
             ks_manager.manage(
-                KillSwitchManagerActionEnum.PRE_CONNECTION,
+                KillSwitchActionEnum.PRE_CONNECTION,
                 server_ip=entry_ip
             )
 
@@ -308,10 +308,10 @@ class ConnectionManager(ConnectionStateManager):
 
         # conn is a NM.RemoteConnection
         # https://lazka.github.io/pgi-docs/NM-1.0/classes/RemoteConnection.html#NM.RemoteConnection
-        ipv6_lp_manager.manage(KillSwitchManagerActionEnum.DISABLE)
+        ipv6_lp_manager.manage(KillSwitchActionEnum.DISABLE)
 
         if user_conf_manager.killswitch == KillswitchStatusEnum.SOFT: # noqa
-            ks_manager.manage(KillSwitchManagerActionEnum.DISABLE)
+            ks_manager.manage(KillSwitchActionEnum.DISABLE)
 
         conn.delete_async(
             None,

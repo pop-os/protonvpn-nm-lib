@@ -3,7 +3,7 @@ from .core.connection_manager import ConnectionManager
 from .core.dbus_dbus_monitor_vpn_connection_start import \
     MonitorVPNConnectionStart
 from .core.ipv6_leak_protection_manager import IPv6LeakProtectionManager
-from .core.killswitch_manager import KillSwitchManager
+from .core.killswitch import KillSwitch
 from .core.reconnector_manager import ReconnectorManager
 from .core.server_manager import ServerManager
 from .core.user_configuration_manager import UserConfigurationManager
@@ -27,7 +27,7 @@ class API():
     # core
     __reconector_manager = ReconnectorManager()
     __user_conf_manager = UserConfigurationManager()
-    __ks_manager = KillSwitchManager(__user_conf_manager)
+    __killswitch = KillSwitch(__user_conf_manager)
     __connection_manager = ConnectionManager()
     __user_manager = UserManager(__user_conf_manager)
     __server_manager = ServerManager(
@@ -40,7 +40,7 @@ class API():
     connection = ProtonVPNConnection(
         __connection_manager,
         __user_conf_manager,
-        __ks_manager,
+        __killswitch,
         __ipv6_lp_manager,
         __reconector_manager
     )
@@ -57,25 +57,25 @@ class API():
     disconnect = ProtonVPNDisconnect(
         __connection_manager, __user_conf_manager,
         __ipv6_lp_manager, __reconector_manager,
-        __ks_manager
+        __killswitch
     )
     connect = ProtonVPNConnect(
         connection, session,
         server, server_list, disconnect, country,
         __connection_manager, __server_manager,
         __user_manager, __user_conf_manager,
-        __ks_manager, MonitorVPNConnectionStart(),
+        __killswitch, MonitorVPNConnectionStart(),
         __ipv6_lp_manager, __reconector_manager
     )
     reconnect = ProtonVPNReconnect(
         connect, __server_manager, __user_conf_manager
     )
     user_settings = ProtonVPNUserSetting(
-        __user_conf_manager, __user_manager, __ks_manager
+        __user_conf_manager, __user_manager, __killswitch
     )
     status = ProtonVPNStatus(
         connection, server, server_list,
-        __ks_manager, user_settings, __user_conf_manager
+        __killswitch, user_settings, __user_conf_manager
     )
     login = ProtonVPNLogin(
         connection, session,

@@ -6,7 +6,7 @@ from .. import exceptions
 from ..constants import (IPv6_DUMMY_ADDRESS, IPv6_DUMMY_GATEWAY,
                          IPv6_LEAK_PROTECTION_CONN_NAME,
                          IPv6_LEAK_PROTECTION_IFACE_NAME)
-from ..enums import KillSwitchInterfaceTrackerEnum, KillSwitchManagerActionEnum
+from ..enums import KillSwitchInterfaceTrackerEnum, KillSwitchActionEnum
 from ..logger import logger
 from .dbus_get_wrapper import DbusGetWrapper
 
@@ -54,11 +54,11 @@ class IPv6LeakProtectionManager:
         self.update_connection_status()
 
         if (
-            action == KillSwitchManagerActionEnum.ENABLE
+            action == KillSwitchActionEnum.ENABLE
             and self.enable_ipv6_leak_protection
         ):
             self.add_leak_protection()
-        elif action == KillSwitchManagerActionEnum.DISABLE:
+        elif action == KillSwitchActionEnum.DISABLE:
             self.remove_leak_protection()
         else:
             raise exceptions.IPv6LeakProtectionOptionError(
@@ -81,7 +81,7 @@ class IPv6LeakProtectionManager:
         if not self.interface_state_tracker[self.conn_name][
             KillSwitchInterfaceTrackerEnum.EXISTS
         ]:
-            self.manage(KillSwitchManagerActionEnum.DISABLE)
+            self.manage(KillSwitchActionEnum.DISABLE)
             self.run_subprocess(
                 exceptions.EnableIPv6LeakProtectionError,
                 "Unable to add IPv6 leak protection connection/interface",
