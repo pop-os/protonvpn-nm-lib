@@ -7,7 +7,7 @@ from ..logger import logger
 from .dbus_wrapper import DbusWrapper
 
 
-class MonitorVPNConnectionStart(DbusWrapper):
+class MonitorVPNConnectionStart:
     def __init__(self):
         self.max_attempts = 5
         self.delay = 5000
@@ -21,6 +21,7 @@ class MonitorVPNConnectionStart(DbusWrapper):
         self.session = None
         self.bus = None
         self.dbus_response = []
+        self.dbus_wrapper = None
 
     def start_monitor(self):
         self.vpn_check()
@@ -40,9 +41,10 @@ class MonitorVPNConnectionStart(DbusWrapper):
         self.session = session
         self.dbus_response = dbus_response
         self.bus = dbus.SystemBus()
+        self.dbus_wrapper = DbusWrapper(self.bus)
 
     def vpn_check(self):
-        vpn_interface = self.get_vpn_interface(True)
+        vpn_interface = self.dbus_wrapper.get_vpn_interface(True)
 
         if not isinstance(vpn_interface, tuple):
             self.dbus_response[DbusMonitorResponseEnum.RESPONSE] = {
@@ -54,7 +56,9 @@ class MonitorVPNConnectionStart(DbusWrapper):
             }
             self.loop.quit()
 
-        is_protonvpn, state, conn = self.is_protonvpn_being_prepared()
+        (
+            is_protonvpn, state, conn
+        ) = self.dbus_wrapper.is_protonvpn_being_prepared()
         if is_protonvpn and state == 1:
             self.vpn_signal_handler(conn)
 
@@ -132,7 +136,7 @@ class MonitorVPNConnectionStart(DbusWrapper):
         )
 
         try:
-            active_conn_props = self.get_active_conn_props(conn)
+            active_conn_props = self.dbus_wrapper.get_active_conn_props(conn)
             logger.info("Adding listener to active {} connection at {}".format(
                 active_conn_props["Id"],
                 conn)

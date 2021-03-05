@@ -46,8 +46,7 @@ class KillSwitch:
         self.ipv6_dummy_addrs = ipv6_dummy_addrs
         self.ipv6_dummy_gateway = ipv6_dummy_gateway
         self.user_conf_manager = user_conf_manager
-        self.dbus_get_wrapper = DbusWrapper()
-        self.dbus_get_wrapper.bus = self.bus
+        self.dbus_get_wrapper = DbusWrapper(self.bus)
         self.interface_state_tracker = {
             self.ks_conn_name: {
                 KillSwitchInterfaceTrackerEnum.EXISTS: False,

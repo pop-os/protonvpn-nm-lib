@@ -1,10 +1,15 @@
 import dbus
 
 from ..logger import logger
+from ..constants import VIRTUAL_DEVICE_NAME
 
 
 class DbusWrapper:
     NETWORK_MANAGER_INTERFACE_NAME = "/org/freedesktop/NetworkManager"
+
+    def __init__(self, bus):
+        self.bus = bus
+        self.virtual_device_name = VIRTUAL_DEVICE_NAME
 
     def search_for_connection(
         self, conn_name, interface_name=None, is_active=False,
@@ -104,12 +109,32 @@ class DbusWrapper:
 
         return None
 
-    def activate_connection(self, connection_settings_path, device_path):
+    def activate_connection(
+        self, connection_settings_path, device_path, specific_object=None
+    ):
         """Activate existing connection.
 
         Args:
-            connection_settings_path (string): path to connection settings
-            device_path (string): path to device
+            connection_settings_path (string): The connection to activate.
+                If "/" is given, a valid device path must be given, and
+                NetworkManager picks the best connection to activate for the
+                given device. VPN connections must alwayspass a valid
+                connection path.
+            device_path (string): The object path of device to be activated
+                for physical connections. This parameter is ignored for VPN
+                connections, because the specific_object (if provided)
+                specifies the device to use.
+            specific_object (string): The path of a connection-type-specific
+                object this activation should use. This parameter is currently
+                ignored for wired and mobile broadband connections, and the
+                value of "/" should be used (ie, no specific object). For
+                Wi-Fi connections, pass the object path of a specific AP from
+                the card's scan list, or "/" to pick an AP automatically.
+                For VPN connections, pass the object path of an
+                ActiveConnection object that should serve as the "base"
+                connection (to which the VPN connections lifetime
+                will be tied), or pass "/" and NM will automatically use
+                the current default device.
 
         Returns:
             string | None: either path to active connection
@@ -120,7 +145,7 @@ class DbusWrapper:
         active_conn_path = nm_interface.ActivateConnection(
             connection_settings_path,
             device_path,
-            "/"
+            specific_object if specific_object else "/"
         )
 
         return None if not active_conn_path else active_conn_path
@@ -265,17 +290,17 @@ class DbusWrapper:
 
                     if return_properties:
                         return (iface, all_settings)
-                    return iface
+                    return (iface)
 
         logger.error(
             "[!] Could not find interface belonging to '{}'.".format(
                 self.virtual_device_name
             )
         )
-        return None
+        return ()
 
     def get_active_connection(
-        self, get_by_id=None, get_by_interface=False,
+        self, get_by_id=None,
         get_by_settings_path=False, get_by_device_path=False
     ):
         """Get interface of active
@@ -286,7 +311,6 @@ class DbusWrapper:
 
         Args:
             get_by_id (string): connection id
-            get_by_interface (string): connection interface
             get_by_settings_path (string): connection settings path
             get_by_device_path (string): connection device path
 

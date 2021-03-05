@@ -49,7 +49,7 @@ from protonvpn_nm_lib.core.user_configuration_manager import \
     UserConfigurationManager
 
 
-class ProtonVPNReconnector(DbusWrapper):
+class ProtonVPNReconnector:
     """Reconnects to VPN if disconnected not by user
         or when connecting to a new network.
 
@@ -76,11 +76,12 @@ class ProtonVPNReconnector(DbusWrapper):
         self.delay = delay
         self.failed_attempts = 0
         self.bus = dbus.SystemBus()
+        self.dbus_wrapper = DbusWrapper(self.bus)
         self.connection_metadata = ConnectionMetadata()
         # Auto connect at startup (Listen for StateChanged going forward)
         self.vpn_activator()
         try:
-            self.get_network_manager_interface().connect_to_signal(
+            self.dbus_wrapper.get_network_manager_interface().connect_to_signal( # noqa
                 "StateChanged", self.on_network_state_changed
             )
         except Exception as e:
@@ -150,7 +151,7 @@ class ProtonVPNReconnector(DbusWrapper):
             self.failed_attempts = 0
 
             try:
-                vpn_iface, settings = self.get_vpn_interface(True)
+                vpn_iface = self.dbus_wrapper.get_vpn_interface()
             except TypeError as e:
                 logger.exception(e)
 
@@ -208,11 +209,10 @@ class ProtonVPNReconnector(DbusWrapper):
             active_connection (string): path to active connection
             vpn_interface (dbus.Proxy): proxy interface to vpn connection
         """
-        nm_interface = self.get_network_manager_interface()
-        new_con = nm_interface.ActivateConnection(
+        new_con = self.dbus_wrapper.activate_connection(
             vpn_interface,
             dbus.ObjectPath("/"),
-            active_connection,
+            active_connection
         )
         self.vpn_signal_handler(new_con)
         logger.info(
@@ -237,7 +237,7 @@ class ProtonVPNReconnector(DbusWrapper):
                 )
                 return False
 
-        new_active_connection = self.get_active_connection()
+        new_active_connection = self.dbus_wrapper.get_active_connection()
         logger.info(
             "Active conn prior to "
             "setup manual connection: {} {}".format(
@@ -285,8 +285,8 @@ class ProtonVPNReconnector(DbusWrapper):
                 self.failed_attempts, self.max_attempts, self.delay
             ) + "ms;\n"
         )
-        vpn_interface = self.get_vpn_interface()
-        active_connection = self.get_active_connection()
+        vpn_interface = self.dbus_wrapper.get_vpn_interface()
+        active_connection = self.dbus_wrapper.get_active_connection()
 
         logger.info("VPN interface: {}".format(vpn_interface))
         logger.info("Active connection: {}".format(active_connection))
@@ -294,7 +294,10 @@ class ProtonVPNReconnector(DbusWrapper):
         if active_connection is None or vpn_interface is None:
             return True
 
-        is_active_conn_vpn, all_vpn_settings = self.check_active_vpn_conn(
+        (
+            is_active_conn_vpn,
+            all_vpn_settings
+        ) = self.dbus_wrapper.check_active_vpn_conn(
             active_connection
         )
 
@@ -309,7 +312,9 @@ class ProtonVPNReconnector(DbusWrapper):
             self.vpn_signal_handler(active_connection)
             return
 
-        is_protonvpn, state, conn = self.is_protonvpn_being_prepared()
+        (
+            is_protonvpn, state, conn
+        ) = self.dbus_wrapper.is_protonvpn_being_prepared()
         # Check if connection is being prepared
         server_ip = self.connection_metadata.get_server_ip()
         logger.info("Reconnecting to server IP \"{}\"".format(server_ip))

@@ -40,8 +40,7 @@ class IPv6LeakProtection:
                 KillSwitchInterfaceTrackerEnum.IS_RUNNING: False
             }
         }
-        self.dbus_get_wrapper = DbusWrapper()
-        self.dbus_get_wrapper.bus = self.bus
+        self.dbus_get_wrapper = DbusWrapper(self.bus)
         logger.info("Intialized IPv6 leak protection manager")
 
     def manage(self, action):
