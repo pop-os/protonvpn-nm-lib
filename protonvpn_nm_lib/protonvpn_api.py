@@ -5,7 +5,7 @@ from .core.dbus_dbus_monitor_vpn_connection_start import \
 from .core.connection_metadata import ConnectionMetadata
 from .core.ipv6_leak_protection import IPv6LeakProtection
 from .core.killswitch import KillSwitch
-from .core.reconnector_manager import ReconnectorManager
+from .core.dbus_reconnect import DbusReconnect
 from .core.server_manager import ServerManager
 from .core.user_configuration_manager import UserConfigurationManager
 from .core.user_manager import UserManager
@@ -27,7 +27,7 @@ from .lib.user_settings import ProtonVPNUserSetting
 class API():
     # core
     __connection_metadata = ConnectionMetadata()
-    __reconector_manager = ReconnectorManager()
+    __reconector_manager = DbusReconnect()
     __user_conf_manager = UserConfigurationManager()
     __killswitch = KillSwitch(__user_conf_manager)
     __connection_manager = ConnectionManager()

@@ -10,7 +10,7 @@ from common import (CERT_FOLDER, ENV_CI_NAME, MOCK_SESSIONDATA,
                     PLUGIN_CERT_FOLDER, PWD, Certificate, ConnectionManager,
                     ConnectionMetadata, IPv6LeakProtection, KillSwitch,
                     KillswitchStatusEnum, NetworkManagerConnectionTypeEnum,
-                    ProtocolEnum, ReconnectorManager, UserConfigurationManager,
+                    ProtocolEnum, DbusReconnect, UserConfigurationManager,
                     UserManager, UserSettingStatusEnum, exceptions)
 
 TEST_KEYRING_SERVICE = "TestConnManager"
@@ -139,8 +139,8 @@ class TestIntegrationConnectionManager():
         return FakeUserConfigurationManager()
 
     @pytest.fixture
-    def reconnector_manager(self):
-        return ReconnectorManager()
+    def dbus_reconnect(self):
+        return DbusReconnect()
 
     @pytest.fixture
     def ks_man(self, fake_user_conf_man):
@@ -246,23 +246,23 @@ class TestIntegrationConnectionManager():
 
     def test_remove_correct_connection(
         self, conn_man, fake_user_conf_man,
-        ks_man, ipv6_lp_man, reconnector_manager
+        ks_man, ipv6_lp_man, dbus_reconnect
     ):
         conn_man.remove_connection(
             fake_user_conf_man,
             ks_man,
             ipv6_lp_man,
-            reconnector_manager
+            dbus_reconnect
         )
 
     def test_remove_inexistent_connection(
         self, conn_man, fake_user_conf_man,
-        ks_man, ipv6_lp_man, reconnector_manager
+        ks_man, ipv6_lp_man, dbus_reconnect
     ):
         with pytest.raises(exceptions.ConnectionNotFound):
             conn_man.remove_connection(
                 fake_user_conf_man,
                 ks_man,
                 ipv6_lp_man,
-                reconnector_manager
+                dbus_reconnect
             )

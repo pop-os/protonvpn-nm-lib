@@ -15,7 +15,7 @@ from protonvpn_nm_lib.core.killswitch import KillSwitch
 from protonvpn_nm_lib.core.metadata import Metadata
 from protonvpn_nm_lib.core.plugin_manager import PluginManager
 from protonvpn_nm_lib.core.proton_session_wrapper import ProtonSessionWrapper
-from protonvpn_nm_lib.core.reconnector_manager import ReconnectorManager
+from protonvpn_nm_lib.core.dbus_reconnect import DbusReconnect
 from protonvpn_nm_lib.core.server_manager import ServerManager
 from protonvpn_nm_lib.core.user_configuration_manager import \
     UserConfigurationManager

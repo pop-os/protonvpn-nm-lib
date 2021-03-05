@@ -10,7 +10,7 @@ from ..logger import logger
 from ..enums import DaemonReconnectorEnum
 
 
-class ReconnectorManager():
+class DbusReconnect:
     DAEMON_COMMANDS = [
         DaemonReconnectorEnum.START,
         DaemonReconnectorEnum.STOP,
