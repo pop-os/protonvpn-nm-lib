@@ -439,8 +439,8 @@ class ServerManager(ConnectionStateManager):
                 not user_tier
                 or user_tier and server["Tier"] <= user_tier
             ) and (
-                not ignore_server_status
-                or ignore_server_status and server["Status"] == 1
+                ignore_server_status
+                or not ignore_server_status and server["Status"] == 1
             ) and (
                 (
                     not exclude_features

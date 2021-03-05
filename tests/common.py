@@ -42,7 +42,7 @@ class TestServernameEnum(Enum):
     TEST_P2P_9 = "TE-P2P#9"
     TEST_STREAM_10 = "TE-STREAMING#10"
     TEST_IPV6_11 = "TE-IPV6#11"
-    TEST_DISABLED_11 = "TE-DISABLED#12"
+    TEST_DISABLED_12 = "TE-DISABLED#12"
 
 
 MOCK_SESSIONDATA = {
@@ -260,7 +260,7 @@ SERVERS = [
         ], "Load": 6, "Score": 1.00053101
     },
     {
-        "Name": TestServernameEnum.TEST_DISABLED_11.value,
+        "Name": TestServernameEnum.TEST_DISABLED_12.value,
         "EntryCountry": "CH",
         "ExitCountry": "CH",
         "Domain": "ch-99.webtest.com",
