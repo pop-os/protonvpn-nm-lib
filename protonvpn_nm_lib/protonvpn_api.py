@@ -1,6 +1,6 @@
 from .core.certificate import Certificate
 from .core.connection_manager import ConnectionManager
-from .core.dbus_dbus_monitor_vpn_connection_start import \
+from .core.dbus_monitor_vpn_connection_start import \
     MonitorVPNConnectionStart
 from .core.connection_metadata import ConnectionMetadata
 from .core.ipv6_leak_protection import IPv6LeakProtection
