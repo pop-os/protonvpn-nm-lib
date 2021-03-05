@@ -14,7 +14,7 @@ from . import capture_exception
 from .connection_state_manager import ConnectionStateManager
 
 
-class CertificateManager(ConnectionStateManager):
+class Certificate(ConnectionStateManager):
     def __init__(self):
         super().__init__()
 

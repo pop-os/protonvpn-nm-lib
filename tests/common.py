@@ -5,7 +5,7 @@ from enum import Enum
 from protonvpn_nm_lib import exceptions
 from protonvpn_nm_lib.constants import (CACHED_OPENVPN_CERTIFICATE,
                                         ENV_CI_NAME, NETSHIELD_STATUS_DICT)
-from protonvpn_nm_lib.core.certificate_manager import CertificateManager
+from protonvpn_nm_lib.core.certificate import Certificate
 from protonvpn_nm_lib.core.connection_manager import ConnectionManager
 from protonvpn_nm_lib.core.connection_state_manager import \
     ConnectionStateManager

@@ -6,7 +6,7 @@ from ..constants import FLAT_SUPPORTED_PROTOCOLS, VIRTUAL_DEVICE_NAME
 from ..enums import (ConnectionTypeEnum, DbusMonitorResponseEnum,
                      NetworkManagerConnectionTypeEnum, ProtocolEnum)
 from ..logger import logger
-from ..core.certificate_manager import CertificateManager
+from ..core.certificate import Certificate
 
 
 class ProtonVPNConnect():
@@ -248,7 +248,7 @@ class ProtonVPNConnect():
         try:
             self.__connection_manager.add_connection(
                 certificate_filename, openvpn_username, openvpn_password,
-                CertificateManager.delete_cached_certificate, domain,
+                Certificate.delete_cached_certificate, domain,
                 self.__user_conf_manager, self.__ks_manager,
                 self.__ipv6_lp_manager, entry_ip
             )

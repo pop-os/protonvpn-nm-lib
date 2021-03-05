@@ -1,4 +1,4 @@
-from .core.certificate_manager import CertificateManager
+from .core.certificate import Certificate
 from .core.connection_manager import ConnectionManager
 from .core.dbus_dbus_monitor_vpn_connection_start import \
     MonitorVPNConnectionStart
@@ -31,7 +31,7 @@ class API():
     __connection_manager = ConnectionManager()
     __user_manager = UserManager(__user_conf_manager)
     __server_manager = ServerManager(
-        CertificateManager(), __user_manager
+        Certificate(), __user_manager
     )
     __ipv6_leak_protection = IPv6LeakProtection()
 

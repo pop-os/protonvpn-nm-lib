@@ -7,7 +7,7 @@ import pytest
 
 from common import (CACHED_OPENVPN_CERTIFICATE, MOCK_DATA_JSON,
                     MOCK_SESSIONDATA, PWD, RAW_SERVER_LIST, SERVERS,
-                    TEST_CACHED_SERVERFILE, CertificateManager,
+                    TEST_CACHED_SERVERFILE, Certificate,
                     ConnectionTypeEnum, MetadataEnum, ProtocolEnum,
                     ProtonSessionWrapper, ServerManager, TestServernameEnum,
                     UserConfigurationManager, UserManager)
@@ -59,7 +59,7 @@ session.LOADS_CACHE_TIME_EXPIRE = 1 / 120
 
 class TestUnitServerManager:
     server_man = ServerManager(
-        CertificateManager(),
+        Certificate(),
         um
     )
     MOCKED_SESSION = ProtonSessionWrapper(
@@ -337,7 +337,7 @@ class TestUnitServerManager:
 
 class TestIntegrationServerManager:
     server_man = ServerManager(
-        CertificateManager(),
+        Certificate(),
         um
     )
     server_man.CACHED_SERVERLIST = TEST_CACHED_SERVERLIST

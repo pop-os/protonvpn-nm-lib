@@ -6,7 +6,7 @@ import pytest
 
 from common import (
     MOCK_DATA_JSON, SERVERS, TEST_CERTS,
-    CertificateManager, UserConfigurationManager,
+    Certificate, UserConfigurationManager,
     ProtonSessionWrapper, UserManager, exceptions, PWD,
     ProtocolEnum
 )
@@ -29,8 +29,8 @@ um = UserManager(
 session = ProtonSessionWrapper.load(json.loads(MOCK_DATA_JSON), um)
 
 
-class TestCertificateManager:
-    cert_man = CertificateManager()
+class TestCertificate:
+    cert_man = Certificate()
 
     @classmethod
     def setup_class(cls):
