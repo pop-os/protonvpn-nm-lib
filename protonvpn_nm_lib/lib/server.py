@@ -38,11 +38,13 @@ class ProtonVPNServer:
         self.__connection = connection
         self.SERVERNAME = None
         self.COUNTRY = None
+        self.COUNTRY_CODE = None
         self.CITY = None
         self.LOAD = None
         self.TIER = None
         self.FEATURE_LIST = None
         self.ENTRY_COUNTRY = None
+        self.ENTRY_COUNTRY_CODE = None
         self.REGION = None
         self.LATITUDE = None
         self.LONGITUDE = None
@@ -123,11 +125,11 @@ class ProtonVPNServer:
             lat = location.get("Lat")
             long = location.get("Long")
 
-            entry_country = self.__server_manager.extract_server_value(
+            entry_country_code = self.__server_manager.extract_server_value(
                 servername, ServerInfoEnum.ENTRY_COUNTRY.value, server_list
             )
             entry_country = self.__server_manager.extract_country_name(
-                entry_country
+                entry_country_code
             )
 
             tier = [
@@ -155,11 +157,13 @@ class ProtonVPNServer:
 
         self.SERVERNAME = servername
         self.COUNTRY = country
+        self.COUNTRY_CODE = country_code
         self.CITY = city
         self.LOAD = load
         self.TIER = tier
         self.FEATURE_LIST = feature_list
         self.ENTRY_COUNTRY = entry_country
+        self.ENTRY_COUNTRY_CODE = country_code
         self.REGION = region
         self.LATITUDE = lat
         self.LONGITUDE = long
