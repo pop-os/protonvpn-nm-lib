@@ -11,13 +11,13 @@ from ..constants import (
 from ..enums import ProtocolEnum, ProtocolPortEnum
 from ..logger import logger
 from . import capture_exception
-from .connection_metadata import ConnectionMetadata
 
 
-class Certificate(ConnectionMetadata):
-    def __init__(self):
-        super().__init__()
+class Certificate:
+    """Certificate class.
 
+    Generates VPN certificate.
+    """
     def generate_vpn_cert(
         self, protocol,
         servername, ip_list, exit_IP, cached_cert=CACHED_OPENVPN_CERTIFICATE
