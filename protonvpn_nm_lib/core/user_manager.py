@@ -182,7 +182,7 @@ class UserManager:
         Returns:
             Instance of ProtonSessionWrapper
         """
-        session_data = self.session_data.load_stored_user_session(
+        session_data = self.session_data.get_stored_data(
             self.keyring_sessiondata,
             self.keyring_service
         )
@@ -197,7 +197,14 @@ class UserManager:
         Returns:
             Instance of ProtonSessionWrapper
         """
-        return ProtonSessionWrapper.load(session_data, self)
+        try:
+            return ProtonSessionWrapper.load(session_data, self)
+        except KeyError as e:
+            logger.exception("[!] KeyError: {}".format(e))
+            raise KeyError(e)
+        except Exception as e:
+            logger.exception("[!] Exception: {}".format(e))
+            raise Exception(e)
 
     def validate_username_password(self, username, password):
         """Validate ProtonVPN username and password.

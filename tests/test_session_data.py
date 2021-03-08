@@ -105,27 +105,6 @@ class TestSessionData:
             (TEST_KEYRING["sname"][2], TEST_KEYRING["uname"][0])
         ]
     )
-    def test_load_expected_stored_session(
-        self,
-        expected_servicename,
-        expected_username,
-    ):
-        assert isinstance(
-            self.usm.load_stored_user_session(
-                keyring_service=expected_servicename,
-                keyring_username=expected_username
-            ),
-            dict
-        )
-
-    @pytest.mark.parametrize(
-        "expected_servicename,expected_username",
-        [
-            (TEST_KEYRING["sname"][0], TEST_KEYRING["uname"][0]),
-            (TEST_KEYRING["sname"][1], TEST_KEYRING["uname"][0]),
-            (TEST_KEYRING["sname"][2], TEST_KEYRING["uname"][0])
-        ]
-    )
     def test_delete_expected_stored_session(
         self,
         expected_servicename,

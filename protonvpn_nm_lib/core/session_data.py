@@ -1,15 +1,10 @@
 import json
 import os
-import re
-
-import keyring
-import keyring.backends.kwallet
-import keyring.backends.SecretService
 
 from .. import exceptions
 from ..enums import JsonDataEnumAction, KeyringEnum
 from ..logger import logger
-from . import capture_exception
+from .keyring_wrapper import KeyringWrapper
 
 
 class SesssionData:
@@ -18,38 +13,9 @@ class SesssionData:
     Stores and loads a user session data.
     """
     def __init__(self):
-        self.set_optimum_keyring_backend()
+        self.keyring = KeyringWrapper()
         current_DE = str(os.getenv("XDG_CURRENT_DESKTOP"))
         logger.info("Current DE: \"{}\"".format(current_DE))
-
-    def load_stored_user_session(
-        self,
-        keyring_username=KeyringEnum.DEFAULT_KEYRING_SESSIONDATA,
-        keyring_service=KeyringEnum.DEFAULT_KEYRING_SERVICE,
-    ):
-        """Load stored user session from keychain.
-
-        Args:
-            keyring_service (string): the keyring servicename (optional)
-            keyring_username (string): the keyring username (optional)
-        Returns:
-            session (proton.api.Session)
-        """
-        logger.info("Loading stored user session")
-        stored_session = self.get_stored_data(
-            keyring_username,
-            keyring_service,
-        )
-
-        # Needs to be catched
-        try:
-            return stored_session
-        except KeyError as e:
-            logger.exception("[!] KeyError: {}".format(e))
-            raise Exception(e)
-        except Exception as e:
-            logger.exception("[!] Exception: {}".format(e))
-            capture_exception(e)
 
     def store_data(
         self,
@@ -88,24 +54,11 @@ class SesssionData:
             JsonDataEnumAction.SAVE
         )
 
-        try:
-            keyring.set_password(
-                keyring_service,
-                keyring_username,
-                json_data
-            )
-        except (
-            keyring.errors.InitError,
-            keyring.errors.KeyringLocked,
-            keyring.errors.PasswordSetError
-        ) as e:
-            logger.exception("[!] AccessKeyringError: {}".format(e))
-            raise exceptions.AccessKeyringError(
-                "Could not access keychain: {}".format(e)
-            )
-        except Exception as e:
-            logger.error("[!] Exception: {}".format(e))
-            capture_exception(e)
+        self.keyring.set_password(
+            keyring_service,
+            keyring_username,
+            json_data
+        )
 
     def get_stored_data(
         self,
@@ -120,20 +73,10 @@ class SesssionData:
         Returns:
             json: json encoded data
         """
-        try:
-            stored_data = keyring.get_password(
-                keyring_service,
-                keyring_username
-            )
-        except (keyring.errors.InitError, keyring.errors.KeyringLocked) as e:
-            logger.exception("[!] AccessKeyringError: {}".format(e))
-            raise exceptions.AccessKeyringError(
-                "Could not fetch from keychain: {}".format(e)
-            )
-        except Exception as e:
-            logger.exception("[!] KeyringError: {}".format(e))
-            capture_exception(e)
-            raise exceptions.KeyringError(e)
+        stored_data = self.keyring.get_password(
+            keyring_service,
+            keyring_username
+        )
 
         try:
             return self.json_session_transform(
@@ -162,25 +105,10 @@ class SesssionData:
             keyring_service (string): the keyring servicename (optional)
         """
         logger.info("Deleting stored {}".format(keyring_username))
-        try:
-            keyring.delete_password(
-                keyring_service,
-                keyring_username,
-            )
-        except (
-                keyring.errors.InitError,
-                keyring.errors.KeyringLocked
-        ) as e:
-            logger.exception("[!] AccessKeyringError: {}".format(e))
-            raise exceptions.AccessKeyringError(
-                "Could not access keychain: {}".format(e)
-            )
-        except keyring.errors.PasswordDeleteError as e:
-            logger.exception("[!] KeyringDataNotFound: {}".format(e))
-            raise exceptions.KeyringDataNotFound(e)
-        except Exception as e:
-            logger.exception("[!] Unknown exception: {}".format(e))
-            capture_exception(e)
+        self.keyring.delete_password(
+            keyring_service,
+            keyring_username,
+        )
 
     def json_session_transform(self, session_data, action):
         """JSON encode/decode session_data.
@@ -198,61 +126,3 @@ class SesssionData:
             json_action = json.loads
 
         return json_action(session_data)
-
-    def set_optimum_keyring_backend(self):
-        """Determines the optimum keyring backend to be used.
-
-        Default backend: SecretService
-        """
-        logger.info("Setting optimum backend")
-        optimum_backend = None
-        search_in_str = re.search
-        supported_backends = ["kwallet", "SecretService"]
-
-        for k in keyring.backend.get_all_keyring():
-            backend_obj = k
-            backend_str = str(k)
-
-            backend_string_object = backend_str.split()[0]
-
-            try:
-                backend_name = backend_string_object.split(".")[2]
-            except IndexError:
-                backend_priority = None
-            except Exception as e:
-                logger.exception("[!] Unknown exception: {}".format(e))
-                capture_exception(e)
-            else:
-                backend_priority = search_in_str(
-                    r"\(\w+:\W(\d+\.?\d*)\)", backend_str
-                )
-
-            if backend_priority is not None:
-                try:
-                    supported_backends.index(backend_name)
-                except ValueError:
-                    continue
-                except Exception as e:
-                    logger.exception("[!] Unknown exception: {}".format(e))
-                    capture_exception(e)
-                else:
-                    backend_priority = backend_priority.group(1)
-                    if (
-                        optimum_backend is None
-                        or float(backend_priority) > float(optimum_backend[1])
-                    ):
-                        optimum_backend = (
-                            backend_name,
-                            backend_priority,
-                            backend_obj
-                        )
-
-        if optimum_backend is None:
-            optimum_backend = (
-                "SecretService",
-                10,
-                keyring.backends.SecretService.Keyring()
-            )
-
-        logger.info("Keyring backend: {}".format(optimum_backend))
-        keyring.set_keyring(optimum_backend[2])
