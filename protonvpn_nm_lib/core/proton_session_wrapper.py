@@ -14,6 +14,7 @@ from ..enums import (MetadataActionEnum, MetadataEnum,
                      ProtonSessionAPIMethodEnum)
 from ..logger import logger
 from .metadata import Metadata
+from .servers.server_list import ServerList
 
 
 class ProtonSessionWrapper:
@@ -186,36 +187,45 @@ class ProtonSessionWrapper:
         )
 
     def store_server_cache(
-        self, cache, full_cache=False, cache_path=None
+        self, new_cache, full_cache=False, cache_path=None
     ):
         if cache_path is None:
             raise Exception("Invalid server cache path")
 
         if full_cache:
+            try:
+                new_cache.server_list
+            except AttributeError:
+                pass
+            else:
+                new_cache = new_cache.serialize_server_list_to_dict()
+
             with open(cache_path, "w") as f:
-                json.dump(cache, f)
+                json.dump(new_cache, f)
             return
 
         with open(cache_path, "r") as f:
-            servers = json.load(f)
+            locally_cached_servers = ServerList(json.load(f))
 
-        cache_dict = {v["ID"]: v for v in cache["LogicalServers"]}
+        newly_cached_servers = {
+            server.server_id: server
+            for server
+            in ServerList(new_cache).server_list
+        }
 
-        for server in servers["LogicalServers"]:
-            if server["ID"] in cache_dict:
-                new_value = cache_dict.pop(server["ID"])
-                server["Load"] = new_value["Load"]
-                server["Score"] = new_value["Score"]
+        for server in locally_cached_servers.server_list:
+            if server.server_id in newly_cached_servers:
+                updated_server = newly_cached_servers.pop(
+                    server.server_id
+                )
+                server.load = updated_server.load
+                server.score = updated_server.score
 
         self.store_server_cache(
-            servers,
+            locally_cached_servers,
             full_cache=True,
             cache_path=cache_path
         )
-
-    def yield_server_list(self, server_list):
-        for server in server_list["LogicalServers"]:
-            yield server
 
     def logout(self):
         """"Proxymethod for proton-client logout."""

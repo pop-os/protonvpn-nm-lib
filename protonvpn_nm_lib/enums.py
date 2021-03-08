@@ -144,6 +144,39 @@ class NetworkManagerConnectionTypeEnum(Enum):
     ALL = 1
 
 
+class ServerEnum(Enum):
+    ID = "ID"
+    DOMAIN = "Domain"
+    STATUS = "Status"
+
+
+class LogicalServerEnum(Enum):
+    NAME = "Name"
+    ENTRY_COUNTRY = "EntryCountry"
+    EXIT_COUNTRY = "ExitCountry"
+    TIER = "Tier"
+    FEATURES = "Features"
+    REGION = "Region"
+    CITY = "City"
+    SCORE = "Score"
+    LOCATION = "Location"
+    SERVERS = "Servers"
+    LOAD = "Load"
+
+
+class PhysicalServerEnum(Enum):
+    ENTRY_IP = "EntryIP"
+    EXIT_IP = "ExitIP"
+    GENERATION = "Generation"
+    SERVICES_DOWN_REASON = "ServicesDownReason"
+    LABEL = "Label"
+
+
+class ServerLocation(Enum):
+    LONGITUDE = "Long"
+    LATITUDE = "Lat"
+
+
 class ServerInfoEnum(Enum):
     SERVERNAME = "Servername"
     COUNTRY = "ExitCountry"
