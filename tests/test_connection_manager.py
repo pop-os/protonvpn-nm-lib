@@ -11,7 +11,7 @@ from common import (CERT_FOLDER, ENV_CI_NAME, MOCK_SESSIONDATA,
                     ConnectionMetadata, DbusReconnect, IPv6LeakProtection,
                     KillSwitch, KillswitchStatusEnum,
                     NetworkManagerConnectionTypeEnum, ProtocolEnum,
-                    UserConfigurationManager, UserManager, UserSession,
+                    UserConfigurationManager, UserManager, SesssionData,
                     UserSettingStatusEnum, exceptions)
 
 TEST_KEYRING_SERVICE = "TestConnManager"
@@ -85,13 +85,13 @@ class TestIntegrationConnectionManager():
         um.keyring_sessiondata = TEST_KEYRING_SESSIONDATA
         um.keyring_userdata = TEST_KEYRING_USERDATA
         um.keyring_proton_user = TEST_KEYRING_PROTON_USER
-        um.user_session.store_data(
+        um.session_data.store_data(
             data=MOCK_SESSIONDATA,
             keyring_username=TEST_KEYRING_SESSIONDATA,
             keyring_service=TEST_KEYRING_SERVICE,
             store_user_data=False
         )
-        um.user_session.store_data(
+        um.session_data.store_data(
             data=dict(
                 VPN=dict(
                     Name="test_username",
@@ -103,7 +103,7 @@ class TestIntegrationConnectionManager():
             keyring_service=TEST_KEYRING_SERVICE,
             store_user_data=True
         )
-        um.user_session.store_data(
+        um.session_data.store_data(
             data={"test_proton_username": "test_server_man_user"},
             keyring_username=TEST_KEYRING_PROTON_USER,
             keyring_service=TEST_KEYRING_SERVICE,
@@ -117,9 +117,9 @@ class TestIntegrationConnectionManager():
         um.keyring_sessiondata = TEST_KEYRING_SESSIONDATA
         um.keyring_userdata = TEST_KEYRING_USERDATA
         um.keyring_proton_user = TEST_KEYRING_PROTON_USER
-        um.user_session.delete_stored_data(TEST_KEYRING_PROTON_USER, TEST_KEYRING_SERVICE)
-        um.user_session.delete_stored_data(TEST_KEYRING_SESSIONDATA, TEST_KEYRING_SERVICE)
-        um.user_session.delete_stored_data(TEST_KEYRING_USERDATA, TEST_KEYRING_SERVICE)
+        um.session_data.delete_stored_data(TEST_KEYRING_PROTON_USER, TEST_KEYRING_SERVICE)
+        um.session_data.delete_stored_data(TEST_KEYRING_SESSIONDATA, TEST_KEYRING_SERVICE)
+        um.session_data.delete_stored_data(TEST_KEYRING_USERDATA, TEST_KEYRING_SERVICE)
 
     @pytest.fixture
     def openvpn_user(self):

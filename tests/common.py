@@ -20,7 +20,7 @@ from protonvpn_nm_lib.core.server_manager import ServerManager
 from protonvpn_nm_lib.core.user_configuration_manager import \
     UserConfigurationManager
 from protonvpn_nm_lib.core.user_manager import UserManager
-from protonvpn_nm_lib.core.user_session import UserSession
+from protonvpn_nm_lib.core.session_data import SesssionData
 from protonvpn_nm_lib.enums import (ClientSuffixEnum, ConnectionMetadataEnum,
                                     ConnectionTypeEnum, KillswitchStatusEnum,
                                     LastConnectionMetadataEnum,

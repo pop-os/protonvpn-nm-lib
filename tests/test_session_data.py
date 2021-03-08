@@ -1,6 +1,6 @@
 import pytest
 
-from common import (MOCK_SESSIONDATA, ProtonSessionWrapper, UserSession,
+from common import (MOCK_SESSIONDATA, ProtonSessionWrapper, SesssionData,
                     exceptions)
 
 TEST_KEYRING = dict(
@@ -9,9 +9,9 @@ TEST_KEYRING = dict(
 )
 
 
-class TestUserSession:
+class TestSessionData:
 
-    usm = UserSession()
+    usm = SesssionData()
 
     @pytest.fixture
     def test_keyring_service(self):
@@ -115,7 +115,7 @@ class TestUserSession:
                 keyring_service=expected_servicename,
                 keyring_username=expected_username
             ),
-            ProtonSessionWrapper
+            dict
         )
 
     @pytest.mark.parametrize(

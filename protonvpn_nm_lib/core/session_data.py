@@ -5,34 +5,18 @@ import re
 import keyring
 import keyring.backends.kwallet
 import keyring.backends.SecretService
-from .proton_session_wrapper import ProtonSessionWrapper
 
 from .. import exceptions
-from ..enums import KeyringEnum, JsonDataEnumAction
+from ..enums import JsonDataEnumAction, KeyringEnum
 from ..logger import logger
 from . import capture_exception
 
 
-class UserSession:
+class SesssionData:
     """User Sesssion
 
-    Stores and loads a users session.
+    Stores and loads a user session data.
     """
-    KEYRING_BACKENDS = [
-        keyring.backends.kwallet.DBusKeyring,
-        keyring.backends.SecretService.Keyring,
-    ]
-    EXCEPTIONS_DICT = {
-        KeyringEnum.DEFAULT_KEYRING_SESSIONDATA: {
-            "display": "IllegalSessionData",
-            "exception": exceptions.IllegalSessionData,
-        },
-        KeyringEnum.DEFAULT_KEYRING_USERDATA: {
-            "display": "IllegalUserData",
-            "exception": exceptions.IllegalUserData
-        }
-    }
-
     def __init__(self):
         self.set_optimum_keyring_backend()
         current_DE = str(os.getenv("XDG_CURRENT_DESKTOP"))
@@ -59,7 +43,7 @@ class UserSession:
 
         # Needs to be catched
         try:
-            return ProtonSessionWrapper.load(stored_session, self)
+            return stored_session
         except KeyError as e:
             logger.exception("[!] KeyError: {}".format(e))
             raise Exception(e)
