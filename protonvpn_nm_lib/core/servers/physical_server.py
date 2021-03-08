@@ -3,7 +3,12 @@ from ...enums import PhysicalServerEnum, ServerEnum
 
 
 class PhysicalServer(Server):
+    """Physical Server class.
 
+    This class represents the physical servers that are located
+    in each logical server.
+    Provides a method which returns a serealized physical server.
+    """
     def __init__(self, physical_server):
         super().__init__(physical_server)
 
@@ -16,6 +21,14 @@ class PhysicalServer(Server):
         self.label = physical_server.get(PhysicalServerEnum.LABEL.value)
 
     def get_serialized_server(self):
+        """Get serealized physical servers.
+
+        This should be used only when saving to an external file,
+        as python objects are not writeable/accesible to external sources.
+
+        Returns:
+            dict
+        """
         return {
             PhysicalServerEnum.ENTRY_IP.value: self.entry_ip,
             PhysicalServerEnum.EXIT_IP.value: self.exit_ip,

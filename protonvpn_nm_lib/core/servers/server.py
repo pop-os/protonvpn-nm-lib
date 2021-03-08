@@ -3,6 +3,14 @@ from abc import abstractmethod
 
 
 class Server:
+    """Server base class.
+
+    Both logical and physical servers share three common
+    properties and one commmon method. Thus, this class
+    serves as a base class to be inherited by those
+    two classes.
+    """
+
     _server_id = ""
     _domain = ""
     _status = 0

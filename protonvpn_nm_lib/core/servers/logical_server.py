@@ -5,7 +5,14 @@ from ...enums import LogicalServerEnum, ServerEnum
 
 
 class LogicalServer(Server):
+    """Logical Server class.
 
+    This class represent a logicals server which is
+    provided  by the API.
+    A get_serialized_server() is provided so that the
+    contencts can be easily saved/stored to a file,
+    as the object is transformed into a dict.
+    """
     def __init__(self, logical_server):
         super().__init__(logical_server)
 
@@ -26,6 +33,14 @@ class LogicalServer(Server):
         self.load = logical_server.get(LogicalServerEnum.LOAD.value)
 
     def get_serialized_server(self):
+        """Get serealized logical servers.
+
+        This should be used only when saving to an external file,
+        as python objects are not writeable/accesible to external sources.
+
+        Returns:
+            dict
+        """
         return {
             LogicalServerEnum.NAME.value: self.name,
             LogicalServerEnum.ENTRY_COUNTRY.value: self.entry_country,
@@ -44,6 +59,11 @@ class LogicalServer(Server):
         }
 
     def get_serialized_physicals_servers(self):
+        """Get serealized physical servers.
+
+        Returns:
+            dict
+        """
         serialized_server = []
         for physical_server in self.servers:
             serialized_server.append(

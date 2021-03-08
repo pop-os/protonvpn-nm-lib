@@ -2,7 +2,14 @@ from .logical_server import LogicalServer
 
 
 class ServerList:
+    """Server List class.
 
+    This class holds a list of LogicalServer objects.
+    It also provides methods to manipulate this server list.
+
+    The idea here is to use only this list, to filter out servers and
+    manipulate it the way it is needed.
+    """
     def __init__(self, server_list_from_file):
         self.server_list = []
         for server in server_list_from_file["LogicalServers"]:
