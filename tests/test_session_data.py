@@ -1,6 +1,6 @@
 import pytest
 
-from common import (MOCK_SESSIONDATA, ProtonSessionWrapper, SesssionData,
+from common import (MOCK_SESSIONDATA, ProtonSessionWrapper, SessionData,
                     exceptions)
 
 TEST_KEYRING = dict(
@@ -11,7 +11,7 @@ TEST_KEYRING = dict(
 
 class TestSessionData:
 
-    usm = SesssionData()
+    usm = SessionData()
 
     @pytest.fixture
     def test_keyring_service(self):

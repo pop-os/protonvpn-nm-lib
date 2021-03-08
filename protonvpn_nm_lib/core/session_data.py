@@ -7,7 +7,7 @@ from ..logger import logger
 from .keyring_wrapper import KeyringWrapper
 
 
-class SesssionData:
+class SessionData:
     """User Sesssion
 
     Stores and loads a user session data.

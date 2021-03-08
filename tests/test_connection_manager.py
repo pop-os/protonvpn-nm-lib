@@ -11,7 +11,7 @@ from common import (CERT_FOLDER, ENV_CI_NAME, MOCK_SESSIONDATA,
                     ConnectionMetadata, DbusReconnect, IPv6LeakProtection,
                     KillSwitch, KillswitchStatusEnum,
                     NetworkManagerConnectionTypeEnum, ProtocolEnum,
-                    UserConfigurationManager, UserManager, SesssionData,
+                    UserConfigurationManager, UserManager, SessionData,
                     UserSettingStatusEnum, exceptions)
 
 TEST_KEYRING_SERVICE = "TestConnManager"

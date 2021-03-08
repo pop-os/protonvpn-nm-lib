@@ -7,7 +7,7 @@ from ..constants import (
 from ..enums import ClientSuffixEnum, KeyringEnum
 from ..logger import logger
 from .. import exceptions
-from .session_data import SesssionData
+from .session_data import SessionData
 
 
 class UserManager:
@@ -24,7 +24,7 @@ class UserManager:
         self.keyring_userdata = keyring_userdata
         self.keyring_proton_user = keyring_proton_user
         self.user_conf_manager = user_conf_manager
-        self.session_data = SesssionData()
+        self.session_data = SessionData()
 
         logger.info(
 
