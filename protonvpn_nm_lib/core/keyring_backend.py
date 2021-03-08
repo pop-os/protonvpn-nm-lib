@@ -9,6 +9,10 @@ from . import capture_exception
 
 
 class KeyringBackend:
+    """Keyrinb backend class.
+
+    Represents a keyring backend object (keyring.backends)
+    """
     SUPPORTED_BACKENDS = ["kwallet", "SecretService"]
 
     def __init__(
@@ -23,6 +27,12 @@ class KeyringBackend:
         self.priority = None
 
     def generate_backend_object(self):
+        """Generates the backend objects.
+
+        Given that the specified back-end exists,
+        it will generate the backend by setting
+        the all object properties.
+        """
         if (
             self.backend_exist()
             and self.get_backend_name() in self.SUPPORTED_BACKENDS
@@ -30,6 +40,14 @@ class KeyringBackend:
             self.set_properties()
 
     def backend_exist(self):
+        """Checks if backend exists.
+
+        It does so by attempting to extract the backend name.
+        Check self.get_backend_name()
+
+        Returns:
+            bool
+        """
         try:
             self.get_backend_name()
         except Exception as e:
@@ -40,18 +58,37 @@ class KeyringBackend:
         return True
 
     def set_properties(self):
+        """Set object properties."""
         self.object = self.__keyring_backend
         self.name = self.get_backend_name()
         self.priority = self.get_backend_priority()
 
     def get_backend_path_string(self):
+        """Gets a backends path.
+
+        Returns:
+            str
+        """
         return self.__keyring_backend_in_string_type.split()[0]
 
     def get_backend_name(self):
+        """Gets a backends name, by splitting the name.
+
+        Returns:
+            str
+        """
         backend_path_string = self.get_backend_path_string()
         return backend_path_string.split(".")[2]
 
     def get_backend_priority(self):
+        """Get backend priority.
+
+        The backend priority is searched from within a backend
+        string type via regex.
+
+        Returns:
+            float
+        """
         backend_priority = re.search(
             r"\(\w+:\W(\d+\.?\d*)\)", self.__keyring_backend_in_string_type
         )
@@ -59,6 +96,14 @@ class KeyringBackend:
 
     @staticmethod
     def get_default_keyring():
+        """Get default keyring.
+
+        This method should be used only if no other backends were
+        successfully found.
+
+        Returns:
+            KeyringBackend
+        """
         default_keyring_backend = KeyringBackend(
             keyring.backends.SecretService.Keyring()
         )

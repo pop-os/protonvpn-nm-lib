@@ -8,9 +8,11 @@ from .keyring_wrapper import KeyringWrapper
 
 
 class SessionData:
-    """User Sesssion
+    """Session Data class.
 
-    Stores and loads a user session data.
+    This class is used to store, load and delete data related
+    to a user session. All this data is handled via a keyring
+    backend.
     """
     def __init__(self):
         self.keyring = KeyringWrapper()
@@ -54,7 +56,7 @@ class SessionData:
             JsonDataEnumAction.SAVE
         )
 
-        self.keyring.set_password(
+        self.keyring.add_keyring_entry(
             keyring_service,
             keyring_username,
             json_data
@@ -73,7 +75,7 @@ class SessionData:
         Returns:
             json: json encoded data
         """
-        stored_data = self.keyring.get_password(
+        stored_data = self.keyring.get_keyring_entry(
             keyring_service,
             keyring_username
         )
@@ -105,7 +107,7 @@ class SessionData:
             keyring_service (string): the keyring servicename (optional)
         """
         logger.info("Deleting stored {}".format(keyring_username))
-        self.keyring.delete_password(
+        self.keyring.delete_keyring_entry(
             keyring_service,
             keyring_username,
         )

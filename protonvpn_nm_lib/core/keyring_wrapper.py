@@ -10,6 +10,12 @@ from .keyring_backend import KeyringBackend
 
 
 class KeyringWrapper:
+    """Keyring wrapper class.
+
+    It is used to wrap around the keyring implementation.
+    This currently wraps around the python keyring module,
+    but any other implemtation can be easily changed.
+    """
     KEYRING_BACKENDS = [
         keyring.backends.kwallet.DBusKeyring,
         keyring.backends.SecretService.Keyring,
@@ -30,7 +36,7 @@ class KeyringWrapper:
         self.set_optimum_keyring_backend()
 
     def set_optimum_keyring_backend(self):
-        """Determines the optimum keyring backend to be used.
+        """Sets the optimum keyring backend to be used.
 
         Default backend: SecretService
         """
@@ -59,7 +65,16 @@ class KeyringWrapper:
         logger.info("Keyring backend: {}".format(optimum_backend))
         keyring.set_keyring(optimum_backend.object)
 
-    def get_password(self, keyring_service, keyring_username):
+    def get_keyring_entry(self, keyring_service, keyring_username):
+        """Get keyring entry.
+
+        Args:
+            keyring_username (string): the keyring username
+            keyring_service (string): the keyring servicename
+
+        Returns:
+            dict
+        """
         try:
             return keyring.get_password(
                 keyring_service,
@@ -75,7 +90,13 @@ class KeyringWrapper:
             capture_exception(e)
             raise exceptions.KeyringError(e)
 
-    def delete_password(self, keyring_service, keyring_username):
+    def delete_keyring_entry(self, keyring_service, keyring_username):
+        """Delete keyring entry.
+
+        Args:
+            keyring_username (string): the keyring username
+            keyring_service (string): the keyring servicename
+        """
         try:
             keyring.delete_password(
                 keyring_service,
@@ -96,7 +117,14 @@ class KeyringWrapper:
             logger.exception("[!] Unknown exception: {}".format(e))
             capture_exception(e)
 
-    def set_password(self, keyring_service, keyring_username, data):
+    def add_keyring_entry(self, keyring_service, keyring_username, data):
+        """Add data entry to keyring.
+
+        Args:
+            data (dict(json)): data to be stored
+            keyring_username (string): the keyring username
+            keyring_service (string): the keyring servicename
+        """
         try:
             keyring.set_password(
                 keyring_service,
