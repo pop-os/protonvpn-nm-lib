@@ -254,6 +254,14 @@ class Client:
         """
         return session
 
+    def check_session_exists(self):
+        """Checks if session exists.
+
+        Returns:
+            bool
+        """
+        return session.check_session_exists()
+
     def get_connection_status(self):
         """Get active connection status.
 
