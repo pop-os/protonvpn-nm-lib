@@ -146,9 +146,8 @@ class ProtonSessionWrapper:
                 MetadataEnum.SERVER_CACHE,
                 metadata
             )
-            self.store_server_cache(
+            self.store_full_cache(
                 api_response,
-                full_cache=True,
                 cache_path=self.CACHED_SERVERLIST
             )
             return
@@ -177,7 +176,7 @@ class ProtonSessionWrapper:
                 MetadataEnum.SERVER_CACHE,
                 metadata
             )
-            self.store_server_cache(
+            self.store_loads_cache(
                 api_response,
                 cache_path=self.CACHED_SERVERLIST
             )
@@ -187,27 +186,32 @@ class ProtonSessionWrapper:
             error, ProtonSessionAPIMethodEnum.FULL_CACHE
         )
 
-    def store_server_cache(
-        self, new_cache, full_cache=False, cache_path=None
+    def store_full_cache(self, new_cache, cache_path):
+        if cache_path is None:
+            raise Exception("Invalid server cache path")
+
+        try:
+            new_cache.servers
+        except AttributeError:
+            pass
+        else:
+            new_cache = new_cache.serialize_server_list_to_dict()
+
+        with open(cache_path, "w") as f:
+            json.dump(new_cache, f)
+
+        return
+
+    def store_loads_cache(
+        self, new_cache, cache_path=None
     ):
         if cache_path is None:
             raise Exception("Invalid server cache path")
 
-        if full_cache:
-            try:
-                new_cache.servers
-            except AttributeError:
-                pass
-            else:
-                new_cache = new_cache.serialize_server_list_to_dict()
-
-            with open(cache_path, "w") as f:
-                json.dump(new_cache, f)
-            return
-
         with open(cache_path, "r") as f:
+            raw_local_cache = json.load(f)
             locally_cached_servers = ServerList.load_servers_from_dict(
-                json.load(f)
+                raw_local_cache
             )
 
         newly_cached_servers = {
@@ -223,12 +227,6 @@ class ProtonSessionWrapper:
                 )
                 server.load = updated_server.load
                 server.score = updated_server.score
-
-        self.store_server_cache(
-            locally_cached_servers,
-            full_cache=True,
-            cache_path=cache_path
-        )
 
     def logout(self):
         """"Proxymethod for proton-client logout."""

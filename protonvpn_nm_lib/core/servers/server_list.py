@@ -33,10 +33,10 @@ class ServerList:
         return server_list
 
     @staticmethod
-    def load_servers_from_dict(server_list):
+    def load_servers_from_dict(servers):
         server_list = ServerList()
         server_list.reload_servers(
-            server_list
+            servers
         )
 
         return server_list
@@ -87,7 +87,6 @@ class ServerList:
                 from file.
         """
         self._servers = []
-
         for server in server_list["LogicalServers"]:
             self._servers.append(LogicalServer(server))
 
