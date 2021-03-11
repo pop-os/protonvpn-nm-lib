@@ -191,7 +191,7 @@ class Client:
         """
         return server_configurator.get_config_for_random_server()
 
-    def setup_reconnect_to_previously_connected_server(self):
+    def setup_reconnect(self):
         """Setup and configure VPN connection to
         a previously connected server.
 

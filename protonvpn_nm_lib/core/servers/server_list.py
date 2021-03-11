@@ -72,7 +72,7 @@ class ServerList:
     def serialize_servers_to_dict(self):
         writeable_dict_to_file = {"LogicalServers": []}
 
-        for logical_server in self.server_list:
+        for logical_server in self.servers:
             writeable_dict_to_file["LogicalServers"].append(
                 logical_server.get_serialized_server()
             )
@@ -91,7 +91,7 @@ class ServerList:
         for server in server_list["LogicalServers"]:
             self._servers.append(LogicalServer(server))
 
-    def get_matching_domain(self, exit_IP, server_feature):
+    def get_matching_domain(self, logical_server, physical_server):
         """Get matching domaing for featureless or secure-core servers.
 
         Args:
@@ -102,13 +102,14 @@ class ServerList:
             string: matching server domain
         """
         _list = [FeatureEnum.NORMAL, FeatureEnum.SECURE_CORE]
-        if server_feature in _list:
-            for server in self.server_list:
-                for physical_server in server["Servers"]:
-                    if exit_IP in physical_server["EntryIP"]:
-                        return physical_server["Domain"]
+        features = FeatureEnum(logical_server.features)
+        if features in _list:
+            for server in self.servers:
+                for _phys_server in server.servers:
+                    if physical_server.exit_ip == _phys_server.entry_ip:
+                        return _phys_server.domain
 
-        return None
+        return physical_server.domain
 
     def get_fastest_server(self, server_list):
         """Get fastest server.
@@ -190,6 +191,10 @@ class ServerList:
         logger.info("Saving server entry IP: \"{}\"".format(
             random_server.entry_ip
         ))
+        random_server.domain = self.get_matching_domain(
+            logical_server, random_server
+        )
+
         return random_server
 
     def ensure_servers_is_list(self, server_list):
