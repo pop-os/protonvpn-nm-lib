@@ -3,6 +3,7 @@ import dbus
 from ...logger import logger
 from ...constants import VIRTUAL_DEVICE_NAME
 
+
 class DbusWrapper:
     NETWORK_MANAGER_INTERFACE_NAME = "/org/freedesktop/NetworkManager"
 

@@ -1,7 +1,7 @@
 from ..logger import logger
 from .. import exceptions
 import requests
-from ..enums import KillswitchStatusEnum, ProtocolEnum
+from ..enums import KillswitchStatusEnum, ProtocolEnum, ConnectionTypeEnum
 from ..constants import FLAT_SUPPORTED_PROTOCOLS
 import distro
 import re
@@ -97,7 +97,7 @@ class Utilities:
         return "ProtonVPN (Linux; {}/{})".format(distribution, version)
 
     @staticmethod
-    def ensure_servername_is_valid(self, servername):
+    def ensure_servername_is_valid(servername):
         """Check if the provided servername is in a valid format.
 
         Args:
@@ -124,7 +124,7 @@ class Utilities:
             )
 
     @staticmethod
-    def ensure_ip_is_valid(self, ipaddr):
+    def ensure_ip_is_valid(ipaddr):
         """Check if the provided IP is valid IPv4.
 
         Args:
@@ -151,7 +151,8 @@ class Utilities:
                 )
             )
 
-    def is_protocol_valid(self, protocol):
+    @staticmethod
+    def is_protocol_valid(protocol):
         logger.info("Checking if protocol is valid")
         try:
             protocol = ProtocolEnum(protocol)
@@ -163,7 +164,8 @@ class Utilities:
 
         return False
 
-    def ensure_protocol_is_valid(self, protocol):
+    @staticmethod
+    def ensure_protocol_is_valid(protocol):
         """Check if provided protocol is a valid protocol.
 
         Args:
@@ -173,9 +175,54 @@ class Utilities:
             bool
         """
         logger.info("ensuring that protocol is valid")
-        if not self.is_protocol_valid(protocol):
+        if not Utilities.is_protocol_valid(protocol):
             raise Exception(
                 "Invalid protocol \"{}\"".format(
                     protocol
                 )
             )
+
+    @staticmethod
+    def parse_user_input(
+        user_input,
+        ensure_country_exists,
+        user_settings_protocol
+    ):
+        connection_type = user_input.get("connection_type")
+        connection_type_extra_arg = user_input.get("connection_type_extra_arg")
+        protocol = user_input.get("protocol")
+
+        utils = Utilities
+        if connection_type == ConnectionTypeEnum.COUNTRY:
+            ensure_country_exists(connection_type_extra_arg)
+        if connection_type == ConnectionTypeEnum.SERVERNAME:
+            utils.ensure_servername_is_valid(
+                connection_type_extra_arg
+            )
+
+        connection_type = connection_type
+        connection_type_extra_arg = connection_type_extra_arg
+
+        if connection_type not in [
+            ConnectionTypeEnum.SERVERNAME, ConnectionTypeEnum.COUNTRY
+        ]:
+            connection_type_extra_arg = connection_type
+
+        if not utils.is_protocol_valid(protocol):
+            protocol = ProtocolEnum(
+                user_settings_protocol
+            )
+        else:
+            protocol = ProtocolEnum(protocol)
+
+        return connection_type, connection_type_extra_arg, protocol
+
+    @staticmethod
+    def post_setup_connection_save_metadata(
+        connection_metadata, servername,
+        protocol, physical_server
+    ):
+        connection_metadata.save_servername(servername)
+        connection_metadata.save_protocol(protocol)
+        connection_metadata.save_display_server_ip(physical_server.exit_ip)
+        connection_metadata.save_server_ip(physical_server.entry_ip)

@@ -198,7 +198,7 @@ class NMClient:
                     break
         logger.info(
             "VPN connection: {}".format(
-                None if not len(protonvpn_connection) else protonvpn_connection
+                None if not protonvpn_connection else protonvpn_connection
             )
         )
         return protonvpn_connection

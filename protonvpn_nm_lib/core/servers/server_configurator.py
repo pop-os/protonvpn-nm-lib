@@ -71,8 +71,10 @@ class ServerConfigurator:
         self.server_list.reload_servers(
             self.server_list.get_cached_serverlist()
         )
+        servers_list = self.server_list.servers
         default_filtered_servers = \
-            self.server_list.get_default_filtered_servers(
+            self.server_filter.get_default_filtered_servers(
+                servers_list,
                 self.get_user_tier()
             )
         country_servers = self.server_list.get_servers_by_country_code(
@@ -123,11 +125,13 @@ class ServerConfigurator:
         self.server_list.reload_servers(
             self.server_list.get_cached_serverlist()
         )
+        servers_list = self.server_list.servers
         default_filtered_servers = \
-            self.server_list.get_default_filtered_servers(
+            self.server_filter.get_default_filtered_servers(
+                servers_list,
                 self.get_user_tier()
             )
-        filtered_servers = self.server_list.get_server_by_name(
+        filtered_servers = self.server_filter.get_server_by_name(
             default_filtered_servers,
             servername
         )
@@ -143,7 +147,7 @@ class ServerConfigurator:
             )
             raise exceptions.EmptyServerListError(err_msg)
 
-        return self.server_list.get_random_server(filtered_servers)
+        return self.server_list.get_random_server([filtered_servers])
 
     def get_config_for_fastest_server_with_specific_feature(
         self, feature
@@ -159,8 +163,10 @@ class ServerConfigurator:
         self.server_list.reload_servers(
             self.server_list.get_cached_serverlist()
         )
+        servers_list = self.server_list.servers
         default_filtered_servers = \
-            self.server_list.get_default_filtered_servers(
+            self.server_filter.get_default_filtered_servers(
+                servers_list,
                 self.get_user_tier()
             )
 
@@ -181,7 +187,7 @@ class ServerConfigurator:
 
         feature = allowed_features[feature]
 
-        filtered_servers = self.server_list.get_servers_by_include_features( # noqa
+        filtered_servers = self.server_filter.get_servers_by_include_features( # noqa
             default_filtered_servers,
             [feature]
         )
@@ -208,9 +214,11 @@ class ServerConfigurator:
         self.server_list.reload_servers(
             self.server_list.get_cached_serverlist()
         )
+        servers_list = self.server_list.servers
         default_filtered_servers = \
-            self.server_list.get_default_filtered_servers(
-                self.user.tier
+            self.server_filter.get_default_filtered_servers(
+                servers_list,
+                self.get_user_tier()
             )
 
         return self.server_list.get_random_server(default_filtered_servers)

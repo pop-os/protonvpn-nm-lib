@@ -14,9 +14,8 @@ class MonitorVPNConnectionStart:
         self.failed_attempts = 0
         self.loop = None
         self.virtual_device_name = None
-        self.user_conf_manager = None
-        self.reconector_manager = None
-        self.ks_manager = None
+        self.dbus_reconnector = None
+        self.killswitch = None
         self.session = None
         self.bus = None
         self.dbus_response = []
@@ -26,18 +25,17 @@ class MonitorVPNConnectionStart:
         self.vpn_check()
 
     def setup_monitor(
-        self, virtual_device_name, loop,
-        ks_manager, user_conf_manager,
-        reconector_manager,
-        session, dbus_response
+        self, virtual_device_name, loop, dbus_reconnector,
+        dbus_response, killswitch, user_killswitch_config,
+        session
     ):
         self.loop = loop
         self.virtual_device_name = virtual_device_name
-        self.user_conf_manager = user_conf_manager
-        self.reconector_manager = reconector_manager
-        self.ks_manager = ks_manager
-        self.session = session
+        self.dbus_reconnector = dbus_reconnector
         self.dbus_response = dbus_response
+        self.killswitch = killswitch
+        self.user_killswitch_config = user_killswitch_config
+        self.session = session
         self.bus = dbus.SystemBus()
         self.dbus_wrapper = DbusWrapper(self.bus)
 
@@ -68,15 +66,15 @@ class MonitorVPNConnectionStart:
         if state == DbusVPNConnectionStateEnum.IS_ACTIVE:
             msg = "Successfully connected to ProtonVPN."
 
-            if self.user_conf_manager.killswitch == KillswitchStatusEnum.HARD: # noqa
-                self.ks_manager.manage(
+            if self.user_killswitch_config == KillswitchStatusEnum.HARD: # noqa
+                self.killswitch.manage(
                     KillSwitchActionEnum.POST_CONNECTION
                 )
 
-            if self.user_conf_manager.killswitch == KillswitchStatusEnum.SOFT: # noqa
-                self.ks_manager.manage(KillSwitchActionEnum.SOFT)
+            if self.user_killswitch_config == KillswitchStatusEnum.SOFT: # noqa
+                self.killswitch.manage(KillSwitchActionEnum.SOFT)
 
-            self.session.cache_servers()
+            self.session.refresh_servers()
 
             logger.info(msg)
             self.dbus_response[DbusMonitorResponseEnum.RESPONSE] = {
@@ -85,7 +83,7 @@ class MonitorVPNConnectionStart:
                 DbusMonitorResponseEnum.REASON: reason
             }
 
-            self.reconector_manager.start_daemon_reconnector()
+            self.dbus_reconnector.start_daemon_reconnector()
             self.loop.quit()
         elif state in [
             DbusVPNConnectionStateEnum.FAILED,
@@ -117,7 +115,7 @@ class MonitorVPNConnectionStart:
                 DbusMonitorResponseEnum.MESSAGE: msg,
                 DbusMonitorResponseEnum.REASON: reason
             }
-            self.reconector_manager.stop_daemon_reconnector()
+            self.dbus_reconnector.stop_daemon_reconnector()
             self.loop.quit()
 
     def vpn_signal_handler(self, conn):
