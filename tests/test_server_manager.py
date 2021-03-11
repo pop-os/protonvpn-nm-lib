@@ -57,290 +57,9 @@ session.FULL_CACHE_TIME_EXPIRE = 1 / 120
 session.LOADS_CACHE_TIME_EXPIRE = 1 / 120
 
 
-class TestUnitServerManager:
-    server_man = ServerManager(
-        Certificate(),
-        um
-    )
-    MOCKED_SESSION = ProtonSessionWrapper(
-        api_url="https://localhost",
-        user_manager=um
-    )
-
-    @classmethod
-    def setup_class(cls):
-        try:
-            os.mkdir(TEST_CACHED_SERVERFILE)
-        except FileExistsError:
-            shutil.rmtree(TEST_CACHED_SERVERFILE)
-            os.mkdir(TEST_CACHED_SERVERFILE)
-
-        um.session_data.store_data(
-            data=MOCK_SESSIONDATA,
-            keyring_username=TEST_KEYRING_SESSIONDATA,
-            keyring_service=TEST_KEYRING_SERVICE
-        )
-        um.session_data.store_data(
-            data=dict(
-                VPN=dict(
-                    Name="test_username",
-                    Password="test_password",
-                    MaxTier="2",
-                )
-            ),
-            keyring_username=TEST_KEYRING_USERDATA,
-            keyring_service=TEST_KEYRING_SERVICE,
-            store_user_data=True
-        )
-        um.session_data.store_data(
-            data={"test_proton_username": "test_server_man_user"},
-            keyring_username=TEST_KEYRING_PROTON_USER,
-            keyring_service=TEST_KEYRING_SERVICE,
-            store_user_data=False
-        )
-
-    @classmethod
-    def teardown_class(cls):
-        shutil.rmtree(TEST_CACHED_SERVERFILE)
-        um.session_data.delete_stored_data(TEST_KEYRING_PROTON_USER, TEST_KEYRING_SERVICE)
-        um.session_data.delete_stored_data(TEST_KEYRING_SESSIONDATA, TEST_KEYRING_SERVICE)
-        um.session_data.delete_stored_data(TEST_KEYRING_USERDATA, TEST_KEYRING_SERVICE)
-
-    @pytest.fixture
-    def mock_api_request(self):
-        mock_get_patcher = patch(
-            "protonvpn_nm_lib.core.proton_session_wrapper."
-            "Session.api_request"
-        )
-        yield mock_get_patcher.start()
-        mock_get_patcher.stop()
-
-    @pytest.mark.parametrize("servername", ["#", "", 5, None, {}, []])
-    def test_get_incorrect_get_pyshical_ip_list(
-        self, servername, mock_api_request
-    ):
-        mock_api_request.side_effect = [RAW_SERVER_LIST]
-        self.MOCKED_SESSION.cache_servers()
-        (
-            _servername,
-            server_feature,
-            filtered_servers,
-            servers
-        ) = self.server_man.get_config_for_fastest_server()
-        with pytest.raises(IndexError):
-            self.server_man.get_physical_server_list(
-                servername, SERVERS, filtered_servers
-            )
-
-    def test_get_correct_get_pyshical_ip_list(self, mock_api_request):
-        mock_api_request.side_effect = [RAW_SERVER_LIST]
-        (
-            servername,
-            server_feature,
-            filtered_servers,
-            servers
-        ) = self.server_man.get_config_for_specific_server(
-            servername=TestServernameEnum.TEST_5.value
-        )
-        servers = self.server_man.get_physical_server_list(
-            servername, SERVERS, filtered_servers
-        )
-        assert servers[0]["Domain"] == "pt-89.webtest.com"
-
-    def test_get_existing_label(self, mock_api_request):
-        mock_api_request.side_effect = [RAW_SERVER_LIST]
-        (
-            servername,
-            server_feature,
-            filtered_servers,
-            servers
-        ) = self.server_man.get_config_for_specific_server(
-            servername=TestServernameEnum.TEST_5.value
-        )
-        servers = self.server_man.get_physical_server_list(
-            servername, servers, filtered_servers
-        )
-
-        server = self.server_man.get_random_physical_server(servers)
-        label = self.server_man.get_server_label(server)
-        assert label == "TestLabel"
-
-    def test_get_missing_label(self, mock_api_request):
-        mock_api_request.side_effect = [RAW_SERVER_LIST]
-        (
-            servername,
-            server_feature,
-            filtered_servers,
-            servers
-        ) = self.server_man.get_config_for_specific_server(
-            servername=TestServernameEnum.TEST_6.value
-        )
-        servers = self.server_man.get_physical_server_list(
-            servername, servers, filtered_servers
-        )
-
-        server = self.server_man.get_random_physical_server(servers)
-        label = self.server_man.get_server_label(server)
-        assert label is None
-
-    def test_get_nonexisting_label(self, mock_api_request):
-        mock_api_request.side_effect = [RAW_SERVER_LIST]
-        (
-            servername,
-            server_feature,
-            filtered_servers,
-            servers
-        ) = self.server_man.get_config_for_specific_server(
-            servername=TestServernameEnum.TEST_6.value
-        )
-        servers = self.server_man.get_physical_server_list(
-            servername, servers, filtered_servers
-        )
-
-        server = self.server_man.get_random_physical_server(servers)
-        label = self.server_man.get_server_label(server)
-        assert label is None
-
-    def test_get_server_IP(self, mock_api_request):
-        mock_api_request.side_effect = [RAW_SERVER_LIST]
-        (
-            servername,
-            server_feature,
-            filtered_servers,
-            servers
-        ) = self.server_man.get_config_for_specific_server(
-            servername=TestServernameEnum.TEST_6.value
-        )
-        servers = self.server_man.get_physical_server_list(
-            servername, servers, filtered_servers
-        )
-
-        server = self.server_man.get_random_physical_server(servers)
-        ips = self.server_man.get_server_entry_exit_ip(server)
-        assert ips == ("255.211.255.0", "255.211.255.0")
-
-    @pytest.fixture
-    def empty_server_pool(self):
-        server_pool = []
-        return server_pool
-
-    @pytest.fixture
-    def full_server_pool(self):
-        feature = 0
-        server_pool = [s for s in SERVERS if s["Features"] == feature]
-        return server_pool
-
-    def test_get_fastest_server_empty_pool(self, empty_server_pool):
-        with pytest.raises(IndexError):
-            self.server_man.get_fastest_server(empty_server_pool)
-
-    def test_get_fastest_server_full_pool(self, full_server_pool):
-        self.server_man.get_fastest_server(full_server_pool)
-
-    @pytest.mark.parametrize(
-        "servername",
-        [
-            TestServernameEnum.TEST_6.value, TestServernameEnum.TEST_5.value,
-        ]
-    )
-    def test_correct_extract_server_value(self, servername):
-        self.server_man.extract_server_value(servername, "Servers", SERVERS)
-
-    @pytest.mark.parametrize(
-        "servername",
-        [
-            "", "test#50",
-            "#6", "test",
-            123, None,
-            False
-        ]
-    )
-    def test_incorrect_extract_server_value(self, servername):
-        with pytest.raises(IndexError):
-            self.server_man.extract_server_value(
-                servername, "Servers", SERVERS
-            )
-
-    @pytest.mark.parametrize(
-        "cc,country",
-        [
-            ("BR", "Brazil"),
-            ("BS", "Bahamas"),
-            ("GR", "Greece"),
-            ("GQ", "Equatorial Guinea"),
-            ("GP", "Guadeloupe"),
-            ("JP", "Japan"),
-            ("GY", "Guyana"),
-        ]
-    )
-    def test_correct_country_name(self, cc, country):
-        assert self.server_man.extract_country_name(cc) == country
-
-    @pytest.mark.parametrize(
-        "cc,country",
-        [
-            ("BS", "Brazil"),
-            ("BR", "Bahamas"),
-            ("GQ", "Greece"),
-            ("GR", "Equatorial Guinea"),
-            ("JP", "Guadeloupe"),
-            ("GP", "Japan"),
-            ("Z", "Guyana"),
-            ("", "Guyana"),
-            (5, "Guyana"),
-        ]
-    )
-    def test_incorrect_extract_country_name(self, cc, country):
-        assert self.server_man.extract_country_name(cc) != country
-
-    @pytest.mark.parametrize(
-        "servername",
-        [
-            "PT#5",
-            "SE-PT#123",
-            "CH#18-TOR",
-            "US-CA#999",
-            "CH-FI#8",
-            "ch-fi#8",
-        ]
-    )
-    def test_valid_servername(self, servername):
-        resp = self.server_man.is_servername_valid(servername)
-        assert resp is True
-
-    @pytest.mark.parametrize(
-        "servername",
-        [
-            "_#1",
-            "123#412",
-            "#123",
-            "test2#412",
-            "CH#",
-            "#",
-            "5",
-        ]
-    )
-    def test_invalid_servername(self, servername):
-        resp = self.server_man.is_servername_valid(servername)
-        assert resp is False
-
-    @pytest.mark.parametrize(
-        "servername",
-        [
-            [], {}, 132
-        ]
-    )
-    def test_more_incorrect_servernames(self, servername):
-        with pytest.raises(TypeError):
-            self.server_man.is_servername_valid(servername)
-
-
 class TestIntegrationServerManager:
-    server_man = ServerManager(
-        Certificate(),
-        um
-    )
-    server_man.CACHED_SERVERLIST = TEST_CACHED_SERVERLIST
+    server_man = ServerManager(um)
+    server_man.server_list_object.CACHED_SERVERLIST = TEST_CACHED_SERVERLIST
     MOCKED_SESSION = ProtonSessionWrapper(
         api_url="https://localhost",
         user_manager=um
@@ -396,28 +115,28 @@ class TestIntegrationServerManager:
 
     def test_correct_generate_connect_fastest(self, mock_api_request):
         mock_api_request.side_effect = [RAW_SERVER_LIST]
-        servername, *rest = self.server_man.get_config_for_fastest_server()
-        assert servername == TestServernameEnum.TEST_IPV6_11.value
+        (
+            server_list_object, server
+        ) = self.server_man.get_config_for_fastest_server()
+        assert server.name == TestServernameEnum.TEST_IPV6_11.value
 
     def test_correct_generate_connect_country(self):
         (
-            servername,
-            *rest
+            server_list_object, server
         ) = self.server_man.get_config_for_fastest_server_in_country(
             country_code="PT",
         )
-        assert servername == TestServernameEnum.TEST_6.value
+        assert server.name == TestServernameEnum.TEST_6.value
 
     def test_correct_generate_connect_direct(self, mock_api_request):
         mock_api_request.side_effect = [RAW_SERVER_LIST]
-        server = TestServernameEnum.TEST_6.value
+        servername = TestServernameEnum.TEST_6.value
         (
-            servername,
-            *rest
+            server_list_object, server
         ) = self.server_man.get_config_for_specific_server(
-            servername=server,
+            servername=servername,
         )
-        assert servername == server
+        assert server.name == servername
 
     @pytest.mark.parametrize(
         "feature,servername", [
@@ -433,32 +152,12 @@ class TestIntegrationServerManager:
     )
     def test_correct_generate_connect_feature(self, feature, servername):
         (
-            _servername,
-            *rest
+            server_list_object, server
         ) = self.server_man.get_config_for_fastest_server_with_specific_feature( # noqa
             feature=feature,
         )
-        assert servername == _servername
+        assert server.name == servername
 
     def test_correct_generate_connect_random(self):
-        servername, *rest = self.server_man.get_config_for_random_server()
-        assert servername in [server["Name"] for server in SERVERS]
-
-    def test_correct_generate_server_certificate(self):
-        (
-            servername,
-            server_feature,
-            filtered_servers,
-            servers
-        ) = self.server_man.get_config_for_fastest_server()
-        (
-            cert_fp,
-            matching_domain,
-            entry_IP,
-            server_label
-        ) = self.server_man.generate_server_certificate(
-            servername, server_feature,
-            ProtocolEnum.TCP, servers, filtered_servers
-        )
-
-        assert True == (True if os.path.isfile(cert_fp) else False)
+        server_list_object, server = self.server_man.get_config_for_random_server() # noqa
+        assert server.name in [server["Name"] for server in SERVERS]

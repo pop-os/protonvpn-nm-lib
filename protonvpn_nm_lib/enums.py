@@ -227,11 +227,6 @@ class DaemonReconnectorEnum(Enum):
     DAEMON_RELOAD = "daemon-reload"
 
 
-class JsonDataEnumAction(Enum):
-    LOAD = 0
-    SAVE = 1
-
-
 class DbusMonitorResponseEnum(Enum):
     RESPONSE = "dbus_response"
     STATE = "state"

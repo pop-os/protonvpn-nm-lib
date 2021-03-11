@@ -5,23 +5,26 @@ class ProtonVPNException(BaseException):
         super(ProtonVPNException, self).__init__(self.message)
 
 
-class FinishError(ProtonVPNException): # noqa
+class DBusException(ProtonVPNException):
+    """DBus exception."""
+
+class FinishError(DBusException): # noqa
     """Finish async callback error."""
 
 
-class AddConnectionFinishError(FinishError):
+class AddConnectionFinishError(DBusException):
     """Add connection finish error."""
 
 
-class StartConnectionFinishError(FinishError):
+class StartConnectionFinishError(DBusException):
     """Start connection finish error."""
 
 
-class StopConnectionFinishError(FinishError):
+class StopConnectionFinishError(DBusException):
     """Stop connection finish error."""
 
 
-class RemoveConnectionFinishError(FinishError):
+class RemoveConnectionFinishError(DBusException):
     """Remove connection finish error."""
 
 
