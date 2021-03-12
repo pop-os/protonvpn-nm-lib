@@ -34,6 +34,7 @@ connection_metadata = ConnectionMetadata()
 protonvpn_user = ProtonVPNUser()
 protonvpn_user.session = session
 protonvpn_user.settings.protonvpn_user = protonvpn_user
+protonvpn_user.settings.killswitch_obj = killswitch
 
 country = Country()
 server_configurator = ServerConfigurator.init(

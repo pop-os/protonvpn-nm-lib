@@ -71,7 +71,7 @@ class Settings:
                 "https://account.protonvpn.com/dashboard"
             )
 
-        self.settings_configurator.update_netshield(netshield_enum)
+        self.settings_configurator.set_netshield(netshield_enum)
 
     @property
     def killswitch(self):
@@ -159,7 +159,7 @@ class Settings:
         return self.settings_configurator.get_dns()
 
     @dns.setter
-    def dns(self, setting_status, custom_dns_ips=[]):
+    def dns(self, setting_status):
         """Set DNS setting.
 
         Args:
@@ -170,9 +170,6 @@ class Settings:
             raise Exception("Invalid setting status \"{}\"".format(
                 setting_status
             ))
-
-        if custom_dns_ips:
-            self.dns_custom_ips = custom_dns_ips
 
         try:
             self.settings_configurator.set_dns_status(setting_status)
@@ -223,11 +220,11 @@ class Settings:
                 Keys: DisplayUserSettingsEnum
         """
         settings_dict = {
-            DisplayUserSettingsEnum.PROTOCOL: self._get_protocol(),
-            DisplayUserSettingsEnum.KILLSWITCH: self._get_killswitch(),
-            DisplayUserSettingsEnum.DNS: self._get_dns(),
-            DisplayUserSettingsEnum.CUSTOM_DNS: self._get_custom_dns_list(),
-            DisplayUserSettingsEnum.NETSHIELD: self._get_netshield(),
+            DisplayUserSettingsEnum.PROTOCOL: self.protocol,
+            DisplayUserSettingsEnum.KILLSWITCH: self.killswitch,
+            DisplayUserSettingsEnum.DNS: self.dns,
+            DisplayUserSettingsEnum.CUSTOM_DNS: self.dns_custom_ips,
+            DisplayUserSettingsEnum.NETSHIELD: self.netshield,
         }
 
         if not readeable_format:

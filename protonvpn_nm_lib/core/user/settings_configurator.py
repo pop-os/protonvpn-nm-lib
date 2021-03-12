@@ -51,7 +51,7 @@ class SettingsConfigurator:
             UserSettingConnectionEnum.CUSTOM_DNS
         ]
 
-        return [custom_dns]
+        return custom_dns
 
     def get_killswitch(self):
         """Killswitch get property."""

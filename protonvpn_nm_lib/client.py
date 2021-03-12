@@ -198,7 +198,7 @@ class Client:
         Should be called before calling connect().
         """
         logger.info("Attemtping to recconnect to previous server")
-        last_connection_metadata = self.connection_metadata(
+        last_connection_metadata = connection_metadata.get_connection_metadata(
             MetadataEnum.LAST_CONNECTION
         )
 

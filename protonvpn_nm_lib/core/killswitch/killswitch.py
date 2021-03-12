@@ -45,7 +45,6 @@ class KillSwitch:
         self.ipv4_dummy_gateway = ipv4_dummy_gateway
         self.ipv6_dummy_addrs = ipv6_dummy_addrs
         self.ipv6_dummy_gateway = ipv6_dummy_gateway
-        self.user_conf_manager = None
         self.dbus_wrapper = dbus_wrapper(self.bus)
         self.interface_state_tracker = {
             self.ks_conn_name: {
@@ -71,9 +70,8 @@ class KillSwitch:
             server_ip (string): server ip to be connected to
         """
         logger.info(
-            "Action({}); Killswitch setting: {}".format(
+            "Manage Killswitch action: {}".format(
                 action,
-                self.user_conf_manager.killswitch
             )
         )
         conn_check = self.connectivity_check()
@@ -98,9 +96,8 @@ class KillSwitch:
 
     def update_from_user_configuration_menu(self, action):
         logger.info(
-            "Action({}); Killswitch setting: {}".format(
+            "Update from menu killswitch action: {}".format(
                 action,
-                self.user_conf_manager.killswitch
             )
         )
         if action == KillswitchStatusEnum.HARD:

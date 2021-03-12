@@ -14,10 +14,10 @@ class Connection:
         self.daemon_reconnector = None
 
     def get_non_active_protonvpn_connection(self):
-        return self.get_non_active_protonvpn_connection()
+        return self.adapter.get_non_active_protonvpn_connection()
 
     def get_active_protonvpn_connection(self):
-        return self.get_active_protonvpn_connection()
+        return self.adapter.get_active_protonvpn_connection()
 
     def setup_connection(self, server_data, user_data):
         domain = server_data.get("domain")
