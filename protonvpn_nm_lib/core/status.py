@@ -5,9 +5,12 @@ from ..constants import KILLSWITCH_STATUS_TEXT, SUPPORTED_PROTOCOLS
 from ..enums import (ConnectionMetadataEnum, ConnectionStatusEnum,
                      KillSwitchInterfaceTrackerEnum, KillswitchStatusEnum,
                      NetshieldTranslationEnum, ProtocolEnum,
-                     ProtocolImplementationEnum, MetadataEnum, FeatureEnum)
+                     ProtocolImplementationEnum, MetadataEnum)
 from ..logger import logger
 from ..core.servers import ServerFilter
+from .killswitch import KillSwitch
+from .metadata import ConnectionMetadata
+from .servers import ServerFilter
 
 
 class Status:
@@ -15,12 +18,17 @@ class Status:
     Use it to get status information about the current
     ProtonVPN connection.
     """
-    def __init__(self):
-        self.killswitch_obj = None
-        self.connection_metadata = None
+    def __init__(
+        self,
+        killswitch_obj=KillSwitch(),
+        connection_metadata=ConnectionMetadata(),
+        server_filter=ServerFilter()
+    ):
+        self.killswitch_obj = killswitch_obj
+        self.connection_metadata = ConnectionMetadata
         self.user_settings = None
         self.server_list = None
-        self._server_filter = ServerFilter()
+        self._server_filter = server_filter
 
     def get_active_connection_status(self, readeable_format=True):
         """Get active connection status.

@@ -2,15 +2,23 @@ from .connection_adapter import ConnectionAdapter
 from ...enums import KillSwitchActionEnum, KillswitchStatusEnum
 from ... import exceptions
 from ...logger import logger
+from ..dbus import DbusReconnect
+from ..killswitch import IPv6LeakProtection, KillSwitch
 
 
 class Connection:
-    def __init__(self, adapter=ConnectionAdapter()):
+    def __init__(
+        self,
+        adapter=ConnectionAdapter(),
+        daemon_reconnector=DbusReconnect(),
+        ipv6_lp=IPv6LeakProtection(),
+        killswitch=KillSwitch(),
+    ):
         self.adapter = adapter
-        self.ipv6_lp = None
-        self.killswitch = None
+        self.daemon_reconnector = daemon_reconnector
+        self.ipv6_lp = ipv6_lp
+        self.killswitch = killswitch
         self.protonvpn_user = None
-        self.daemon_reconnector = None
 
     def get_non_active_protonvpn_connection(self):
         return self.adapter.get_non_active_protonvpn_connection()

@@ -1,6 +1,7 @@
 from ... import exceptions
 from ...enums import ConnectionTypeEnum, FeatureEnum
 from ...logger import logger
+from ..servers import ServerFilter
 
 
 class ServerConfigurator:
@@ -12,7 +13,7 @@ class ServerConfigurator:
         self.server_filter = None
 
     @staticmethod
-    def init(user, server_list, server_filter):
+    def init(user, server_list, server_filter=ServerFilter()):
         server_configurator = ServerConfigurator()
         server_configurator.user = user
         server_configurator.server_list = server_list

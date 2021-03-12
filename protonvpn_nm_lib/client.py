@@ -2,10 +2,9 @@ from . import exceptions
 from .enums import (ConnectionMetadataEnum, ConnectionTypeEnum,
                     DbusMonitorResponseEnum, KillswitchStatusEnum,
                     MetadataEnum)
-from .init import (connection, connection_metadata, country,
-                   protonvpn_user,
+from .init import (connection, connection_metadata, country, protonvpn_user,
                    server_configurator, server_filter, server_list, session,
-                   utils, vpn_certificate, status)
+                   status, utils, vpn_certificate)
 from .logger import logger
 from .monitor_connection_start import (setup_dbus_vpn_monitor,
                                        start_dbus_vpn_monitor)

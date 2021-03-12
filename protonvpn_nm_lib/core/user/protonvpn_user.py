@@ -1,4 +1,5 @@
 from .settings import Settings
+from ..killswitch import KillSwitch
 
 
 class ProtonVPNUser:
@@ -11,9 +12,10 @@ class ProtonVPNUser:
     can be provided, given that it implements same methods and
     properties.
     """
-    def __init__(self, settings=Settings()):
+    def __init__(self, settings=Settings(), killswitch=KillSwitch()):
         self._session = None
         self.settings = settings
+        self.settings.killswitch_obj = killswitch
 
     @property
     def session(self):
