@@ -38,7 +38,7 @@ from protonvpn_nm_lib.enums import (DbusVPNConnectionReasonEnum,
                                     KillSwitchInterfaceTrackerEnum,
                                     KillSwitchActionEnum,
                                     KillswitchStatusEnum, MetadataEnum)
-from protonvpn_nm_lib.logger import logger
+from protonvpn_nm_lib.daemon.daemon_logger import logger
 from protonvpn_nm_lib.core.metadata import \
     ConnectionMetadata
 from protonvpn_nm_lib.core.dbus import DbusWrapper
