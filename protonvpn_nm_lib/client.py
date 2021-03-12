@@ -26,6 +26,10 @@ class Client:
 
     def logout(self):
         """Logout user and delete current user session."""
+        try:
+            self.disconnect()
+        except exceptions.ConnectionNotFound:
+            pass
         session.logout()
 
     def connect(self):

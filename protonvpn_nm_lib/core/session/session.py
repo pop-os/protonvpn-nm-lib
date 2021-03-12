@@ -36,6 +36,13 @@ class Session:
         self._keyring_session = keyring_session
         self._keyring_ovpn = keyring_ovpn
         self._keyring_proton = keyring_proton
+        self._keyring_list = [
+            self._keyring_session, self._keyring_ovpn, self._keyring_proton
+        ]
+
+    def reload_keyring_properties(self):
+        for keyring in self._keyring_list:
+            keyring.reload_properties()
 
     @property
     def proton_session_wrapper(self):
@@ -179,12 +186,6 @@ class Session:
                 AttributeError
             ):
                 logger.info("Unable to logout from API")
-
-            # TO-DO: code below should be moved before. Client could watch for this.
-            # try:
-            #     self.disconnect._disconnect()
-            # except exceptions.ConnectionNotFound:
-            #     pass
 
             _pass_check = []
             _removed = []
