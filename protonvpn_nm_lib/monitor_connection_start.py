@@ -1,9 +1,9 @@
+from . import protonvpn_user, session
+from .constants import VIRTUAL_DEVICE_NAME
+from .core.dbus import DbusReconnect
 from .core.dbus.dbus_monitor_vpn_connection_start import \
     MonitorVPNConnectionStart
-from .core.dbus import DbusReconnect
 from .core.killswitch import KillSwitch
-
-from .init import VIRTUAL_DEVICE_NAME, protonvpn_user, session
 
 vpn_monitor_connection_start = MonitorVPNConnectionStart()
 from dbus.mainloop.glib import DBusGMainLoop

@@ -1,10 +1,9 @@
-from . import exceptions
+from . import (connection, connection_metadata, country, exceptions,
+               protonvpn_user, server_configurator, server_filter, server_list,
+               session, status, utils, vpn_certificate)
 from .enums import (ConnectionMetadataEnum, ConnectionTypeEnum,
                     DbusMonitorResponseEnum, KillswitchStatusEnum,
                     MetadataEnum)
-from .init import (connection, connection_metadata, country, protonvpn_user,
-                   server_configurator, server_filter, server_list, session,
-                   status, utils, vpn_certificate)
 from .logger import logger
 from .monitor_connection_start import (setup_dbus_vpn_monitor,
                                        start_dbus_vpn_monitor)

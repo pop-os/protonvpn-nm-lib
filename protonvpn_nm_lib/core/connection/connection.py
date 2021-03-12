@@ -4,6 +4,7 @@ from ... import exceptions
 from ...logger import logger
 from ..dbus import DbusReconnect
 from ..killswitch import IPv6LeakProtection, KillSwitch
+from ...constants import VIRTUAL_DEVICE_NAME
 
 
 class Connection:
@@ -15,6 +16,7 @@ class Connection:
         killswitch=KillSwitch(),
     ):
         self.adapter = adapter
+        self.adapter.virtual_device_name = VIRTUAL_DEVICE_NAME
         self.daemon_reconnector = daemon_reconnector
         self.ipv6_lp = ipv6_lp
         self.killswitch = killswitch
