@@ -182,6 +182,9 @@ class DbusWrapper:
         """
         active_conn_all_settings = [False, None]
 
+        if active_conn is None or len(active_conn) < 1:
+            return active_conn_all_settings
+
         try:
             active_conn_props = self.get_active_conn_props(active_conn)
         except dbus.exceptions.DBusException as e:
@@ -233,7 +236,7 @@ class DbusWrapper:
         logger.info("ProtonVPN conn info: {}".format(protonvpn_conn_info))
         return tuple(protonvpn_conn_info)
 
-    def get_vpn_interface(self, return_properties=False):
+    def get_vpn_interface(self):
         """Get VPN connection interface based on virtual device name.
 
         Args:
@@ -288,16 +291,14 @@ class DbusWrapper:
                         + "'{}'.".format(self.virtual_device_name)
                     )
 
-                    if return_properties:
-                        return (iface, all_settings)
-                    return (iface)
+                    return iface
 
         logger.error(
             "[!] Could not find interface belonging to '{}'.".format(
                 self.virtual_device_name
             )
         )
-        return ()
+        return None
 
     def get_active_connection(
         self, get_by_id=None,
@@ -338,6 +339,7 @@ class DbusWrapper:
                 logger.exception(e)
                 continue
 
+            logger.info("{}".format(active_conn_props))
             if get_by_id and str(active_conn_props["Id"]) == get_by_id:
                 return active_conn
             elif get_by_settings_path and str(active_conn_props["Connection"]) == get_by_settings_path: # noqa

@@ -96,8 +96,6 @@ class ConnectionAdapter:
     def vpn_remove_connection(self):
         try:
             self.vpn_disconnect()
-        except exceptions.ConnectionNotFound as e:
-            raise exceptions.ConnectionNotFound(e)
         except: # noqa
             # It does not matter what type of exception is thrown here
             # after ConnectionNotFound, as long as the connection is disabled,

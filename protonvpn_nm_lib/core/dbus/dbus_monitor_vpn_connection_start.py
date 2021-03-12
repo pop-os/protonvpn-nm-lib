@@ -40,7 +40,7 @@ class MonitorVPNConnectionStart:
         self.dbus_wrapper = DbusWrapper(self.bus)
 
     def vpn_check(self):
-        vpn_interface = self.dbus_wrapper.get_vpn_interface(True)
+        vpn_interface = self.dbus_wrapper.get_vpn_interface()
 
         if not isinstance(vpn_interface, tuple):
             self.dbus_response[DbusMonitorResponseEnum.RESPONSE] = {
