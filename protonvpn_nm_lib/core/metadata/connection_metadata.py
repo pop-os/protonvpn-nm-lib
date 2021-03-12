@@ -29,7 +29,9 @@ class ConnectionMetadata:
         real_metadata = self.get_connection_metadata(
             MetadataEnum.CONNECTION
         )
+
         real_metadata[ConnectionMetadataEnum.SERVER.value] = servername
+        last_metadata[ConnectionMetadataEnum.SERVER.value] = servername
 
         logger.info("Saving servername \"{}\" on \"{}\"".format(
             servername, MetadataEnum.CONNECTION
