@@ -177,6 +177,7 @@ class ProtonVPNAPI:
         )
         self.connection.adapter.certificate_filepath = certificate_path
         self.connection.setup_connection(server_data, user_data)
+        return server
 
     def config_for_fastest_server(self, *_):
         """Select fastest server.

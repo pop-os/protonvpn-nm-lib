@@ -25,10 +25,10 @@ class Status:
         server_filter=ServerFilter()
     ):
         self.killswitch_obj = killswitch_obj
-        self.connection_metadata = ConnectionMetadata
+        self.connection_metadata = connection_metadata
         self.user_settings = None
         self.server_list = None
-        self._server_filter = server_filter
+        self.server_filter = server_filter
 
     def get_active_connection_status(self, readeable_format=True):
         """Get active connection status.
