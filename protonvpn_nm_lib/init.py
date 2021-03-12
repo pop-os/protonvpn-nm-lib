@@ -1,4 +1,3 @@
-from .enums import ProtocolEnum, ConnectionTypeEnum
 from .constants import VIRTUAL_DEVICE_NAME
 
 # Killswitch
@@ -16,7 +15,7 @@ from .core.metadata import ConnectionMetadata
 # Dbus processes
 from .core.dbus import DbusReconnect
 # Other
-from .core import Country, Utilities
+from .core import Country, Utilities, Status
 
 
 dbus_reconnector = DbusReconnect()
@@ -47,3 +46,10 @@ connection.killswitch = killswitch
 connection.protonvpn_user = protonvpn_user
 connection.connection_metadata = connection_metadata
 connection.daemon_reconnector = dbus_reconnector
+
+status = Status()
+status.killswitch_obj = killswitch
+status.connection_metadata = connection_metadata
+status.server_list = server_list
+status.server_filter = server_filter
+status.user_settings = protonvpn_user.settings

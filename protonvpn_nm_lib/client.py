@@ -5,13 +5,14 @@ from .enums import (ConnectionMetadataEnum, ConnectionTypeEnum,
 from .init import (connection, connection_metadata, country,
                    protonvpn_user,
                    server_configurator, server_filter, server_list, session,
-                   utils, vpn_certificate)
+                   utils, vpn_certificate, status)
 from .logger import logger
 from .monitor_connection_start import (setup_dbus_vpn_monitor,
                                        start_dbus_vpn_monitor)
 
 
 class Client:
+
     def login(self, username, password):
         """Login user with provided username and password.
         If login is unsuccessful, an exception will be thrown.
@@ -37,14 +38,11 @@ class Client:
         utils.ensure_internet_connection_is_available(
             protonvpn_user.settings.killswitch
         )
-        try:
-            self.disconnect()
-        except exceptions.ConnectionNotFound:
-            pass
 
         connection.connect()
         setup_dbus_vpn_monitor(dbus_response)
         start_dbus_vpn_monitor()
+        connection_metadata.save_connected_time()
         return dbus_response
 
     def disconnect(self):
@@ -108,6 +106,12 @@ class Client:
             country.ensure_country_code_exists,
             protonvpn_user.settings.protocol
         )
+
+        try:
+            self.disconnect()
+        except exceptions.ConnectionNotFound:
+            pass
+
         if killswitch_status != KillswitchStatusEnum.HARD:
             session.refresh_servers()
 
@@ -141,7 +145,8 @@ class Client:
             },
         }
         utils.post_setup_connection_save_metadata(
-            connection_metadata, server.name, _protocol, physical_server
+            connection_metadata, server.name,
+            _protocol, physical_server
         )
         connection.adapter.certificate_filepath = certificate_path
         connection.setup_connection(server_data, user_data)
@@ -274,7 +279,7 @@ class Client:
         Returns:
             dict
         """
-        pass
+        return status.get_active_connection_status()
 
     def get_connection_metadata(self):
         """Get metadata of an active ProtonVPN connection.
@@ -314,8 +319,8 @@ class Client:
         """
         utils.ensure_connectivity(protonvpn_user.settings.killswitch)
 
-    def get_country(self, country_code):
-        """Get country object
+    def get_country(self):
+        """Get country object.
 
         Args:
             Country

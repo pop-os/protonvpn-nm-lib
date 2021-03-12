@@ -1,5 +1,5 @@
 from .connection_adapter import ConnectionAdapter
-from ...enums import MetadataEnum, KillSwitchActionEnum, KillswitchStatusEnum
+from ...enums import KillSwitchActionEnum, KillswitchStatusEnum
 from ... import exceptions
 from ...logger import logger
 
@@ -10,7 +10,6 @@ class Connection:
         self.ipv6_lp = None
         self.killswitch = None
         self.protonvpn_user = None
-        self.connection_metadata = None
         self.daemon_reconnector = None
 
     def get_non_active_protonvpn_connection(self):
@@ -44,7 +43,6 @@ class Connection:
 
     def connect(self):
         self.adapter.vpn_connect()
-        self.connection_metadata.save_connected_time()
 
     def disconnect(self):
         try:
@@ -73,10 +71,6 @@ class Connection:
             raise Exception("Unknown error occured: {}".format(e))
 
         logger.info("Disconnected from VPN.")
-        self.connection_metadata.remove_connection_metadata(
-            MetadataEnum.CONNECTION
-        )
-        logger.info("Removing connection metadata.")
         self._post_disconnect()
 
     # TO-DO: Maybe move code below outside of this class
