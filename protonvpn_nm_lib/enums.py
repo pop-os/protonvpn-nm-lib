@@ -309,3 +309,8 @@ class DbusVPNConnectionReasonEnum(Enum):
     CREATE_SOFTWARE_DEVICE_LINK_FAILED = 13
     VPN_DEVICE_DISAPPEARED = 14
     UNKNOWN_ERROR = 999
+
+
+class ServerStatusEnum(Enum):
+    ACTIVE = 1
+    UNDER_MAINTENANCE = 0

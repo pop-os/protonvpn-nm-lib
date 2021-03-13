@@ -35,6 +35,25 @@ class Country:
 
         return countries
 
+    def get_dict_with_country_code_servername(self, server_list):
+        """Generate dict with {country:[servername]}.
+
+        Args:
+            server_list (list)
+        Returns:
+            dict: country_code: [servername]
+                ie {PT: [PT#5, PT#8]}
+        """
+        countries = {}
+        for server in server_list:
+            if countries.get(server.exit_country):
+                countries[server.exit_country].append(server.name)
+            else:
+                countries[server.exit_country] = []
+                countries[server.exit_country].append(server.name)
+
+        return countries
+
     def get_country_name(self, country_code):
         """Get country name of a given country code.
 
