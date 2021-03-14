@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, IntFlag
 
 
 class ProtocolEnum(Enum):
@@ -19,7 +19,7 @@ class ProtocolPortEnum(Enum):
     UDP = 1194
 
 
-class FeatureEnum(Enum):
+class FeatureEnum(IntFlag):
     NORMAL = 0
     SECURE_CORE = 1
     TOR = 2

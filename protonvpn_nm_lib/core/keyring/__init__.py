@@ -1,7 +1,5 @@
-from .wrapper import keyring_wrapper
-from .keyring_adapter import KeyringAdapter
-from .keyring_ovpn import KeyringOVPN # noqa
-from .keyring_proton import KeyringProton # noqa
-from .keyring_session import KeyringSession # noqa
+from . import (linuxkeyring, textfilekeyring)
 
-keyring_adapter = KeyringAdapter(keyring_wrapper)
+from ._base import KeyringBackend
+
+__all__ = ['KeyringBackend']

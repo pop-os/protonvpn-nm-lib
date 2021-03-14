@@ -1,6 +1,6 @@
 from . import (Connection, ConnectionMetadata, Country, exceptions,
                ProtonVPNUser, ServerConfigurator, ServerFilter, ServerList,
-               Session, Status, Utilities, VPNCertificate)
+               APISession, Status, Utilities, VPNConfiguration)
 from .enums import (ConnectionMetadataEnum, ConnectionTypeEnum,
                     DbusMonitorResponseEnum, KillswitchStatusEnum,
                     MetadataEnum)
@@ -8,31 +8,12 @@ from .logger import logger
 from .monitor_connection_start import (setup_dbus_vpn_monitor,
                                        start_dbus_vpn_monitor)
 
-
-class ProtonVPNAPI:
-    utils = Utilities()
-
-    _vpn_certificate = VPNCertificate()
-    server_list = ServerList()
-    server_filter = ServerFilter()
-    session = Session()
-    connection_metadata = ConnectionMetadata()
-
-    protonvpn_user = ProtonVPNUser()
-    protonvpn_user.session = session
-    protonvpn_user.settings.protonvpn_user = protonvpn_user
-    settings = protonvpn_user.settings
-
-    country = Country()
-    server_configurator = ServerConfigurator.init(
-        protonvpn_user, server_list
-    )
-    connection = Connection()
-    connection.protonvpn_user = protonvpn_user
-
-    status = Status()
-    status.server_list = server_list
-    status.user_settings = protonvpn_user.settings
+from .core.environment import ExecutionEnvironment
+class ProtonVPNClientAPI:
+    def __init__(self):
+        #The constructor should be where you initialize the environment and it's parameter
+        self._env = ExecutionEnvironment()
+        
 
     def login(self, username, password):
         """Login user with provided username and password.
@@ -42,16 +23,19 @@ class ProtonVPNAPI:
             username (string)
             password (string)
         """
-        self.utils.ensure_connectivity(self.protonvpn_user.settings.killswitch)
-        self.session.login(username, password)
+        #FIXME: Not implemented yet
+        #self._env.ensure_connectivity()
+        self._env.api_session.login(username, password)
 
     def logout(self):
         """Logout user and delete current user session."""
+        env = ExecutionEnvironment()
+        
         try:
-            self.disconnect()
+            self._env.connection_backend.disconnect()
         except exceptions.ConnectionNotFound:
             pass
-        self.session.logout()
+        self._env.api_session.logout()
 
     def connect(self):
         """Connect to ProtonVPN.
@@ -74,7 +58,7 @@ class ProtonVPNAPI:
 
     def disconnect(self):
         """Disconnect from ProtonVPN"""
-        self.connection.disconnect()
+        self._env.connection_backend.disconnect()
 
     def setup_connection(
         self,
@@ -147,10 +131,8 @@ class ProtonVPNAPI:
         )
 
         physical_server = self.server_list.get_random_physical_server(server)
-        certificate_path = self._vpn_certificate.generate(
-            _protocol, server.name, [physical_server.entry_ip]
-        )
-
+        configuration = VPNConfiguration.factory(_protocol, server.name, [physical_server.entry_ip])
+        
         openvpn_username = self.protonvpn_user.ovpn_username
         if physical_server.label is not None:
             openvpn_username = openvpn_username + "+b:" + physical_server.label
@@ -329,4 +311,4 @@ class ProtonVPNAPI:
             self.protonvpn_user.settings.killswitch
         )
 
-protonvpn = ProtonVPNAPI() # noqa
+protonvpn = ProtonVPNClientAPI() # noqa

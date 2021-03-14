@@ -17,6 +17,7 @@ class Utilities:
             utils.ensure_internet_connection_is_available(
                 killswith_setting
             )
+            #LF: It's bad to loose the type of exception
         except exceptions.InternetConnectionError as e:
             raise Exception("\n{}".format(e))
         except (exceptions.ProtonVPNException, Exception) as e:
@@ -85,16 +86,6 @@ class Utilities:
                 "Couldn't reach Proton API."
                 "This might happen due to connection issues or network blocks."
             )
-
-    @staticmethod
-    def get_distro_info():
-        """Get distribution version
-
-        Returns:
-            string: Linux distribution
-        """
-        distribution, version, code_nome = distro.linux_distribution()
-        return "ProtonVPN (Linux; {}/{})".format(distribution, version)
 
     @staticmethod
     def ensure_servername_is_valid(servername):

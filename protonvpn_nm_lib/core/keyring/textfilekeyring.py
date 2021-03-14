@@ -1,0 +1,38 @@
+import os, json
+
+from ._base import KeyringBackend
+
+from ...constants import PROTON_XDG_CONFIG_HOME
+
+class KeyringBackendJsonFiles(KeyringBackend):
+    #Low priority
+    priority = -1000
+    
+    def __init__(self):
+        super().__init__()
+        
+        self.__path_base = PROTON_XDG_CONFIG_HOME
+        
+    def __get_filename_for_key(self, key):
+        self._ensure_key_is_valid(key)
+            
+        return os.path.join(self.__path_base, f'keyring-{key}.json')
+        
+    def __getitem__(self, key):
+        f = self.__get_filename_for_key(key)
+        if not os.path.exists(f):
+            raise KeyError(key)
+    
+    def __delitem__(self, key):
+        f = self.__get_filename_for_key(key)
+        if not os.path.exists(f):
+            raise KeyError(key)
+        os.unlink(f)
+    
+    def __setitem__(self, key, value):
+        self._ensure_key_is_valid(key)
+        self._ensure_value_is_valid(value)
+        
+        with open(self.__get_filename_for_key(key), 'w') as f:
+            json.dump(value, f)
+        
