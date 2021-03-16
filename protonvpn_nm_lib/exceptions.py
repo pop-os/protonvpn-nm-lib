@@ -4,11 +4,13 @@ class ProtonVPNException(BaseException):
         self.additional_context = additional_info
         super(ProtonVPNException, self).__init__(self.message)
 
+
 class APISessionIsNotValidError(ProtonVPNException):
     """
     This exception is raised when a call requires a valid Proton API session,
     but we currently don't have one. This can be solved by doing a new login.
     """
+
 
 class DBusException(ProtonVPNException):
     """DBus exception."""

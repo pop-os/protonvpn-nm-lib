@@ -1,6 +1,7 @@
 from . import (Connection, ConnectionMetadata, Country, exceptions,
                ProtonVPNUser, ServerConfigurator, ServerFilter, ServerList,
                APISession, Status, Utilities, VPNConfiguration)
+
 from .enums import (ConnectionMetadataEnum, ConnectionTypeEnum,
                     DbusMonitorResponseEnum, KillswitchStatusEnum,
                     MetadataEnum)
@@ -9,11 +10,13 @@ from .monitor_connection_start import (setup_dbus_vpn_monitor,
                                        start_dbus_vpn_monitor)
 
 from .core.environment import ExecutionEnvironment
+
+
 class ProtonVPNClientAPI:
     def __init__(self):
-        #The constructor should be where you initialize the environment and it's parameter
+        # The constructor should be where you initialize
+        # the environment and it's parameter
         self._env = ExecutionEnvironment()
-        
 
     def login(self, username, password):
         """Login user with provided username and password.
@@ -23,14 +26,14 @@ class ProtonVPNClientAPI:
             username (string)
             password (string)
         """
-        #FIXME: Not implemented yet
-        #self._env.ensure_connectivity()
+        # FIXME: Not implemented yet
+        # self._env.ensure_connectivity()
         self._env.api_session.login(username, password)
 
     def logout(self):
         """Logout user and delete current user session."""
         env = ExecutionEnvironment()
-        
+
         try:
             self._env.connection_backend.disconnect()
         except exceptions.ConnectionNotFound:
@@ -131,8 +134,10 @@ class ProtonVPNClientAPI:
         )
 
         physical_server = self.server_list.get_random_physical_server(server)
-        configuration = VPNConfiguration.factory(_protocol, server.name, [physical_server.entry_ip])
-        
+        configuration = VPNConfiguration.factory(
+            _protocol, server.name, [physical_server.entry_ip]
+        )
+
         openvpn_username = self.protonvpn_user.ovpn_username
         if physical_server.label is not None:
             openvpn_username = openvpn_username + "+b:" + physical_server.label

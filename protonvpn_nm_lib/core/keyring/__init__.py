@@ -1,4 +1,4 @@
-from . import (linuxkeyring, textfilekeyring)
+from . import (linuxkeyring, textfilekeyring) # noqa
 
 from ._base import KeyringBackend
 

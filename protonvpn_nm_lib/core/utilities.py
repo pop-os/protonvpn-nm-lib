@@ -3,7 +3,6 @@ from .. import exceptions
 import requests
 from ..enums import KillswitchStatusEnum, ProtocolEnum, ConnectionTypeEnum
 from ..constants import FLAT_SUPPORTED_PROTOCOLS
-import distro
 import re
 
 

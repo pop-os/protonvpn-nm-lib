@@ -10,7 +10,6 @@ from ..logger import logger
 from ..core.servers import ServerFilter
 from .killswitch import KillSwitch
 from .metadata import ConnectionMetadata
-from .servers import ServerFilter
 
 
 class Status:
