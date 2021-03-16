@@ -78,14 +78,14 @@ class ServerConfigurator:
                 servers_list,
                 self.get_user_tier()
             )
-        country_servers = self.server_list.get_servers_by_country_code(
+        country_servers = self.server_filter.get_servers_by_country_code(
             default_filtered_servers, country_code
         )
 
         excluded_features = [
             FeatureEnum.TOR, FeatureEnum.SECURE_CORE
         ]
-        filtered_servers = self.server_list.get_servers_by_exclude_features( # noqa
+        filtered_servers = self.server_filter.get_servers_by_exclude_features( # noqa
             country_servers,
             excluded_features,
         )
