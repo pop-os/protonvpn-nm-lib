@@ -8,7 +8,8 @@ from proton import ProtonError
 
 from common import (PWD, RAW_LOADS_LIST, RAW_SERVER_LIST, MetadataEnum,
                     ProtonSessionAPIMethodEnum, ProtonSessionWrapper,
-                    UserManager, UserConfigurationManager, exceptions)
+                    TestServernameEnum, UserConfigurationManager, UserManager,
+                    exceptions)
 
 TEST_KEYRING_SERVICE = "TestServerManager"
 TEST_KEYRING_SESSIONDATA = "TestServerManSessionData"
@@ -65,7 +66,7 @@ class TestProtonSessionWrapperAPIRequest():
     @pytest.fixture
     def mock_api_request(self):
         mock_get_patcher = patch(
-            "protonvpn_nm_lib.services.proton_session_wrapper."
+            "protonvpn_nm_lib.core.proton_session_wrapper."
             "Session.api_request"
         )
         yield mock_get_patcher.start()
@@ -255,7 +256,7 @@ class TestProtonSessionWrapperAuthenticate():
     @pytest.fixture
     def mock_authenticate_request(self):
         mock_get_patcher = patch(
-            "protonvpn_nm_lib.services.proton_session_wrapper."
+            "protonvpn_nm_lib.core.proton_session_wrapper."
             "Session.authenticate"
         )
         yield mock_get_patcher.start()
@@ -369,7 +370,7 @@ class TestProtonSessionWrapperLogout():
     @pytest.fixture
     def mock_logout_request(self):
         mock_get_patcher = patch(
-            "protonvpn_nm_lib.services.proton_session_wrapper."
+            "protonvpn_nm_lib.core.proton_session_wrapper."
             "Session.logout"
         )
         yield mock_get_patcher.start()
@@ -524,7 +525,7 @@ class TestProtonSessionWrapperFullCache():
     @pytest.fixture
     def mock_api_request(self):
         mock_get_patcher = patch(
-            "protonvpn_nm_lib.services.proton_session_wrapper."
+            "protonvpn_nm_lib.core.proton_session_wrapper."
             "Session.api_request"
         )
         yield mock_get_patcher.start()
@@ -538,7 +539,9 @@ class TestProtonSessionWrapperFullCache():
         with open(TEST_CACHED_SERVERLIST) as f:
             file = json.load(f)
 
-            assert file["LogicalServers"][0]["Name"] == "TEST#5"
+            assert file[
+                "LogicalServers"
+            ][0]["Name"] == TestServernameEnum.TEST_5.value
 
     @pytest.mark.parametrize(
         "error", [
@@ -593,7 +596,7 @@ class TestProtonSessionWrapperLoadsCache():
     @pytest.fixture
     def mock_api_request(self):
         mock_get_patcher = patch(
-            "protonvpn_nm_lib.services.proton_session_wrapper."
+            "protonvpn_nm_lib.core.proton_session_wrapper."
             "Session.api_request"
         )
         yield mock_get_patcher.start()

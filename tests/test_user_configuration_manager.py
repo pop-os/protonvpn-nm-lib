@@ -6,7 +6,7 @@ import pytest
 
 from common import (PWD, KillswitchStatusEnum, ProtocolEnum,
                     UserConfigurationManager, UserSettingConnectionEnum,
-                    UserSettingEnum, UserSettingStatusEnum,
+                    UserSettingStatusEnum,
                     NetshieldTranslationEnum, NETSHIELD_STATUS_DICT)
 
 test_user_config_dir = os.path.join(PWD, "test_config_protonvpn")
@@ -30,9 +30,10 @@ class TestSetUserConfigurationManager():
         with open(test_user_config_fp) as f:
             json_configs = json.load(f)
 
-        assert json_configs[
-            UserSettingEnum.CONNECTION
-        ][UserSettingConnectionEnum.DEFAULT_PROTOCOL] == protocol
+            assert (
+                json_configs[UserSettingConnectionEnum.DEFAULT_PROTOCOL.value]
+                == protocol.value
+            )
 
     @pytest.mark.parametrize(
         "protocol",
@@ -45,8 +46,8 @@ class TestSetUserConfigurationManager():
     @pytest.mark.parametrize(
         "status,custom_dns_list",
         [
-            (UserSettingStatusEnum.ENABLED, None),
-            (UserSettingStatusEnum.CUSTOM, "192.159.2.1")
+            (UserSettingStatusEnum.ENABLED, []),
+            (UserSettingStatusEnum.CUSTOM, ["192.159.2.1"])
         ]
     )
     def test_set_correct_dns(self, status, custom_dns_list):
@@ -55,10 +56,8 @@ class TestSetUserConfigurationManager():
             json_configs = json.load(f)
 
         assert json_configs[
-            UserSettingEnum.CONNECTION
-        ][
-            UserSettingConnectionEnum.DNS
-        ][UserSettingConnectionEnum.DNS_STATUS] == status
+            UserSettingConnectionEnum.DNS.value
+        ][UserSettingConnectionEnum.DNS_STATUS.value] == status.value
 
     @pytest.mark.parametrize(
         "status",
@@ -83,9 +82,10 @@ class TestSetUserConfigurationManager():
         with open(test_user_config_fp) as f:
             json_configs = json.load(f)
 
-        assert json_configs[
-            UserSettingEnum.CONNECTION
-        ][UserSettingConnectionEnum.KILLSWITCH] == ks_status
+        assert (
+            json_configs[UserSettingConnectionEnum.KILLSWITCH.value]
+            == ks_status.value
+        )
 
     @pytest.mark.parametrize(
         "ks_status",
@@ -114,9 +114,7 @@ class TestSetUserConfigurationManager():
         with open(test_user_config_fp) as f:
             json_configs = json.load(f)
 
-        assert json_configs[
-            UserSettingEnum.CONNECTION
-        ][UserSettingConnectionEnum.NETSHIELD] == ns_status
+        assert json_configs[UserSettingConnectionEnum.NETSHIELD.value] == ns_status.value
 
     @pytest.mark.parametrize(
         "ns_status",
@@ -132,32 +130,18 @@ class TestSetUserConfigurationManager():
         with pytest.raises(KeyError):
             self.ucm.update_netshield(ns_status)
 
-    def test_get_non_existing_netshield(self):
-        with open(test_user_config_fp) as f:
-            json_configs = json.load(f)
-
-        _ = json_configs[UserSettingEnum.CONNECTION].pop(
-            UserSettingConnectionEnum.NETSHIELD
-        )
-        self.ucm.set_user_configurations(json_configs)
-        assert self.ucm.netshield == 0
-
     def test_reset_default_configs(self):
         self.ucm.reset_default_configs()
         with open(test_user_config_fp) as f:
             json_configs = json.load(f)
 
         assert json_configs[
-            UserSettingEnum.CONNECTION
-        ][
-            UserSettingConnectionEnum.KILLSWITCH
-        ] == KillswitchStatusEnum.DISABLED
+            UserSettingConnectionEnum.KILLSWITCH.value
+        ] == KillswitchStatusEnum.DISABLED.value
 
     def test_exists_get_user_configs(self):
         json_configs = self.ucm.get_user_configurations()
         assert json_configs[
-            UserSettingEnum.CONNECTION
-        ][
             UserSettingConnectionEnum.KILLSWITCH
         ] == KillswitchStatusEnum.DISABLED
 

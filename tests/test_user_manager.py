@@ -29,13 +29,13 @@ class TestUnitUserManager():
     @classmethod
     def setup_class(cls):
         um = UserManager(user_conf_manager=ucm)
-        um.store_data(
+        um.session_data.store_data(
             data=MOCK_SESSIONDATA,
             keyring_username=TEST_KEYRING_SESSIONDATA,
             keyring_service=TEST_KEYRING_SERVICE,
             store_user_data=False
         )
-        um.store_data(
+        um.session_data.store_data(
             data=dict(
                 VPN=dict(
                     Name="test_username",
@@ -47,7 +47,7 @@ class TestUnitUserManager():
             keyring_service=TEST_KEYRING_SERVICE,
             store_user_data=True
         )
-        um.store_data(
+        um.session_data.store_data(
             data={"test_proton_username": "test_server_man_user"},
             keyring_username=TEST_KEYRING_PROTON_USER,
             keyring_service=TEST_KEYRING_SERVICE,
@@ -57,13 +57,13 @@ class TestUnitUserManager():
     @classmethod
     def teardown_class(cls):
         um = UserManager(user_conf_manager=ucm)
-        um.delete_stored_data(TEST_KEYRING_PROTON_USER, TEST_KEYRING_SERVICE)
+        um.session_data.delete_stored_data(TEST_KEYRING_PROTON_USER, TEST_KEYRING_SERVICE)
         shutil.rmtree(test_user_config_dir)
 
     @pytest.fixture
     def mock_authenticate(self):
         mock_get_patcher = patch(
-            "protonvpn_nm_lib.services.proton_session_wrapper."
+            "protonvpn_nm_lib.core.proton_session_wrapper."
             "Session.authenticate"
         )
         yield mock_get_patcher.start()
@@ -72,7 +72,7 @@ class TestUnitUserManager():
     @pytest.fixture
     def mock_api_request(self):
         mock_get_patcher = patch(
-            "protonvpn_nm_lib.services.proton_session_wrapper."
+            "protonvpn_nm_lib.core.proton_session_wrapper."
             "Session.api_request"
         )
         yield mock_get_patcher.start()
@@ -193,8 +193,8 @@ class TestUnitUserManager():
         openvpn_password = MOCK_USER_DATA["VPN"]["Password"]
         assert (resp_user, resp_pwd) == (
             openvn_username
-            + "+" + ClientSuffixEnum.PLATFORM
-            + "+" + NetshieldStatusEnum.DISABLED,
+            + "+" + ClientSuffixEnum.PLATFORM.value
+            + "+" + NetshieldStatusEnum.DISABLED.value,
             openvpn_password
         )
 

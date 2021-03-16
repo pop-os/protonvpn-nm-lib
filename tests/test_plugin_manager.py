@@ -6,24 +6,31 @@ import pytest
 gi.require_version("NM", "1.0")
 from gi.repository import NM
 
-from common import PLUGIN_CERT_FOLDER, PluginManager, exceptions
+from common import (PLUGIN_CERT_FOLDER, PluginManager, ProtocolEnum,
+                    ProtocolImplementationEnum, exceptions)
 
 
 class TestUnitPluginManager:
     pm = PluginManager()
 
     def test_correct_tcp_implementation(self):
-        assert self.pm.get_protocol_implementation_type("tcp") == "openvpn"
+        assert (
+            self.pm.get_protocol_implementation_type(ProtocolEnum.TCP)
+            == ProtocolImplementationEnum.OPENVPN
+        )
 
     def test_correct_udp_implementation(self):
-        assert self.pm.get_protocol_implementation_type("udp") == "openvpn"
+        assert (
+            self.pm.get_protocol_implementation_type(ProtocolEnum.UDP)
+            == ProtocolImplementationEnum.OPENVPN
+        )
 
     def test_incorrect_openvpn_protocol(self):
-        with pytest.raises(exceptions.IllegalVPNProtocol):
+        with pytest.raises(ValueError):
             self.pm.get_protocol_implementation_type("ikve2")
 
     def test_random_protocol(self):
-        with pytest.raises(exceptions.IllegalVPNProtocol):
+        with pytest.raises(ValueError):
             self.pm.get_protocol_implementation_type("some_protocol")
 
     def test_correct_plugin_protocol_name(self):
@@ -33,14 +40,14 @@ class TestUnitPluginManager:
         )
 
     def test_incorrect_plugin_protocol_name(self):
-        with pytest.raises(exceptions.ProtocolPluginNotFound):
+        with pytest.raises(ValueError):
             self.pm.get_matching_plugin("ikve2")
 
     def test_extract_correct_protocol(self):
         proto = self.pm.extract_openvpn_protocol(
             os.path.join(PLUGIN_CERT_FOLDER, "TestProtonVPN.ovpn")
         )
-        assert proto == "tcp"
+        assert proto == ProtocolEnum.TCP.value
 
     def test_extract_missing_protocol(self):
         vpn_proto = self.pm.extract_openvpn_protocol(

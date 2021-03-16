@@ -10,10 +10,10 @@ from xdg import BaseDirectory
 from .enums import (FeatureEnum, KillswitchStatusEnum,
                     NetshieldTranslationEnum, ProtocolEnum,
                     ProtocolImplementationEnum, ServerTierEnum,
-                    UserSettingConnectionEnum, UserSettingEnum,
+                    UserSettingConnectionEnum,
                     UserSettingStatusEnum, NetshieldStatusEnum)
 
-APP_VERSION = '0.4.0'
+APP_VERSION = '0.5.0'
 
 IPv6_LEAK_PROTECTION_CONN_NAME = "pvpn-ipv6leak-protection"
 IPv6_LEAK_PROTECTION_IFACE_NAME = "ipv6leakintrf0"
@@ -63,33 +63,29 @@ SUPPORTED_FEATURES = {
     FeatureEnum.STREAMING: "Streaming",
     FeatureEnum.IPv6: "IPv6"
 }
+
 CONFIG_STATUSES = [
     UserSettingStatusEnum.DISABLED,
     UserSettingStatusEnum.ENABLED,
     UserSettingStatusEnum.CUSTOM,
 ]
 USER_CONFIG_TEMPLATE = {
-    UserSettingEnum.CONNECTION: {
-        UserSettingConnectionEnum.DEFAULT_PROTOCOL: ProtocolEnum.UDP,
-        UserSettingConnectionEnum.KILLSWITCH: KillswitchStatusEnum.DISABLED,
-        UserSettingConnectionEnum.DNS: {
-            UserSettingConnectionEnum.DNS_STATUS: UserSettingStatusEnum.ENABLED, # noqa
-            UserSettingConnectionEnum.CUSTOM_DNS: []
-        },
-        UserSettingConnectionEnum.SPLIT_TUNNELING: {
-            UserSettingConnectionEnum.SPLIT_TUNNELING_STATUS: UserSettingStatusEnum.DISABLED, # noqa
-            UserSettingConnectionEnum.IP_LIST: []
-        },
-        UserSettingConnectionEnum.NETSHIELD: UserSettingStatusEnum.DISABLED
+    UserSettingConnectionEnum.DEFAULT_PROTOCOL: ProtocolEnum.UDP, # noqa
+    UserSettingConnectionEnum.KILLSWITCH: KillswitchStatusEnum.DISABLED, # noqa
+    UserSettingConnectionEnum.DNS: {
+        UserSettingConnectionEnum.DNS_STATUS: UserSettingStatusEnum.ENABLED, # noqa
+        UserSettingConnectionEnum.CUSTOM_DNS: []
     },
-    UserSettingEnum.GENERAL: {},
-    UserSettingEnum.ADVANCED: {},
-    UserSettingEnum.TRAY: {},
+    UserSettingConnectionEnum.SPLIT_TUNNELING: {
+        UserSettingConnectionEnum.SPLIT_TUNNELING_STATUS: UserSettingStatusEnum.DISABLED, # noqa
+        UserSettingConnectionEnum.IP_LIST: []
+    },
+    UserSettingConnectionEnum.NETSHIELD: NetshieldTranslationEnum.DISABLED  # noqa
 }
 NETSHIELD_STATUS_DICT = {
-    NetshieldTranslationEnum.DISABLED: NetshieldStatusEnum.DISABLED,
+    NetshieldTranslationEnum.DISABLED: NetshieldStatusEnum.DISABLED, # noqa
     NetshieldTranslationEnum.MALWARE: NetshieldStatusEnum.MALWARE,
-    NetshieldTranslationEnum.ADS_MALWARE: NetshieldStatusEnum.ADS_MALWARE
+    NetshieldTranslationEnum.ADS_MALWARE: NetshieldStatusEnum.ADS_MALWARE # noqa
 }
 KILLSWITCH_STATUS_TEXT = {
     KillswitchStatusEnum.HARD: "Always-on",

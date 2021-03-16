@@ -4,24 +4,32 @@ class ProtonVPNException(BaseException):
         self.additional_context = additional_info
         super(ProtonVPNException, self).__init__(self.message)
 
+class APISessionIsNotValidError(ProtonVPNException):
+    """
+    This exception is raised when a call requires a valid Proton API session,
+    but we currently don't have one. This can be solved by doing a new login.
+    """
 
-class FinishError(ProtonVPNException): # noqa
+class DBusException(ProtonVPNException):
+    """DBus exception."""
+
+class FinishError(DBusException): # noqa
     """Finish async callback error."""
 
 
-class AddConnectionFinishError(FinishError):
+class AddConnectionFinishError(DBusException):
     """Add connection finish error."""
 
 
-class StartConnectionFinishError(FinishError):
+class StartConnectionFinishError(DBusException):
     """Start connection finish error."""
 
 
-class StopConnectionFinishError(FinishError):
+class StopConnectionFinishError(DBusException):
     """Stop connection finish error."""
 
 
-class RemoveConnectionFinishError(FinishError):
+class RemoveConnectionFinishError(DBusException):
     """Remove connection finish error."""
 
 
@@ -37,7 +45,6 @@ class IllegalSessionData(IllegalData):
 
 class IllegalUserData(IllegalData):
     """Illegal/unexpected UserData type"""
-
 
 
 
@@ -105,6 +112,8 @@ class StoredProtonUsernameNotFound(KeyringDataNotFound):
     """Stored user data was not found"""
 
 
+class UserSessionNotFound(KeyringError):
+    """User session not found."""
 
 
 class IPv6LeakProtectionError(ProtonVPNException): # noqa
@@ -305,3 +314,11 @@ class IllegalServername(ProtonVPNException):
 
 class EmptyServerListError(ProtonVPNException):
     """Empty server list error."""
+
+
+class InvalidCountryCode(ProtonVPNException):
+    """Illegal country code."""
+
+
+class InvalidUsernameFormat(ProtonVPNException):
+    """Invalid username format."""

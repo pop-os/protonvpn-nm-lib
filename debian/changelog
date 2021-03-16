@@ -1,4 +1,20 @@
-protonvpn-nm-core (0.4.0-2) unstable; urgency=low
+protonvpn-nm-core (0.5.0-2) unstable; urgency=medium
+
+  * Refactor library
+  * Create public API
+  * Improved library overall stability
+  * Implement subprocess wrapper
+
+ -- Proton Technologies AG <opensource@proton.me>  Thu, 25 Feb 2021 13:00:00 +0000
+ 
+protonvpn-nm-core (0.4.2-1) unstable; urgency=low
+
+  * Fix bug when connecting to P2P, Secure-Core and TOR due to incorrect subject name for TLS authentication
+  * Correctly apply server domain for TLS authentication
+
+ -- Proton Technologies AG <opensource@proton.me>  Thu, 25 Feb 2021 12:00:00 +0000
+
+ protonvpn-nm-core (0.4.0-2) unstable; urgency=low
 
   * Improved Kill Switch logic
   * Improved reconnection logic after suspend/hibernate

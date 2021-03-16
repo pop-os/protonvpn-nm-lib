@@ -1,6 +1,6 @@
 [run]
 omit =
-    protonvpn_nm_lib/services/__init__.py
-    protonvpn_nm_lib/services/dbus_get_wrapper.py
-    protonvpn_nm_lib/services/abstract_interface_manager.py
-    protonvpn_nm_lib/services/reconnector_manager.py
+    protonvpn_nm_lib/core/__init__.py
+    protonvpn_nm_lib/core/dbus_get_wrapper.py
+    protonvpn_nm_lib/core/abstract_interface_manager.py
+    protonvpn_nm_lib/core/reconnector_manager.py

@@ -6,11 +6,12 @@ import pytest
 gi.require_version("NM", "1.0")
 from gi.repository import NM
 
-from common import (CERT_FOLDER, ENV_CI_NAME, PWD, MOCK_SESSIONDATA,
-                    PLUGIN_CERT_FOLDER, CertificateManager, ConnectionManager,
-                    IPv6LeakProtectionManager, KillSwitchManager,
-                    UserConfigurationManager,
-                    KillswitchStatusEnum, ReconnectorManager, UserManager,
+from common import (CERT_FOLDER, ENV_CI_NAME, MOCK_SESSIONDATA,
+                    PLUGIN_CERT_FOLDER, PWD, Certificate, ConnectionManager,
+                    ConnectionMetadata, DbusReconnect, IPv6LeakProtection,
+                    KillSwitch, KillswitchStatusEnum,
+                    NetworkManagerConnectionTypeEnum, ProtocolEnum,
+                    UserConfigurationManager, UserManager, SessionData,
                     UserSettingStatusEnum, exceptions)
 
 TEST_KEYRING_SERVICE = "TestConnManager"
@@ -76,18 +77,21 @@ class TestUnitConnectionManager:
 class TestIntegrationConnectionManager():
     @classmethod
     def setup_class(cls):
+        connection_metadata = ConnectionMetadata()
         um = UserManager(user_conf_manager=ucm)
+        connection_metadata.save_servername("TESTCONNMANAGER#1")
+        connection_metadata.save_protocol(ProtocolEnum.TCP)
         um.keyring_service = TEST_KEYRING_SERVICE
         um.keyring_sessiondata = TEST_KEYRING_SESSIONDATA
         um.keyring_userdata = TEST_KEYRING_USERDATA
         um.keyring_proton_user = TEST_KEYRING_PROTON_USER
-        um.store_data(
+        um.session_data.store_data(
             data=MOCK_SESSIONDATA,
             keyring_username=TEST_KEYRING_SESSIONDATA,
             keyring_service=TEST_KEYRING_SERVICE,
             store_user_data=False
         )
-        um.store_data(
+        um.session_data.store_data(
             data=dict(
                 VPN=dict(
                     Name="test_username",
@@ -99,7 +103,7 @@ class TestIntegrationConnectionManager():
             keyring_service=TEST_KEYRING_SERVICE,
             store_user_data=True
         )
-        um.store_data(
+        um.session_data.store_data(
             data={"test_proton_username": "test_server_man_user"},
             keyring_username=TEST_KEYRING_PROTON_USER,
             keyring_service=TEST_KEYRING_SERVICE,
@@ -113,9 +117,9 @@ class TestIntegrationConnectionManager():
         um.keyring_sessiondata = TEST_KEYRING_SESSIONDATA
         um.keyring_userdata = TEST_KEYRING_USERDATA
         um.keyring_proton_user = TEST_KEYRING_PROTON_USER
-        um.delete_stored_data(TEST_KEYRING_PROTON_USER, TEST_KEYRING_SERVICE)
-        um.delete_stored_data(TEST_KEYRING_SESSIONDATA, TEST_KEYRING_SERVICE)
-        um.delete_stored_data(TEST_KEYRING_USERDATA, TEST_KEYRING_SERVICE)
+        um.session_data.delete_stored_data(TEST_KEYRING_PROTON_USER, TEST_KEYRING_SERVICE)
+        um.session_data.delete_stored_data(TEST_KEYRING_SESSIONDATA, TEST_KEYRING_SERVICE)
+        um.session_data.delete_stored_data(TEST_KEYRING_USERDATA, TEST_KEYRING_SERVICE)
 
     @pytest.fixture
     def openvpn_user(self):
@@ -136,12 +140,12 @@ class TestIntegrationConnectionManager():
         return FakeUserConfigurationManager()
 
     @pytest.fixture
-    def reconnector_manager(self):
-        return ReconnectorManager()
+    def dbus_reconnect(self):
+        return DbusReconnect()
 
     @pytest.fixture
     def ks_man(self, fake_user_conf_man):
-        return KillSwitchManager(
+        return KillSwitch(
             fake_user_conf_man,
             ks_conn_name="testks",
             ks_interface_name="testksintrf0",
@@ -151,7 +155,7 @@ class TestIntegrationConnectionManager():
 
     @pytest.fixture
     def ipv6_lp_man(self):
-        return IPv6LeakProtectionManager(
+        return IPv6LeakProtection(
             conn_name="test-ipv6-leak-prot",
             iface_name="testipv6intrf0",
         )
@@ -168,7 +172,7 @@ class TestIntegrationConnectionManager():
             os.path.join(PLUGIN_CERT_FOLDER, "TestProtonVPN.ovpn"),
             openvpn_user,
             openvpn_pass,
-            CertificateManager.delete_cached_certificate,
+            Certificate.delete_cached_certificate,
             random_domain,
             fake_user_conf_man,
             ks_man,
@@ -176,7 +180,9 @@ class TestIntegrationConnectionManager():
             "192.168.0.1"
         )
         assert isinstance(
-            conn_man.get_proton_connection("all_connections")[0],
+            conn_man.get_protonvpn_connection(
+                NetworkManagerConnectionTypeEnum.ALL
+            )[0],
             NM.RemoteConnection
         )
 
@@ -189,7 +195,7 @@ class TestIntegrationConnectionManager():
                 os.path.join(CERT_FOLDER, ""),
                 openvpn_user,
                 openvpn_pass,
-                CertificateManager.delete_cached_certificate,
+                Certificate.delete_cached_certificate,
                 random_domain,
                 fake_user_conf_man,
                 ks_man,
@@ -214,7 +220,7 @@ class TestIntegrationConnectionManager():
                 os.path.join(CERT_FOLDER, "TestProtonVPN.ovpn"),
                 user,
                 pwd,
-                CertificateManager.delete_cached_certificate,
+                Certificate.delete_cached_certificate,
                 random_domain,
                 fake_user_conf_man,
                 ks_man,
@@ -226,7 +232,7 @@ class TestIntegrationConnectionManager():
         self, conn_man, openvpn_user, openvpn_pass, random_domain,
         fake_user_conf_man, ks_man, ipv6_lp_man
     ):
-        with pytest.raises(NotImplementedError):
+        with pytest.raises(FileNotFoundError):
             conn_man.add_connection(
                 os.path.join(CERT_FOLDER, "TestProtonVPN.ovpn"),
                 openvpn_user,
@@ -241,23 +247,23 @@ class TestIntegrationConnectionManager():
 
     def test_remove_correct_connection(
         self, conn_man, fake_user_conf_man,
-        ks_man, ipv6_lp_man, reconnector_manager
+        ks_man, ipv6_lp_man, dbus_reconnect
     ):
         conn_man.remove_connection(
             fake_user_conf_man,
             ks_man,
             ipv6_lp_man,
-            reconnector_manager
+            dbus_reconnect
         )
 
     def test_remove_inexistent_connection(
         self, conn_man, fake_user_conf_man,
-        ks_man, ipv6_lp_man, reconnector_manager
+        ks_man, ipv6_lp_man, dbus_reconnect
     ):
         with pytest.raises(exceptions.ConnectionNotFound):
             conn_man.remove_connection(
                 fake_user_conf_man,
                 ks_man,
                 ipv6_lp_man,
-                reconnector_manager
+                dbus_reconnect
             )

@@ -1,5 +1,5 @@
 %define unmangled_name protonvpn-nm-lib
-%define version 0.4.0
+%define version 0.5.0
 %define release 2
 
 Prefix: %{_prefix}
@@ -56,6 +56,19 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
+* Thu Feb 25 2021 Proton Technologies AG <opensource@proton.me> 0.5.0-1
+- Refactor library
+- Create public API
+- Improved library overall stability 
+- Implement subprocess wrapper
+
+* Thu Feb 25 2021 Proton Technologies AG <opensource@proton.me> 0.4.2-1
+- Correctly apply server domain for TLS authentication
+
+* Wed Feb 24 2021 Proton Technologies AG <opensource@proton.me> 0.4.1-1
+- Fix bug when connecting to P2P, Secure-Core and TOR due to incorrect subject name for TLS authentication
+
+
 * Mon Feb 01 2021 Proton Technologies AG <opensource@proton.me> 0.4.0-2
 - Improved Kill Switch logic
 - Improved reconnection logic after suspend/hibernate
