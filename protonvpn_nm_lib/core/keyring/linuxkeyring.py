@@ -3,6 +3,7 @@ from ...logger import logger
 from ...enums import KeyringEnum
 from ... import exceptions
 from ._base import KeyringBackend
+import os
 
 
 class KeyringBackendLinux(KeyringBackend):
@@ -21,7 +22,7 @@ class KeyringBackendLinux(KeyringBackend):
                 key
             )
         except (keyring.errors.InitError, keyring.errors.KeyringLocked) as e:
-            logger.exception("[!] AccessKeyringError: {}".format(e))
+            logger.exception("AccessKeyringError: {}".format(e))
             raise exceptions.AccessKeyringError(
                 "Could not fetch from keychain: {}".format(e)
             )
@@ -97,17 +98,27 @@ class KeyringBackendLinux(KeyringBackend):
             keyring.errors.KeyringLocked,
             keyring.errors.PasswordSetError
         ) as e:
-            logger.exception("[!] AccessKeyringError: {}".format(e))
+            logger.exception("AccessKeyringError: {}".format(e))
             raise exceptions.AccessKeyringError(
                 "Could not access keychain: {}".format(e)
             )
         except Exception as e:
-            logger.error("[!] Exception: {}".format(e))
+            logger.error("Exception: {}".format(e))
             # capture_exception(e)
 
 
 class KeyringBackendLinuxKwallet(KeyringBackendLinux):
-    pass
+    priority = (
+        5.1
+        if "KDE" in os.getenv(
+            "XDG_CURRENT_DESKTOP", ""
+        ).split(":")
+        else 4.9
+    )
+
+    def __init__(self):
+        from keyring.backends import kwallet
+        super().__init__(kwallet.DBusKeyring())
 
 
 class KeyringBackendLinuxSecretService(KeyringBackendLinux):
