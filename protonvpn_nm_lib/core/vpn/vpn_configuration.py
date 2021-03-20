@@ -65,6 +65,7 @@ class VPNConfiguration(SubclassesMixin, metaclass=ABCMeta):
                 prefix='ProtonVPN-', suffix=self.config_extn, mode='w'
             )
             self._configfile.write(self.generate())
+            self._configfile.close()
             self._configfile_enter_level = 0
 
         self._configfile_enter_level += 1
