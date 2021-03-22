@@ -4,7 +4,7 @@ from .core.environment import ExecutionEnvironment
 from .core.status import Status
 from .core.utilities import Utilities
 from .enums import (ConnectionMetadataEnum, ConnectionTypeEnum, FeatureEnum,
-                    MetadataEnum, ProtocolEnum)
+                    MetadataEnum)
 from .logger import logger
 
 
@@ -272,6 +272,10 @@ class ProtonVPNClientAPI:
         """Get user settings."""
         return self._env.api_session
 
+    def get_country(self):
+        """Get country object."""
+        return self.country
+
     def get_connection_metadata(self):
         """Get metadata of an active ProtonVPN connection.
 
@@ -313,4 +317,5 @@ class ProtonVPNClientAPI:
         self.utils.ensure_connectivity(
             self._env.settings.killswitch
         )
+
 protonvpn = ProtonVPNClientAPI() # noqa
