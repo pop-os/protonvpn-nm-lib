@@ -60,6 +60,7 @@ class VPNConfiguration(SubclassesMixin, metaclass=ABCMeta):
         # and delete it when we exit.
         # This is a race free way of having temporary files.
         if self._configfile is None:
+            self.__delete_existing_ovpn_configuration()
             self._configfile = tempfile.NamedTemporaryFile(
                 dir=PROTON_XDG_CACHE_HOME, delete=False,
                 prefix='ProtonVPN-', suffix=self.config_extn, mode='w'
@@ -80,6 +81,13 @@ class VPNConfiguration(SubclassesMixin, metaclass=ABCMeta):
         if self._configfile_enter_level == 0:
             os.unlink(self._configfile.name)
             self._configfile = None
+
+    def __delete_existing_ovpn_configuration(self):
+        for file in os.listdir(PROTON_XDG_CACHE_HOME):
+            if file.endswith(".ovpn"):
+                os.remove(
+                    os.path.join(PROTON_XDG_CACHE_HOME, file)
+                )
 
 
 class VPNConfigurationOpenVPN(VPNConfiguration):
