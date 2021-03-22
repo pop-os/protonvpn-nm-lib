@@ -6,7 +6,7 @@ import weakref
 from ... import exceptions
 from ...enums import FeatureEnum
 from ...logger import logger
-
+from ..environment import ExecutionEnvironment
 # For simplification, we'll use format as coming from the API here,
 # although that might not be a good approach for genericity
 
@@ -26,6 +26,12 @@ class PhysicalServer:
     @property
     def domain(self):
         return self._data['Domain']
+
+    # Domain can be set to new value when
+    # searching for matching domain
+    @domain.setter
+    def domain(self, newvalue):
+        self._data['Domain'] = newvalue
 
     @property
     def enabled(self):
@@ -116,7 +122,9 @@ class LogicalServer:
 
     @property
     def enabled(self):
-        return self._data['Status'] == 1 and all(x.enabled for x in self.physical_servers)
+        return self._data['Status'] == 1 and all(
+            x.enabled for x in self.physical_servers
+        )
 
     @property
     def tier(self):
@@ -318,6 +326,12 @@ class ServerList:
                 lambda x: self._condition(x) and condition(x)
             )
 
+    def filter_servers_by_tier(self):
+        # Filter servers bye tier
+        return list(self.filter(
+            lambda server: server.tier >= ExecutionEnvironment().api_session.vpn_tier # noqa
+        ))
+
     def get_random_server(self):
         return self[random.randint(0, len(self) - 1)]
 
@@ -326,12 +340,29 @@ class ServerList:
         servers_ordered = list(
             self.filter(lambda x: x.enabled).sort(lambda x: x.score)
         )
+
         if len(servers_ordered) == 0:
             logger.error("List of logical servers is empty")
             raise exceptions.EmptyServerListError(
                 "No logical server could be found"
             )
         return servers_ordered[0]
+
+    def match_server_domain(self, physical_server):
+        domain = physical_server.domain
+
+        for logical_server in self:
+            servers = logical_server.physical_servers
+            servers = [
+                _physical_server
+                for _physical_server
+                in servers
+                if _physical_server.entry_ip == physical_server.exit_ip
+            ]
+            if len(servers) == 1:
+                domain = servers.pop().domain
+
+        physical_server.domain = domain
 
     def sort(self, key=None, reverse=False):
         """
