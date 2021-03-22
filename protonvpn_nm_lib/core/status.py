@@ -7,9 +7,7 @@ from ..enums import (ConnectionMetadataEnum, ConnectionStatusEnum,
                      NetshieldTranslationEnum, ProtocolEnum,
                      ProtocolImplementationEnum, MetadataEnum)
 from ..logger import logger
-from ..core.servers import ServerFilter
-from .killswitch import KillSwitch
-from .metadata import ConnectionMetadata
+from .environment import ExecutionEnvironment
 
 
 class Status:
@@ -17,17 +15,11 @@ class Status:
     Use it to get status information about the current
     ProtonVPN connection.
     """
-    def __init__(
-        self,
-        killswitch_obj=KillSwitch(),
-        connection_metadata=ConnectionMetadata(),
-        server_filter=ServerFilter()
-    ):
-        self.killswitch_obj = killswitch_obj
-        self.connection_metadata = connection_metadata
-        self.user_settings = None
-        self.server_list = None
-        self.server_filter = server_filter
+    def __init__(self):
+        self.user_settings = ExecutionEnvironment().settings
+        self.server_list = ExecutionEnvironment().api_session.servers
+        self.killswitch_obj = ExecutionEnvironment().killswitch
+        self.connection_metadata = ExecutionEnvironment().connection_metadata
 
     def get_active_connection_status(self, readeable_format=True):
         """Get active connection status.
@@ -63,11 +55,9 @@ class Status:
         except KeyError:
             exit_server_ip = "(Missing)"
 
-        raw_servers = self.server_list.get_cached_serverlist()
-        self.server_list.reload_servers(raw_servers)
-        server = self.server_filter.get_server_by_name(
-            self.server_list.servers, servername
-        )
+        server = self.server_list.filter(
+            lambda server: server.name.lower() == servername.lower()
+        ).get_fastest_server()
 
         self.killswitch_obj.update_connection_status()
 

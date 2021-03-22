@@ -5,17 +5,21 @@ from ...enums import (ConnectionMetadataEnum, LastConnectionMetadataEnum,
                       MetadataActionEnum, MetadataEnum)
 from ...logger import logger
 from .metadata import Metadata
+from .connection_metadata_backend import ConnectionMetadataBackend
 
 
-class ConnectionMetadata:
+class ConnectionMetadata(ConnectionMetadataBackend):
     """
     Read/Write connection metadata. Stores
     metadata about the current connection
     for displaying connection status and also
     stores for metadata for future reconnections.
     """
-    def __init__(self, metadata=Metadata()):
-        self.metadata = metadata
+    connection_metadata = "default"
+
+    def __init__(self, metadata=None):
+        super().__init__()
+        self.metadata = metadata or Metadata()
 
     def save_servername(self, servername):
         """Save connected servername metadata.
@@ -36,22 +40,24 @@ class ConnectionMetadata:
         logger.info("Saving servername \"{}\" on \"{}\"".format(
             servername, MetadataEnum.CONNECTION
         ))
-        self.write_connection_metadata(MetadataEnum.CONNECTION, real_metadata)
+        self.__write_connection_metadata(
+            MetadataEnum.CONNECTION, real_metadata
+        )
 
         logger.info("Saving servername \"{}\" on \"{}\"".format(
             servername, MetadataEnum.LAST_CONNECTION
         ))
-        self.write_connection_metadata(
+        self.__write_connection_metadata(
             MetadataEnum.LAST_CONNECTION, last_metadata
         )
 
-    def save_connected_time(self):
+    def save_connect_time(self):
         """Save connected time metdata."""
         metadata = self.get_connection_metadata(MetadataEnum.CONNECTION)
         metadata[ConnectionMetadataEnum.CONNECTED_TIME.value] = str(
             int(time.time())
         )
-        self.write_connection_metadata(MetadataEnum.CONNECTION, metadata)
+        self.__write_connection_metadata(MetadataEnum.CONNECTION, metadata)
         logger.info("Saved connected time to file")
 
     def save_protocol(self, protocol):
@@ -65,17 +71,19 @@ class ConnectionMetadata:
             MetadataEnum.LAST_CONNECTION
         )
         real_metadata[ConnectionMetadataEnum.PROTOCOL.value] = protocol.value
-        last_metadata[LastConnectionMetadataEnum.PROTOCOL.value] = protocol.value
+        last_metadata[LastConnectionMetadataEnum.PROTOCOL.value] = protocol.value # noqa
 
         logger.info("Saving protocol \"{}\" on \"{}\"".format(
             protocol, MetadataEnum.CONNECTION
         ))
-        self.write_connection_metadata(MetadataEnum.CONNECTION, real_metadata)
+        self.__write_connection_metadata(
+            MetadataEnum.CONNECTION, real_metadata
+        )
 
         logger.info("Saving protocol \"{}\" on \"{}\"".format(
             protocol, MetadataEnum.LAST_CONNECTION
         ))
-        self.write_connection_metadata(
+        self.__write_connection_metadata(
             MetadataEnum.LAST_CONNECTION, last_metadata
         )
         logger.info("Saved protocol to file")
@@ -87,7 +95,9 @@ class ConnectionMetadata:
         logger.info("Saving exit server IP \"{}\" on \"{}\"".format(
             ip, MetadataEnum.CONNECTION
         ))
-        self.write_connection_metadata(MetadataEnum.CONNECTION, real_metadata)
+        self.__write_connection_metadata(
+            MetadataEnum.CONNECTION, real_metadata
+        )
 
         logger.info("Saved exit ip to file")
 
@@ -104,7 +114,7 @@ class ConnectionMetadata:
         logger.info("Saving server ip \"{}\" on \"{}\"".format(
             ip, MetadataEnum.LAST_CONNECTION
         ))
-        self.write_connection_metadata(
+        self.__write_connection_metadata(
             MetadataEnum.LAST_CONNECTION, last_metadata
         )
         logger.info("Saved server IP to file")
@@ -133,10 +143,12 @@ class ConnectionMetadata:
             return self.metadata.manage_metadata(
                 MetadataActionEnum.GET, metadata_type
             )
+            print("Return all")
         except FileNotFoundError:
+            print("Returning empty")
             return {}
 
-    def write_connection_metadata(self, metadata_type, metadata):
+    def __write_connection_metadata(self, metadata_type, metadata):
         """Save metadata to file.
 
         Args:

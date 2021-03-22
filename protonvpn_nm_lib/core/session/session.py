@@ -342,7 +342,7 @@ class APISession:
 
     def _update_next_fetch_loads(self):
         self.__next_fetch_load = self \
-            .__vpn_logicals.logicals_update_timestamp + \
+            .__vpn_logicals.loads_update_timestamp + \
             self.LOADS_CACHE_TIME_EXPIRE * self.__generate_random_component()
 
     def _update_next_fetch_client_config(self):

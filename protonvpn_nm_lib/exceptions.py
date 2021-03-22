@@ -67,8 +67,11 @@ class JSONDataError(JSONError):
 
 
 
+class CacheError(ProtonVPNException): # noqa
+    """Cache error base exception"""
 
-class CacheServersError(ProtonVPNException): # noqa
+
+class CacheServersError(CacheError):
     """Cache servers error"""
 
 
@@ -83,6 +86,11 @@ class CacheLogicalServersFallbackError(CacheServersError):
 class MissingCacheError(CacheServersError):
     """Missing cache error."""
 
+
+class DefaultOVPNPortsNotFoundError(CacheError):
+    """Default OpenVPN ports not found.
+    Either cache is missing or unable to fetch from API.
+    """
 
 
 

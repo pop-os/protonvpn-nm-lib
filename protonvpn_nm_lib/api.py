@@ -1,15 +1,11 @@
-from . import (Connection, ConnectionMetadata, Country, exceptions,
-               ProtonVPNUser, ServerConfigurator, ServerFilter, ServerList,
-               APISession, Status, Utilities, VPNConfiguration)
-
-from .enums import (ConnectionMetadataEnum, ConnectionTypeEnum,
-                    DbusMonitorResponseEnum, KillswitchStatusEnum,
-                    MetadataEnum)
-from .logger import logger
-from .monitor_connection_start import (setup_dbus_vpn_monitor,
-                                       start_dbus_vpn_monitor)
-
+from . import exceptions
+from .core.country import Country
 from .core.environment import ExecutionEnvironment
+from .core.status import Status
+from .core.utilities import Utilities
+from .enums import (ConnectionMetadataEnum, ConnectionTypeEnum, FeatureEnum,
+                    MetadataEnum, ProtocolEnum)
+from .logger import logger
 
 
 class ProtonVPNClientAPI:
@@ -17,6 +13,9 @@ class ProtonVPNClientAPI:
         # The constructor should be where you initialize
         # the environment and it's parameter
         self._env = ExecutionEnvironment()
+        self.country = Country()
+        self.utils = Utilities
+        self.status = Status()
 
     def login(self, username, password):
         """Login user with provided username and password.
@@ -26,18 +25,17 @@ class ProtonVPNClientAPI:
             username (string)
             password (string)
         """
-        # FIXME: Not implemented yet
-        # self._env.ensure_connectivity()
+        self.utils.ensure_connectivity(self._env.settings.killswitch)
         self._env.api_session.login(username, password)
 
     def logout(self):
         """Logout user and delete current user session."""
-        env = ExecutionEnvironment()
 
         try:
             self._env.connection_backend.disconnect()
         except exceptions.ConnectionNotFound:
             pass
+
         self._env.api_session.logout()
 
     def connect(self):
@@ -46,18 +44,13 @@ class ProtonVPNClientAPI:
         Should be user either after setup_connection() or
         setup_reconnect_to_previously_connected_server().
         """
-        dbus_response = {DbusMonitorResponseEnum.RESPONSE: ""}
         self.utils.ensure_internet_connection_is_available(
-            self.protonvpn_user.settings.killswitch
+            self._env.settings.killswitch
         )
-
-        self.connection.connect()
-        setup_dbus_vpn_monitor(
-            dbus_response, self.protonvpn_user, self.session
-        )
-        start_dbus_vpn_monitor()
-        self.connection_metadata.save_connected_time()
-        return dbus_response
+        connect_result = self._env.connection_backend.connect()
+        # print(self._env.connection_metadata.get_connection_metadata(MetadataEnum.CONNECTION))
+        self._env.connection_metadata.save_connect_time()
+        return connect_result
 
     def disconnect(self):
         """Disconnect from ProtonVPN"""
@@ -88,12 +81,23 @@ class ProtonVPNClientAPI:
         Returns:
             dict: dbus response
         """
-        if not self.session.check_session_exists():
+        if not self._env.api_session.is_valid:
             raise exceptions.UserSessionNotFound(
                 "User session was not found, please login first."
             )
-        killswitch_status = self.protonvpn_user.settings.killswitch
-        self.utils.ensure_connectivity(killswitch_status)
+        self.utils.ensure_connectivity(self._env.settings.killswitch)
+
+        (
+            _connection_type,
+            _connection_type_extra_arg,
+            _protocol
+        ) = self.utils.parse_user_input(
+            {
+                "connection_type": connection_type,
+                "connection_type_extra_arg": connection_type_extra_arg,
+                "protocol": protocol,
+            }
+        )
         connect_configurations = {
             ConnectionTypeEnum.SERVERNAME:
                 self.config_for_server_with_servername,
@@ -107,64 +111,41 @@ class ProtonVPNClientAPI:
                 self.config_for_fastest_server_with_feature,
             ConnectionTypeEnum.TOR: self.config_for_fastest_server_with_feature
         }
-        (
-            _connection_type,
-            _connection_type_extra_arg,
-            _protocol
-        ) = self.utils.parse_user_input(
-            {
-                "connection_type": connection_type,
-                "connection_type_extra_arg": connection_type_extra_arg,
-                "protocol": protocol,
-            },
-            self.country.ensure_country_code_exists,
-            self.protonvpn_user.settings.protocol
-        )
-
-        try:
-            self.disconnect()
-        except exceptions.ConnectionNotFound:
-            pass
-
-        if killswitch_status != KillswitchStatusEnum.HARD:
-            self.session.refresh_servers()
 
         server = connect_configurations[connection_type](
             _connection_type_extra_arg,
         )
+        physical_server = server.get_random_physical_server()
+        self._env.api_session.servers.match_server_domain(physical_server)
 
-        physical_server = self.server_list.get_random_physical_server(server)
-        configuration = VPNConfiguration.factory(
-            _protocol, server.name, [physical_server.entry_ip]
-        )
-
-        openvpn_username = self.protonvpn_user.ovpn_username
-        if physical_server.label is not None:
+        openvpn_username = self._env.api_session.vpn_username
+        if physical_server.label:
             openvpn_username = openvpn_username + "+b:" + physical_server.label
             logger.info("Appended server label.")
 
-        server_data = {
+        data = {
             "domain": physical_server.domain,
-            "server_entry_ip": physical_server.entry_ip,
-            "servername": server.name
-        }
-        user_data = {
-            "dns": {
-                "dns_status": self.protonvpn_user.settings.dns,
-                "custom_dns": self.protonvpn_user.settings.dns_custom_ips
-            },
+            "entry_ip": physical_server.entry_ip,
+            "servername": server.name,
             "credentials": {
                 "ovpn_username": openvpn_username,
-                "ovpn_password": self.protonvpn_user.ovpn_password
+                "ovpn_password": self._env.api_session.vpn_password
             },
         }
-        self.utils.post_setup_connection_save_metadata(
-            self.connection_metadata, server.name,
-            _protocol, physical_server
+        self._env.connection_metadata.save_servername(server.name)
+        self._env.connection_metadata.save_protocol(_protocol)
+        self._env.connection_metadata.save_display_server_ip(
+            physical_server.exit_ip
         )
-        self.connection.adapter.certificate_filepath = certificate_path
-        self.connection.setup_connection(server_data, user_data)
-        return server
+        self._env.connection_metadata.save_server_ip(physical_server.entry_ip)
+
+        logger.info("Stored metadata to file")
+        configuration = physical_server.get_configuration(_protocol)
+        logger.info("Received confiuration object")
+        self._env.connection_backend.vpn_configuration = configuration
+
+        logger.info("Setting up {}".format(server.name))
+        self._env.connection_backend.setup(**data)
 
     def config_for_fastest_server(self, *_):
         """Select fastest server.
@@ -172,7 +153,7 @@ class ProtonVPNClientAPI:
         Returns:
             LogicalServer
         """
-        return self.server_configurator.get_config_for_fastest_server()
+        return self._env.api_session.servers.get_fastest_server()
 
     def config_for_fastest_server_in_country(self, country_code):
         """Select server by country code.
@@ -180,10 +161,9 @@ class ProtonVPNClientAPI:
         Returns:
             LogicalServer
         """
-        return self.server_configurator\
-            .get_config_for_fastest_server_in_country(
-                country_code
-            )
+        return self._env.api_session.servers.filter(
+            lambda server: server.exit_country.lower() == country_code.lower() # noqa
+        ).get_fastest_server()
 
     def config_for_fastest_server_with_feature(self, feature):
         """Select server by specified feature.
@@ -191,8 +171,16 @@ class ProtonVPNClientAPI:
         Returns:
             LogicalServer
         """
-        return self.server_configurator.\
-            get_config_for_fastest_server_with_specific_feature(feature)
+        connection_dict = {
+            ConnectionTypeEnum.SECURE_CORE: FeatureEnum.SECURE_CORE,
+            ConnectionTypeEnum.PEER2PEER: FeatureEnum.P2P,
+            ConnectionTypeEnum.TOR: FeatureEnum.TOR,
+        }
+        return self._env.api_session.servers.filter(
+            lambda server: (
+                server.features == connection_dict[feature]
+            )
+        ).get_fastest_server()
 
     def config_for_server_with_servername(self, servername):
         """Select server by servername.
@@ -200,9 +188,9 @@ class ProtonVPNClientAPI:
         Returns:
             LogicalServer
         """
-        return self.server_configurator.get_config_for_specific_server(
-            servername
-        )
+        return self._env.api_session.servers.filter(
+            lambda server: server.name.lower() == servername.lower() # noqa
+        ).get_fastest_server()
 
     def config_for_random_server(self, *_):
         """Select server for random connection.
@@ -210,7 +198,7 @@ class ProtonVPNClientAPI:
         Returns:
             LogicalServer
         """
-        return self.server_configurator.get_config_for_random_server()
+        return self._env.api_session.servers.get_random_server()
 
     def setup_reconnect(self):
         """Setup and configure VPN connection to
@@ -219,7 +207,7 @@ class ProtonVPNClientAPI:
         Should be called before calling connect().
         """
         logger.info("Attemtping to recconnect to previous server")
-        last_connection_metadata = self.connection_metadata\
+        last_connection_metadata = self._env.connection_metadata\
             .get_connection_metadata(
                 MetadataEnum.LAST_CONNECTION
             )
@@ -260,7 +248,7 @@ class ProtonVPNClientAPI:
         Returns:
             bool
         """
-        return self.session.check_session_exists()
+        return self._env.api_session.is_valid
 
     def get_connection_status(self):
         """Get active connection status.
@@ -276,13 +264,21 @@ class ProtonVPNClientAPI:
         """
         return self.status.get_active_connection_status()
 
+    def get_settings(self):
+        """Get user settings."""
+        return self._env.settings
+
+    def get_session(self):
+        """Get user settings."""
+        return self._env.api_session
+
     def get_connection_metadata(self):
         """Get metadata of an active ProtonVPN connection.
 
         Returns:
             dict
         """
-        return self.connection_metadata.get_connection_metadata(
+        return self._env.connection_metadata.get_connection_metadata(
             MetadataEnum.CONNECTION
         )
 
@@ -294,7 +290,8 @@ class ProtonVPNClientAPI:
         Returns:
             VPN connection
         """
-        return self.connection.get_non_active_protonvpn_connection()
+        return self._env.connection_backend\
+            .get_non_active_protonvpn_connection()
 
     def get_active_protonvpn_connection(self):
         """Get active ProtonVPN connection object.
@@ -304,7 +301,8 @@ class ProtonVPNClientAPI:
         Returns:
             VPN connection
         """
-        return self.connection.get_active_protonvpn_connection()
+        return self._env.connection_backend\
+            .get_active_protonvpn_connection()
 
     def ensure_connectivity(self):
         """Check for connectivity.
@@ -313,7 +311,6 @@ class ProtonVPNClientAPI:
         2) It checks if API can be reached
         """
         self.utils.ensure_connectivity(
-            self.protonvpn_user.settings.killswitch
+            self._env.settings.killswitch
         )
-
 protonvpn = ProtonVPNClientAPI() # noqa

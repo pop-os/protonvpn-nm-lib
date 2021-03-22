@@ -328,17 +328,24 @@ class ServerList:
 
     def filter_servers_by_tier(self):
         # Filter servers bye tier
-        return list(self.filter(
-            lambda server: server.tier >= ExecutionEnvironment().api_session.vpn_tier # noqa
+        server_list = list(self.filter(
+            lambda server: server.tier <= ExecutionEnvironment().api_session.vpn_tier # noqa
         ))
+        return server_list
 
     def get_random_server(self):
-        return self[random.randint(0, len(self) - 1)]
+        server_list = self.filter_servers_by_tier()
+        return server_list[random.randint(0, len(server_list) - 1)]
 
     def get_fastest_server(self):
         # Get the fastest enabled server
         servers_ordered = list(
-            self.filter(lambda x: x.enabled).sort(lambda x: x.score)
+            self.filter(
+                lambda server: server.enabled
+                and server.tier <= ExecutionEnvironment().api_session.vpn_tier
+            ).sort(
+                lambda server: server.score
+            )
         )
 
         if len(servers_ordered) == 0:
