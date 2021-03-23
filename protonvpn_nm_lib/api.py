@@ -26,7 +26,7 @@ class ProtonVPNClientAPI:
             password (string)
         """
         self.utils.ensure_connectivity(self._env.settings.killswitch)
-        self._env.api_session.login(username, password)
+        self._env.api_session.authenticate(username, password)
 
     def logout(self):
         """Logout user and delete current user session."""
@@ -146,6 +146,7 @@ class ProtonVPNClientAPI:
 
         logger.info("Setting up {}".format(server.name))
         self._env.connection_backend.setup(**data)
+        return server
 
     def config_for_fastest_server(self, *_):
         """Select fastest server.

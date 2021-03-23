@@ -161,9 +161,9 @@ class Utilities:
 
         utils = Utilities
         if connection_type == ConnectionTypeEnum.COUNTRY:
-            from .core.country import Country
+            from .country import Country
             country = Country()
-            country.ensure_country_exists(connection_type_extra_arg)
+            country.ensure_country_code_exists(connection_type_extra_arg)
         if connection_type == ConnectionTypeEnum.SERVERNAME:
             utils.ensure_servername_is_valid(
                 connection_type_extra_arg
