@@ -4,7 +4,7 @@ ENV git_repo=${git_repo:-GIT_REPO}
 ARG git_branch
 ENV git_branch=${git_branch:-GIT_BRANCH}
 ARG pkgname
-ENV pkgname=${pkgname:-python-protonvpn-nm-lib}
+ENV pkgname=${pkgname:-protonvpn-nm-lib}
 
 RUN pacman -Syu --noconfirm \
     sudo \

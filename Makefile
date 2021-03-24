@@ -57,7 +57,7 @@ latest:
 local: docker-source
 	docker build -t $(NAME_IMAGE) -f "$(DOCKERFILE_BUILD)" --network=host --build-arg git_repo=$(GIT_REPO) --build-arg git_branch=$(GIT_BRANCH) .
 	@ rm -rf __SOURCE_APP || true
-local: NAME_IMAGE = protonvpn-nm-core:latest
+local: NAME_IMAGE = protonvpn-nm-lib:latest
 
 local-base: local-deb local-rpm local-arch
 
@@ -86,8 +86,8 @@ test-deb: local-deb
 			--rm \
 			-it \
 			--privileged \
-			--volume $(PWD)/home/user/protonvpn-nm-core/ \
-			protonvpn-nm-core:latest \
+			--volume $(PWD)/home/user/protonvpn-nm-lib/ \
+			protonvpn-nm-lib:latest \
 			python3 -m pytest
 
 ## Run tests against the latest version of the rpm from your code
@@ -97,8 +97,8 @@ test-rpm: local-rpm
 			--rm \
 			-it \
 			--privileged \
-			--volume $(PWD)/home/user/protonvpn-nm-core/ \
-			protonvpn-nm-core:latest \
+			--volume $(PWD)/home/user/protonvpn-nm-lib/ \
+			protonvpn-nm-lib:latest \
 			python3 -m pytest
 
 ## Run tests against the latest version of the arch from your code
@@ -108,6 +108,6 @@ test-arch: local-arch
 			--rm \
 			-it \
 			--privileged \
-			--volume $(PWD)/home/user/protonvpn-nm-core/ \
-			protonvpn-nm-core:latest \
+			--volume $(PWD)/home/user/protonvpn-nm-lib/ \
+			protonvpn-nm-lib:latest \
 			python3 -m pytest
