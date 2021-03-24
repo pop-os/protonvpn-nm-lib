@@ -132,7 +132,6 @@ class Settings(SettingsBackend):
             protocol_enum (ProtocolEnum)
         """
         logger.info("Setting protocol to: {}".format(protocol_enum))
-        print("settign protocol: ", ProtocolEnum)
         if not isinstance(protocol_enum, ProtocolEnum):
             logger.error("Select protocol is incorrect.")
             raise Exception(
