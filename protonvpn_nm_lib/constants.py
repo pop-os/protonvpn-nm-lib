@@ -96,7 +96,6 @@ KILLSWITCH_STATUS_TEXT = {
 # Constant folders
 XDG_CACHE_HOME = BaseDirectory.xdg_cache_home
 XDG_CONFIG_HOME = BaseDirectory.xdg_config_home
-# XDG_DATA_HOME = BaseDirectory.xdg_data_home
 PWD = os.path.dirname(os.path.abspath(__file__))
 PROTON_XDG_CACHE_HOME = os.path.join(XDG_CACHE_HOME, "protonvpn")
 PROTON_XDG_CONFIG_HOME = os.path.join(XDG_CONFIG_HOME, "protonvpn")
@@ -126,6 +125,9 @@ CONNECTION_STATE_FILEPATH = os.path.join(
 )
 LAST_CONNECTION_METADATA_FILEPATH = os.path.join(
     PROTON_XDG_CACHE_HOME, "last_connection_metadata.json"
+)
+CLIENT_CONFIG = os.path.join(
+    PROTON_XDG_CACHE_HOME, "client_config.json"
 )
 USER_CONFIGURATIONS_FILEPATH = os.path.join(
     PROTON_XDG_CONFIG_HOME, "user_configurations.json"

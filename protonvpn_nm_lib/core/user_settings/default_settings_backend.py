@@ -5,9 +5,11 @@ from ...enums import (DisplayUserSettingsEnum, NetshieldTranslationEnum,
                       UserSettingStatusEnum, ServerTierEnum)
 from ...logger import logger
 from .settings_configurator import SettingsConfigurator
+from ..environment import ExecutionEnvironment
+from .settings_backend import SettingsBackend
 
 
-class Settings:
+class Settings(SettingsBackend):
     """Settings class.
     Use it to get and set user settings.
 
@@ -39,10 +41,11 @@ class Settings:
         dns_custom_ips
             Gets/Sets users custom DNS list.
     """
-    def __init__(self, settings_configurator=SettingsConfigurator()):
-        self.settings_configurator = settings_configurator
-        self.killswitch_obj = None
-        self.protonvpn_user = None
+    settings_backend = "default"
+
+    def __init__(self, settings_configurator=None):
+        super().__init__()
+        self.settings_configurator = settings_configurator or SettingsConfigurator() # noqa
 
     @property
     def netshield(self):
@@ -62,7 +65,10 @@ class Settings:
         """
         if (
             not netshield_enum
-            and self.protonvpn_user.tier == ServerTierEnum.FREE
+            and (
+                ExecutionEnvironment().api_session.vpn_tier
+                == ServerTierEnum.FREE
+            )
         ):
             raise Exception(
                 "\nBrowse the Internet free of malware, ads, "
@@ -90,7 +96,7 @@ class Settings:
             killswitch_enum (KillswitchStatusEnum)
         """
         try:
-            self.killswitch_obj.update_from_user_configuration_menu(
+            ExecutionEnvironment().killswitch.update_from_user_configuration_menu( # noqa
                 killswitch_enum
             )
         except exceptions.DisableConnectivityCheckError as e:
@@ -126,7 +132,6 @@ class Settings:
             protocol_enum (ProtocolEnum)
         """
         logger.info("Setting protocol to: {}".format(protocol_enum))
-
         if not isinstance(protocol_enum, ProtocolEnum):
             logger.error("Select protocol is incorrect.")
             raise Exception(

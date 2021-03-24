@@ -1,20 +1,26 @@
 from .utils import Singleton
 
+
 class ExecutionEnvironment(metaclass=Singleton):
     """This class hold all the system environment based elements.
-    
-    The goal is to abstract all differences between system and isolate them in one point.
-    
+
+    The goal is to abstract all differences between system and
+    isolate them in one point.
+
     This is a singleton.
     """
-    
+
     def __init__(self):
         self.__keyring = None
         self.__api_session = None
-        
+
         self.__connection_backend = None
         self.__killswitch = None
-    
+        self.__ipv6leak = None
+
+        self.__settings = None
+        self.__connection_metadata = None
+
     @property
     def keyring(self):
         """Return the keyring to use"""
@@ -22,20 +28,23 @@ class ExecutionEnvironment(metaclass=Singleton):
             from .keyring import KeyringBackend
             self.__keyring = KeyringBackend.get_default()
         return self.__keyring
-    
+
     @keyring.setter
     def keyring(self, newvalue):
         self.__keyring = newvalue
-    
+
     @property
     def connection_backend(self):
         """Return the connection backend to use (nm, etc.)"""
-        raise NotImplementedError()
-    
+        if self.__connection_backend is None:
+            from .connection_backend import ConnectionBackend
+            self.__connection_backend = ConnectionBackend.get_backend()
+        return self.__connection_backend
+
     @connection_backend.setter
     def connection_backend(self, newvalue):
         self.__connection_backend = newvalue
-    
+
     @property
     def api_session(self):
         """Return the session to the API"""
@@ -43,11 +52,59 @@ class ExecutionEnvironment(metaclass=Singleton):
             from .session import APISession
             self.__api_session = APISession()
         return self.__api_session
-    
+
     @api_session.setter
     def api_session(self, newvalue):
         self.__api_session = newvalue
-    
+
+    @property
+    def killswitch(self):
+        """Return the session to the API"""
+        if self.__killswitch is None:
+            from .killswitch import KillSwitch
+            self.__killswitch = KillSwitch()
+        return self.__killswitch
+
+    @killswitch.setter
+    def killswitch(self, newvalue):
+        self.__killswitch = newvalue
+
+    @property
+    def ipv6leak(self):
+        """Return the session to the API"""
+        if self.__ipv6leak is None:
+            from .killswitch import IPv6LeakProtection
+            self.__ipv6leak = IPv6LeakProtection()
+        return self.__ipv6leak
+
+    @ipv6leak.setter
+    def ipv6leak(self, newvalue):
+        self.__ipv6leak = newvalue
+
+    @property
+    def settings(self):
+        """Return the session to the API"""
+        if self.__settings is None:
+            from .user_settings import SettingsBackend
+            self.__settings = SettingsBackend.get_backend()
+        return self.__settings
+
+    @settings.setter
+    def settings(self, newvalue):
+        self.__settings = newvalue
+
+    @property
+    def connection_metadata(self):
+        """Return the session to the API"""
+        if self.__connection_metadata is None:
+            from .metadata import ConnectionMetadataBackend
+            self.__connection_metadata = ConnectionMetadataBackend.get_backend() # noqa
+        return self.__connection_metadata
+
+    @connection_metadata.setter
+    def connection_metadata(self, newvalue):
+        self.__connection_metadata = newvalue
+
     @property
     def user_agent(self):
         """Get user agent to use when communicating with API
@@ -58,9 +115,7 @@ class ExecutionEnvironment(metaclass=Singleton):
         try:
             import distro
             distribution, version, code_nome = distro.linux_distribution()
-            return "ProtonVPN (Linux; {}/{})".format(distribution, version) 
-        
+            return "ProtonVPN (Linux; {}/{})".format(distribution, version)
+
         except ImportError:
             return "ProtonVPN (Linux; unknown distribution/unknown version)"
-        
-    

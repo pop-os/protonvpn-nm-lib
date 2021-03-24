@@ -3,8 +3,8 @@ from .. import exceptions
 import requests
 from ..enums import KillswitchStatusEnum, ProtocolEnum, ConnectionTypeEnum
 from ..constants import FLAT_SUPPORTED_PROTOCOLS
-import distro
 import re
+from .environment import ExecutionEnvironment
 
 
 class Utilities:
@@ -13,32 +13,12 @@ class Utilities:
     def ensure_connectivity(killswith_setting):
         utils = Utilities()
 
-        try:
-            utils.ensure_internet_connection_is_available(
-                killswith_setting
-            )
-            #LF: It's bad to loose the type of exception
-        except exceptions.InternetConnectionError as e:
-            raise Exception("\n{}".format(e))
-        except (exceptions.ProtonVPNException, Exception) as e:
-            logger.exception(e)
-            raise Exception(e)
-
-        try:
-            utils.ensure_api_is_reacheable(
-                killswith_setting
-            )
-        except exceptions.APITimeoutError as e:
-            raise Exception(
-                "{}".format(e)
-            )
-        except exceptions.UnreacheableAPIError as e:
-            raise Exception(
-                "{}".format(e)
-            )
-        except (exceptions.ProtonVPNException, Exception) as e:
-            logger.exception(e)
-            raise Exception("{}".format(e))
+        utils.ensure_internet_connection_is_available(
+            killswith_setting
+        )
+        utils.ensure_api_is_reacheable(
+            killswith_setting
+        )
 
     @staticmethod
     def ensure_internet_connection_is_available(killswith_setting):
@@ -57,7 +37,7 @@ class Utilities:
                 "No internet connection found, request timed out. "
                 "Please make sure you are connected and retry."
             )
-        except (requests.exceptions.RequestException, Exception) as e:
+        except (requests.exceptions.BaseHTTPError, Exception) as e:
             logger.exception("InternetConnectionError: {}".format(e))
             raise exceptions.InternetConnectionError(
                 "No internet connection. "
@@ -174,18 +154,16 @@ class Utilities:
             )
 
     @staticmethod
-    def parse_user_input(
-        user_input,
-        ensure_country_exists,
-        user_settings_protocol
-    ):
+    def parse_user_input(user_input):
         connection_type = user_input.get("connection_type")
         connection_type_extra_arg = user_input.get("connection_type_extra_arg")
         protocol = user_input.get("protocol")
 
         utils = Utilities
         if connection_type == ConnectionTypeEnum.COUNTRY:
-            ensure_country_exists(connection_type_extra_arg)
+            from .country import Country
+            country = Country()
+            country.ensure_country_code_exists(connection_type_extra_arg)
         if connection_type == ConnectionTypeEnum.SERVERNAME:
             utils.ensure_servername_is_valid(
                 connection_type_extra_arg
@@ -201,7 +179,7 @@ class Utilities:
 
         if not utils.is_protocol_valid(protocol):
             protocol = ProtocolEnum(
-                user_settings_protocol
+                ExecutionEnvironment().settings.protocol
             )
         else:
             protocol = ProtocolEnum(protocol)

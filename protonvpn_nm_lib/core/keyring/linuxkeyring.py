@@ -3,24 +3,26 @@ from ...logger import logger
 from ...enums import KeyringEnum
 from ... import exceptions
 from ._base import KeyringBackend
+import os
+
 
 class KeyringBackendLinux(KeyringBackend):
     def __init__(self, keyring_backend):
         self.__keyring_backend = keyring_backend
         self.__keyring_service = KeyringEnum.DEFAULT_KEYRING_SERVICE.value
-        
+
     def __getitem__(self, key):
         import keyring
-        
+
         self._ensure_key_is_valid(key)
-        
+
         try:
             stored_data = self.__keyring_backend.get_password(
                 self.__keyring_service,
                 key
             )
         except (keyring.errors.InitError, keyring.errors.KeyringLocked) as e:
-            logger.exception("[!] AccessKeyringError: {}".format(e))
+            logger.exception("AccessKeyringError: {}".format(e))
             raise exceptions.AccessKeyringError(
                 "Could not fetch from keychain: {}".format(e)
             )
@@ -28,8 +30,9 @@ class KeyringBackendLinux(KeyringBackend):
             logger.exception("[!] KeyringError: {}".format(e))
             # capture_exception(e)
             raise exceptions.KeyringError(e)
-        
-        #Since we're borrowing the dict interface, be consistent and throw a KeyError if it doesn't exist
+
+        # Since we're borrowing the dict interface,
+        # be consistent and throw a KeyError if it doesn't exist
         if stored_data is None:
             raise KeyError(key)
 
@@ -44,12 +47,12 @@ class KeyringBackendLinux(KeyringBackend):
         except Exception as e:
             logger.exception("[!] JSONDataError: {}".format(e))
             raise exceptions.JSONDataError(e)
-    
+
     def __delitem__(self, key):
         import keyring
-        
+
         self._ensure_key_is_valid(key)
-        
+
         try:
             self.__keyring_backend.delete_password(self.__keyring_service, key)
         except (
@@ -65,10 +68,10 @@ class KeyringBackendLinux(KeyringBackend):
             raise KeyError(key)
         except Exception as e:
             logger.exception("[!] Unknown exception: {}".format(e))
-            raise #We shouldn't ignore exceptions!
+            # We shouldn't ignore exceptions!
+            raise Exception(e)
             # capture_exception(e)
-            
-    
+
     def __setitem__(self, key, value):
         """Add data entry to keyring.
 
@@ -77,12 +80,12 @@ class KeyringBackendLinux(KeyringBackend):
             keyring_username (string): the keyring username
             keyring_service (string): the keyring servicename
         """
-        
+
         import keyring
-        
+
         self._ensure_key_is_valid(key)
         self._ensure_value_is_valid(value)
-        
+
         json_data = json.dumps(value)
         try:
             self.__keyring_backend.set_password(
@@ -95,23 +98,32 @@ class KeyringBackendLinux(KeyringBackend):
             keyring.errors.KeyringLocked,
             keyring.errors.PasswordSetError
         ) as e:
-            logger.exception("[!] AccessKeyringError: {}".format(e))
+            logger.exception("AccessKeyringError: {}".format(e))
             raise exceptions.AccessKeyringError(
                 "Could not access keychain: {}".format(e)
             )
         except Exception as e:
-            logger.error("[!] Exception: {}".format(e))
-            # capture_exception(e)        
+            logger.error("Exception: {}".format(e))
+            # capture_exception(e)
 
 
 class KeyringBackendLinuxKwallet(KeyringBackendLinux):
-    pass
-    
+    priority = (
+        5.1
+        if "KDE" in os.getenv(
+            "XDG_CURRENT_DESKTOP", ""
+        ).split(":")
+        else 4.9
+    )
+
+    def __init__(self):
+        from keyring.backends import kwallet
+        super().__init__(kwallet.DBusKeyring())
+
+
 class KeyringBackendLinuxSecretService(KeyringBackendLinux):
     priority = 5
-    
+
     def __init__(self):
         from keyring.backends import SecretService
         super().__init__(SecretService.Keyring())
-        
-    

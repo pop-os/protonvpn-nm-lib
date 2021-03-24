@@ -1,57 +1,58 @@
 from getpass import getuser
 
-from ... import exceptions
-from ...constants import CONFIG_STATUSES
-from ...enums import (ConnectionMetadataEnum, MetadataEnum,
-                      UserSettingStatusEnum)
-from ...logger import logger
+from ..... import exceptions
+from .....constants import CONFIG_STATUSES, NETSHIELD_STATUS_DICT
+from .....enums import UserSettingStatusEnum, ClientSuffixEnum
+from .....logger import logger
+from ....environment import ExecutionEnvironment
 
 
-class SetupConnection:
+class ConfigureOpenVPNConnection:
 
     def __init__(self):
         self.virtual_device_name = None
-        self.certificate_filepath = None
+
+        self.username = None
+        self.password = None
+        self.domain = None
+        self.servername = None
+        self.dns_status = None
+        self.custom_dns = None
 
         self.connection = None
         self._vpn_settings = None
         self._conn_settings = None
 
     @staticmethod
-    def init(
-        protonvpn_user, physical_server,
-        virtual_device_name,
-        certificate_filepath
-    ):
-        setup_connection = SetupConnection()
-        setup_connection.protonvpn_user = protonvpn_user
-        setup_connection.physical_server = physical_server
-        setup_connection.virtual_device_name = virtual_device_name
-        setup_connection.certificate_filepath = certificate_filepath
+    def configure_connection(connection, connection_data):
+        setup_connection = ConfigureOpenVPNConnection()
 
-        return setup_connection
+        setup_connection.connection = connection
+        user_data = connection_data.get("user_data")
+        setup_connection.username = user_data.get("username")
+        setup_connection.password = user_data.get("password")
+        setup_connection.append_suffixes()
 
-    def run_setup(self, **kwargs):
-        user_data = kwargs.get("user_data")
-        self.username = user_data.get("username")
-        self.password = user_data.get("password")
+        setup_connection.domain = connection_data.get("domain")
+        setup_connection.servername = connection_data.get("servername")
 
-        self.domain = kwargs.get("domain")
-        self.servername = kwargs.get("servername")
+        setup_connection.dns_status = ExecutionEnvironment().settings.dns
+        setup_connection.custom_dns = ExecutionEnvironment()\
+            .settings.dns_custom_ips
 
-        dns = kwargs.get("dns")
-        self.dns_status = dns.get("dns_status")
-        self.custom_dns = dns.get("custom_dns")
+        setup_connection.virtual_device_name = connection_data.get(
+            "virtual_device_name"
+        )
 
-        self._vpn_settings = self.connection.get_setting_vpn()
-        self._conn_settings = self.connection.get_setting_connection()
+        setup_connection._vpn_settings = connection.get_setting_vpn()
+        setup_connection._conn_settings = connection.get_setting_connection()
 
-        self.make_vpn_user_owned()
-        self.set_custom_connection_id()
-        self.add_vpn_credentials()
-        self.add_server_certificate_check()
-        self.apply_virtual_device_type()
-        self.dns_configurator()
+        setup_connection.make_vpn_user_owned()
+        setup_connection.set_custom_connection_id()
+        setup_connection.add_vpn_credentials()
+        setup_connection.add_server_certificate_check()
+        setup_connection.apply_virtual_device_type()
+        setup_connection.dns_configurator()
 
     def make_vpn_user_owned(self):
         # returns NM.SettingConnection
@@ -66,6 +67,15 @@ class SetupConnection:
     def set_custom_connection_id(self):
         self._conn_settings.props.id = "ProtonVPN " + self.servername
 
+    def append_suffixes(self):
+        suffixes = [
+            ClientSuffixEnum.PLATFORM,
+            NETSHIELD_STATUS_DICT[ExecutionEnvironment().settings.netshield]
+        ]
+        self.username = self.username + "+" + "+".join(
+            suffix.value for suffix in suffixes
+        )
+
     def add_vpn_credentials(self):
         """Add OpenVPN credentials to ProtonVPN connection.
 
@@ -76,6 +86,7 @@ class SetupConnection:
         # returns NM.SettingVpn if the connection contains one, otherwise None
         # https://lazka.github.io/pgi-docs/NM-1.0/classes/SettingVpn.html
         logger.info("Adding OpenVPN credentials")
+
         try:
             self._vpn_settings.add_data_item(
                 "username", self.username
@@ -110,13 +121,10 @@ class SetupConnection:
     def apply_virtual_device_type(self):
         """Apply virtual device type and name."""
         logger.info("Applying virtual device type to VPN")
-        virtual_device_type = self.extract_virtual_device_type(
-            self.certificate_filepath
-        )
 
         # Changes virtual tunnel name
         self._vpn_settings.add_data_item("dev", self.virtual_device_name)
-        self._vpn_settings.add_data_item("dev-type", virtual_device_type)
+        self._vpn_settings.add_data_item("dev-type", "tun")
 
     def extract_virtual_device_type(self, filename):
         """Extract virtual device type from .ovpn file.
@@ -172,20 +180,20 @@ class SetupConnection:
         if self.dns_status not in CONFIG_STATUSES:
             raise Exception("Incorrect status configuration")
 
-        dns_status = self.enforce_enbled_state_if_disabled()
+        self.enforce_enbled_state_if_disabled()
 
         ipv4_config = self.connection.get_setting_ip4_config()
         ipv6_config = self.connection.get_setting_ip6_config()
 
-        if dns_status == UserSettingStatusEnum.CUSTOM:
+        if self.dns_status == UserSettingStatusEnum.CUSTOM:
+
             self.apply_custom_dns_configuration(
                 ipv4_config, ipv6_config
             )
-            return
-
-        self.apply_automatic_dns_configuration(
-            ipv4_config, ipv6_config
-        )
+        else:
+            self.apply_automatic_dns_configuration(
+                ipv4_config, ipv6_config
+            )
 
     def enforce_enbled_state_if_disabled(self):
         if self.dns_status == UserSettingStatusEnum.DISABLED:
@@ -204,7 +212,4 @@ class SetupConnection:
         logger.info("Applying custom DNS: {}".format(custom_dns))
         ipv4_config.props.dns_priority = -50
         ipv6_config.props.dns_priority = -50
-        for ip in custom_dns:
-            self.protonvpn_user.user_settings.\
-                setting_configurator.is_valid_ip(ip)
         ipv4_config.props.dns = custom_dns

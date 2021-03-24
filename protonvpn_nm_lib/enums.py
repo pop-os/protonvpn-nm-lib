@@ -144,53 +144,6 @@ class NetworkManagerConnectionTypeEnum(Enum):
     ALL = 1
 
 
-class ServerEnum(Enum):
-    ID = "ID"
-    DOMAIN = "Domain"
-    STATUS = "Status"
-
-
-class LogicalServerEnum(Enum):
-    NAME = "Name"
-    ENTRY_COUNTRY = "EntryCountry"
-    EXIT_COUNTRY = "ExitCountry"
-    TIER = "Tier"
-    FEATURES = "Features"
-    REGION = "Region"
-    CITY = "City"
-    SCORE = "Score"
-    LOCATION = "Location"
-    SERVERS = "Servers"
-    LOAD = "Load"
-
-
-class PhysicalServerEnum(Enum):
-    ENTRY_IP = "EntryIP"
-    EXIT_IP = "ExitIP"
-    GENERATION = "Generation"
-    SERVICES_DOWN_REASON = "ServicesDownReason"
-    LABEL = "Label"
-
-
-class ServerLocation(Enum):
-    LONGITUDE = "Long"
-    LATITUDE = "Lat"
-
-
-class ServerInfoEnum(Enum):
-    SERVERNAME = "Servername"
-    COUNTRY = "ExitCountry"
-    CITY = "City"
-    LOAD = "Load"
-    TIER = "Tier"
-    FEATURES = "Features"
-    LOCATION = "Location"
-    LATITUDE = "Lat"
-    LONGITUDE = "Long"
-    ENTRY_COUNTRY = "EntryCountry"
-    REGION = "Region"
-
-
 class ConnectionStatusEnum(Enum):
     SERVER_INFORMATION = "server_information"
     PROTOCOL = "protocol"
@@ -227,14 +180,13 @@ class DaemonReconnectorEnum(Enum):
     DAEMON_RELOAD = "daemon-reload"
 
 
-class DbusMonitorResponseEnum(Enum):
-    RESPONSE = "dbus_response"
+class ConnectionStartStatusEnum(Enum):
     STATE = "state"
     REASON = "reason"
     MESSAGE = "message"
 
 
-class DbusVPNConnectionStateEnum(Enum):
+class VPNConnectionStateEnum(Enum):
     """
     NMVpnConnectionState(int)
 
@@ -259,7 +211,7 @@ class DbusVPNConnectionStateEnum(Enum):
     UNKNOWN_ERROR = 999
 
 
-class DbusVPNConnectionReasonEnum(Enum):
+class VPNConnectionReasonEnum(Enum):
     """
     NMActiveConnectionStateReason(int)
 

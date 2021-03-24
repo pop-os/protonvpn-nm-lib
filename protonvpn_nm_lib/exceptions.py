@@ -4,11 +4,13 @@ class ProtonVPNException(BaseException):
         self.additional_context = additional_info
         super(ProtonVPNException, self).__init__(self.message)
 
+
 class APISessionIsNotValidError(ProtonVPNException):
     """
     This exception is raised when a call requires a valid Proton API session,
     but we currently don't have one. This can be solved by doing a new login.
     """
+
 
 class DBusException(ProtonVPNException):
     """DBus exception."""
@@ -65,8 +67,11 @@ class JSONDataError(JSONError):
 
 
 
+class CacheError(ProtonVPNException): # noqa
+    """Cache error base exception"""
 
-class CacheServersError(ProtonVPNException): # noqa
+
+class CacheServersError(CacheError):
     """Cache servers error"""
 
 
@@ -81,6 +86,11 @@ class CacheLogicalServersFallbackError(CacheServersError):
 class MissingCacheError(CacheServersError):
     """Missing cache error."""
 
+
+class DefaultOVPNPortsNotFoundError(CacheError):
+    """Default OpenVPN ports not found.
+    Either cache is missing or unable to fetch from API.
+    """
 
 
 
