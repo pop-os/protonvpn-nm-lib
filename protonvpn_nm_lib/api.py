@@ -251,7 +251,7 @@ class ProtonVPNClientAPI:
         """
         return self._env.api_session.is_valid
 
-    def get_connection_status(self):
+    def get_connection_status(self, readeable_format=True):
         """Get active connection status.
 
         Args:
@@ -263,7 +263,7 @@ class ProtonVPNClientAPI:
         Returns:
             dict
         """
-        return self.status.get_active_connection_status()
+        return self.status.get_active_connection_status(readeable_format)
 
     def get_settings(self):
         """Get user settings."""

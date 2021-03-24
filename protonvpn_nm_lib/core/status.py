@@ -21,7 +21,7 @@ class Status:
         self.killswitch_obj = ExecutionEnvironment().killswitch
         self.connection_metadata = ExecutionEnvironment().connection_metadata
 
-    def get_active_connection_status(self, readeable_format=True):
+    def get_active_connection_status(self, readeable_format):
         """Get active connection status.
 
         Args:
