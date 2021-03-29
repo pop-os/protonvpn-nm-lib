@@ -1,3 +1,4 @@
+import hashlib
 import os
 import sys
 
@@ -18,13 +19,29 @@ class DbusReconnect:
     ]
 
     def __init__(self):
+        pass
         if not os.path.isdir(XDG_CONFIG_SYSTEMD_USER):
             os.makedirs(XDG_CONFIG_SYSTEMD_USER)
 
-        if not os.path.isfile(LOCAL_SERVICE_FILEPATH):
+        if (
+            not os.path.isfile(LOCAL_SERVICE_FILEPATH)
+            or (
+                os.path.isfile(LOCAL_SERVICE_FILEPATH)
+                and self.get_hash_from_template() != self.get_service_file_hash(LOCAL_SERVICE_FILEPATH) # noqa
+            )
+        ):
             self.setup_service()
 
     def setup_service(self):
+        """Setup .service file."""
+        logger.info("Setting up .service file")
+        filled_template = self.__get_filled_service_template()
+        with open(LOCAL_SERVICE_FILEPATH, "w") as f:
+            f.write(filled_template)
+
+        self.call_daemon_reconnector(DaemonReconnectorEnum.DAEMON_RELOAD)
+
+    def __get_filled_service_template(self):
         root_dir = os.path.dirname(protonvpn_nm_lib.__file__)
         daemon_folder = os.path.join(root_dir, "daemon")
         python_service_path = os.path.join(
@@ -32,12 +49,9 @@ class DbusReconnect:
         )
         python_interpreter_path = sys.executable
         exec_start = python_interpreter_path + " " + python_service_path
-        with_cli_path = SERVICE_TEMPLATE.replace("EXEC_START", exec_start)
+        filled_template = SERVICE_TEMPLATE.replace("EXEC_START", exec_start)
 
-        with open(LOCAL_SERVICE_FILEPATH, "w") as f:
-            f.write(with_cli_path)
-
-        self.call_daemon_reconnector(DaemonReconnectorEnum.DAEMON_RELOAD)
+        return filled_template
 
     def start_daemon_reconnector(self):
         """Start daemon reconnector."""
@@ -168,3 +182,41 @@ class DbusReconnect:
                     decoded_stderr
                 )
             logger.error(msg)
+
+    def get_hash_from_template(self):
+        filled_template = self.__get_filled_service_template()
+        template_hash = hashlib.sha256(
+            filled_template.encode('ascii')
+        ).hexdigest()
+        logger.info("Template hash \"{}\"".format(template_hash))
+        return template_hash
+
+    def get_service_file_hash(self, file):
+        # A arbitrary (but fixed) buffer
+        # size (change accordingly)
+        # 65536 = 65536 bytes = 64 kilobytes
+        BUF_SIZE = 65536
+        sha256 = hashlib.sha256()
+        with open(file, "rb") as f:
+            while True:
+                # reading data = BUF_SIZE from
+                # the file and saving it in a
+                # variable
+                data = f.read(BUF_SIZE)
+                # True if eof = 1
+                if not data:
+                    break
+                # Passing that data to that sh256 hash
+                # function (updating the function with
+                # that data)
+                sha256.update(data)
+
+        # sha256.hexdigest() hashes all the input
+        # data passed to the sha256() via sha256.update()
+        # Acts as a finalize method, after which
+        # all the input data gets hashed hexdigest()
+        # hashes the data, and returns the output
+        # in hexadecimal format
+        generated_hash = sha256.hexdigest()
+        logger.info("Generated hash at runtime \"{}\"".format(generated_hash))
+        return generated_hash
