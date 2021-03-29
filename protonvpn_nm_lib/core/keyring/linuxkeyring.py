@@ -21,13 +21,13 @@ class KeyringBackendLinux(KeyringBackend):
                 self.__keyring_service,
                 key
             )
-        except (keyring.errors.InitError, keyring.errors.KeyringLocked) as e:
+        except (keyring.errors.InitError) as e:
             logger.exception("AccessKeyringError: {}".format(e))
             raise exceptions.AccessKeyringError(
                 "Could not fetch from keychain: {}".format(e)
             )
-        except Exception as e:
-            logger.exception("[!] KeyringError: {}".format(e))
+        except (Exception, keyring.errors.KeyringError) as e:
+            logger.exception("KeyringError: {}".format(e))
             # capture_exception(e)
             raise exceptions.KeyringError(e)
 
@@ -39,13 +39,13 @@ class KeyringBackendLinux(KeyringBackend):
         try:
             return json.loads(stored_data)
         except json.decoder.JSONDecodeError as e:
-            logger.exception("[!] JSONDataEmptyError: {}".format(e))
+            logger.exception("JSONDataEmptyError: {}".format(e))
             raise exceptions.JSONDataEmptyError(e)
         except TypeError as e:
-            logger.exception("[!] JSONDataNoneError: {}".format(e))
+            logger.exception("JSONDataNoneError: {}".format(e))
             raise exceptions.JSONDataNoneError(e)
         except Exception as e:
-            logger.exception("[!] JSONDataError: {}".format(e))
+            logger.exception("JSONDataError: {}".format(e))
             raise exceptions.JSONDataError(e)
 
     def __delitem__(self, key):
@@ -56,20 +56,19 @@ class KeyringBackendLinux(KeyringBackend):
         try:
             self.__keyring_backend.delete_password(self.__keyring_service, key)
         except (
-                keyring.errors.InitError,
-                keyring.errors.KeyringLocked
+                keyring.errors.InitError
         ) as e:
-            logger.exception("[!] AccessKeyringError: {}".format(e))
+            logger.exception("AccessKeyringError: {}".format(e))
             raise exceptions.AccessKeyringError(
                 "Could not access keychain: {}".format(e)
             )
         except keyring.errors.PasswordDeleteError as e:
-            logger.exception("[!] KeyringDataNotFound: {}".format(e))
+            logger.exception("KeyringDataNotFound: {}".format(e))
             raise KeyError(key)
-        except Exception as e:
-            logger.exception("[!] Unknown exception: {}".format(e))
+        except (Exception, keyring.errors.KeyringError) as e:
+            logger.exception("Unknown exception: {}".format(e))
             # We shouldn't ignore exceptions!
-            raise Exception(e)
+            raise exceptions.KeyringError(e)
             # capture_exception(e)
 
     def __setitem__(self, key, value):
@@ -95,16 +94,16 @@ class KeyringBackendLinux(KeyringBackend):
             )
         except (
             keyring.errors.InitError,
-            keyring.errors.KeyringLocked,
             keyring.errors.PasswordSetError
         ) as e:
             logger.exception("AccessKeyringError: {}".format(e))
             raise exceptions.AccessKeyringError(
                 "Could not access keychain: {}".format(e)
             )
-        except Exception as e:
+        except (Exception, keyring.errors.KeyringError) as e:
             logger.error("Exception: {}".format(e))
             # capture_exception(e)
+            raise exceptions.KeyringError(e)
 
 
 class KeyringBackendLinuxKwallet(KeyringBackendLinux):
