@@ -10,20 +10,16 @@ from .environment import ExecutionEnvironment
 class Utilities:
 
     @staticmethod
-    def ensure_connectivity(killswith_setting):
+    def ensure_connectivity():
         utils = Utilities()
 
-        utils.ensure_internet_connection_is_available(
-            killswith_setting
-        )
-        utils.ensure_api_is_reacheable(
-            killswith_setting
-        )
+        utils.ensure_internet_connection_is_available()
+        utils.ensure_api_is_reacheable()
 
     @staticmethod
-    def ensure_internet_connection_is_available(killswith_setting):
+    def ensure_internet_connection_is_available():
         logger.info("Checking internet connectivity")
-        if killswith_setting == KillswitchStatusEnum.HARD:
+        if ExecutionEnvironment().killswitch != KillswitchStatusEnum.DISABLED:
             return
 
         try:
@@ -45,10 +41,10 @@ class Utilities:
             )
 
     @staticmethod
-    def ensure_api_is_reacheable(ks_status):
+    def ensure_api_is_reacheable():
         logger.info("Checking API connectivity")
 
-        if ks_status == KillswitchStatusEnum.HARD:
+        if ExecutionEnvironment().killswitch != KillswitchStatusEnum.DISABLED:
             return
 
         try:

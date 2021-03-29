@@ -25,7 +25,7 @@ class ProtonVPNClientAPI:
             username (string)
             password (string)
         """
-        self.utils.ensure_connectivity(self._env.settings.killswitch)
+        self.utils.ensure_connectivity()
         self._env.api_session.authenticate(username, password)
 
     def logout(self):
@@ -46,9 +46,7 @@ class ProtonVPNClientAPI:
         Should be user either after setup_connection() or
         setup_reconnect_to_previously_connected_server().
         """
-        self.utils.ensure_internet_connection_is_available(
-            self._env.settings.killswitch
-        )
+        self.utils.ensure_internet_connection_is_available()
         connect_result = self._env.connection_backend.connect()
         self._env.connection_metadata.save_connect_time()
         return connect_result
@@ -86,7 +84,7 @@ class ProtonVPNClientAPI:
             raise exceptions.UserSessionNotFound(
                 "User session was not found, please login first."
             )
-        self.utils.ensure_connectivity(self._env.settings.killswitch)
+        self.utils.ensure_connectivity()
 
         (
             _connection_type,
@@ -316,8 +314,6 @@ class ProtonVPNClientAPI:
         1) It checks if there is internet connection
         2) It checks if API can be reached
         """
-        self.utils.ensure_connectivity(
-            self._env.settings.killswitch
-        )
+        self.utils.ensure_connectivity()
 
 protonvpn = ProtonVPNClientAPI() # noqa
