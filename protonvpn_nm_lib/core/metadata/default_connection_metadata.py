@@ -161,6 +161,17 @@ class ConnectionMetadata(ConnectionMetadataBackend):
             metadata
         )
 
+    def remove_all_metadata(self):
+        """Remove all metadata connection files."""
+        self.metadata.manage_metadata(
+            MetadataActionEnum.REMOVE,
+            MetadataEnum.CONNECTION
+        )
+        self.metadata.manage_metadata(
+            MetadataActionEnum.REMOVE,
+            MetadataEnum.LAST_CONNECTION
+        )
+
     def remove_connection_metadata(self, metadata_type):
         """Remove metadata file.
 
