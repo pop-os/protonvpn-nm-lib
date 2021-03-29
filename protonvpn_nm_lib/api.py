@@ -37,6 +37,8 @@ class ProtonVPNClientAPI:
             pass
 
         self._env.api_session.logout()
+        self._env.connection_metadata.remove_all_metadata()
+        self._env.settings.reset_to_default_configs()
 
     def connect(self):
         """Connect to ProtonVPN.
@@ -48,7 +50,6 @@ class ProtonVPNClientAPI:
             self._env.settings.killswitch
         )
         connect_result = self._env.connection_backend.connect()
-        # print(self._env.connection_metadata.get_connection_metadata(MetadataEnum.CONNECTION))
         self._env.connection_metadata.save_connect_time()
         return connect_result
 
