@@ -1,4 +1,5 @@
 from ..country_codes import country_codes
+from ..enums import ServerTierEnum
 
 
 class Country:
@@ -17,18 +18,25 @@ class Country:
         Ensures that a given country code exists.
     """
 
-    def get_dict_with_country_servername(self, server_list):
+    def get_dict_with_country_servername(self, server_list, user_tier=False):
         """Generate dict with {country:[servername]}.
 
         Args:
             server_list (list)
+            tier (int)
         Returns:
             dict: country_code: [servername]
                 ie {PT: [PT#5, PT#8]}
         """
         countries = {}
         for server in server_list:
-            country = self.get_country_name(server.exit_country)
+            if user_tier is not False and int(server.tier) <= int(user_tier):
+                country = self.get_country_name(server.exit_country)
+            elif isinstance(user_tier, bool) and not user_tier:
+                country = self.get_country_name(server.exit_country)
+            else:
+                continue
+
             if country not in countries.keys():
                 countries[country] = []
             countries[country].append(server.name)
