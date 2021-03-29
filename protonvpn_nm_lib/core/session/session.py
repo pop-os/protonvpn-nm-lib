@@ -1,3 +1,5 @@
+import json
+import os
 import random
 import time
 
@@ -7,7 +9,6 @@ from ...exceptions import (APISessionIsNotValidError,
                            DefaultOVPNPortsNotFoundError, JSONDataError)
 from ...logger import logger
 from ..environment import ExecutionEnvironment
-import json
 
 
 class ErrorStrategy:
@@ -225,7 +226,15 @@ class APISession:
 
         self.__vpn_logicals = None
 
-        self.__proton_api.logout()
+        # A best effort is to logout the user via
+        # the API, but if that is not possible then
+        # at the least logout the user locally.
+        try:
+            self.__proton_api.logout()
+        except: # noqa
+            pass
+        self.remove_cache(CACHED_SERVERLIST)
+        self.remove_cache(CLIENT_CONFIG)
         # Re-create a new
         self.__session_create()
 
@@ -277,6 +286,12 @@ class APISession:
     def ensure_valid(self):
         if not self.is_valid:
             raise APISessionIsNotValidError("No session")
+
+    def remove_cache(self, cache_path):
+        try:
+            os.remove(cache_path)
+        except FileNotFoundError:
+            pass
 
     @property
     def username(self):
