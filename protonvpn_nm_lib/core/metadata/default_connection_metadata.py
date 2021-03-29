@@ -143,9 +143,7 @@ class ConnectionMetadata(ConnectionMetadataBackend):
             return self.metadata.manage_metadata(
                 MetadataActionEnum.GET, metadata_type
             )
-            print("Return all")
         except FileNotFoundError:
-            print("Returning empty")
             return {}
 
     def __write_connection_metadata(self, metadata_type, metadata):
