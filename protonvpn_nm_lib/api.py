@@ -140,7 +140,7 @@ class ProtonVPNClientAPI:
 
         logger.info("Stored metadata to file")
         configuration = physical_server.get_configuration(_protocol)
-        logger.info("Received confiuration object")
+        logger.info("Received configuration object")
         self._env.connection_backend.vpn_configuration = configuration
 
         logger.info("Setting up {}".format(server.name))
