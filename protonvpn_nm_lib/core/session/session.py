@@ -47,7 +47,7 @@ class ErrorStrategy:
         raise
 
     def _call_with_error_remapping(self, session, *args, **kwargs):
-        return self._func(session, *args, **kwargs) 
+        return self._func(session, *args, **kwargs)
 
     def _call_original_function(self, session, *args, **kwargs):
         return getattr(session, self.__func__.__name__)(*args, **kwargs)
@@ -116,9 +116,9 @@ class APISession:
     """
 
     # Probably would be better to have that somewhere else
-    FULL_CACHE_TIME_EXPIRE = 180 * 60  # 1 5min in seconds
+    FULL_CACHE_TIME_EXPIRE = 180 * 60  # 180min in seconds
     LOADS_CACHE_TIME_EXPIRE = 15 * 60  # 15min in seconds
-    CLIENT_CONFIG_TIME_EXPIRE = 15 * 60  # 15min in seconds
+    CLIENT_CONFIG_TIME_EXPIRE = 180 * 60  # 180min in seconds
     RANDOM_FRACTION = 0.22  # Generate a value of the timeout, +/- up to 22%, at random
 
     def __init__(self, api_url=None, enforce_pinning=True):
