@@ -15,7 +15,6 @@ class ProtonVPNClientAPI:
         self._env = ExecutionEnvironment()
         self.country = Country()
         self.utils = Utilities
-        self.status = Status()
 
     def login(self, username, password):
         """Login user with provided username and password.
@@ -80,6 +79,7 @@ class ProtonVPNClientAPI:
         Returns:
             dict: dbus response
         """
+        logger.info("Setting up connection")
         if not self._env.api_session.is_valid:
             raise exceptions.UserSessionNotFound(
                 "User session was not found, please login first."
@@ -206,7 +206,7 @@ class ProtonVPNClientAPI:
 
         Should be called before calling connect().
         """
-        logger.info("Attemtping to recconnect to previous server")
+        logger.info("Gathering data for recconnect to previous server")
         last_connection_metadata = self._env.connection_metadata\
             .get_connection_metadata(
                 MetadataEnum.LAST_CONNECTION
@@ -232,9 +232,12 @@ class ProtonVPNClientAPI:
         except KeyError:
             protocol = None
 
-        logger.info("Passed all check, will reconnecto to \"{}\"".format(
-            previous_server
-        ))
+        logger.info(
+            "Gathered all data from previous connection \"{}\". "
+            "Proceeding to setup connection.".format(
+                previous_server
+            )
+        )
 
         self.setup_connection(
             connection_type=ConnectionTypeEnum.SERVERNAME,
@@ -262,7 +265,7 @@ class ProtonVPNClientAPI:
         Returns:
             dict
         """
-        return self.status.get_active_connection_status(readeable_format)
+        return Status().get_active_connection_status(readeable_format)
 
     def get_settings(self):
         """Get user settings."""
