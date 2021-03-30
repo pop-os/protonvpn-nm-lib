@@ -1,4 +1,4 @@
-Source: protonvpn-nm-core
+Source: protonvpn-nm-lib
 Priority: optional
 Maintainer: Proton Technologies AG <opensource@proton.me>
 Build-Depends: debhelper (>= 10), dh-python, python3-all, python3-setuptools
