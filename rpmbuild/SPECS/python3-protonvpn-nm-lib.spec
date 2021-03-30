@@ -1,6 +1,6 @@
 %define unmangled_name protonvpn-nm-lib
 %define version 0.5.1
-%define release 1
+%define release 2
 
 Prefix: %{_prefix}
 
@@ -56,7 +56,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
-* Tue Feb 30 2021 Proton Technologies AG <opensource@proton.me> 0.5.1-1
+* Tue Feb 30 2021 Proton Technologies AG <opensource@proton.me> 0.5.1-2
 - Improve reconnection logic when computer goes to sleep or there is no internet connectivity
 - Improve logging
 

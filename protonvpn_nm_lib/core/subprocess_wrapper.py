@@ -106,9 +106,6 @@ class SubprocessWrapper():
         # Replace the path with the one we wanted
         args[0] = self._path_to_binaries[args[0]]
 
-        # Replace the path with the one we wanted
-        args[0] = self._path_to_binaries[args[0]]
-
         # Python below 3.7.0 does not support capture_output
         if platform.python_version() < "3.7.0":
             return _subprocess.run(
