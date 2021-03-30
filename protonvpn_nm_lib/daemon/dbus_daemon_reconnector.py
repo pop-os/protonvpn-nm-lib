@@ -11,6 +11,7 @@ from protonvpn_nm_lib.enums import (KillSwitchActionEnum,
                                     VPNConnectionStateEnum)
 
 env = ExecutionEnvironment()
+connection_metadata = env.connection_metadata
 killswitch = env.killswitch
 ipv6_leak_protection = env.ipv6leak
 settings = env.settings
@@ -78,20 +79,19 @@ class ProtonVPNReconnector:
             )
         )
         if state == VPNConnectionStateEnum.IS_ACTIVE:
-            self.failed_attempts = 0
-            ExecutionEnvironment().connection_metadata.save_connected_time()
-
             logger.info(
                 "ProtonVPN with virtual device '{}' is running.".format(
                     self.virtual_device_name
                 )
             )
+            self.failed_attempts = 0
+
+            connection_metadata.save_connect_time()
 
             if ipv6_leak_protection.enable_ipv6_leak_protection:
                 ipv6_leak_protection.manage(
                     KillSwitchActionEnum.ENABLE
                 )
-
             if (
                 settings.killswitch
                 != KillswitchStatusEnum.DISABLED
@@ -101,12 +101,17 @@ class ProtonVPNReconnector:
                     not killswitch.interface_state_tracker[
                         killswitch.ks_conn_name
                     ][KillSwitchInterfaceTrackerEnum.IS_RUNNING]
+                    or killswitch.interface_state_tracker[
+                        killswitch.routed_conn_name
+                    ][KillSwitchInterfaceTrackerEnum.IS_RUNNING]
                 ):
                     killswitch.manage(KillSwitchActionEnum.SOFT)
+                    logger.info("Running killswitch soft-mode")
                 else:
                     killswitch.manage(
                         KillSwitchActionEnum.POST_CONNECTION
                     )
+                    logger.info("Running killswitch post-conneciton mode")
 
         elif (
             state == VPNConnectionStateEnum.DISCONNECTED
@@ -124,7 +129,7 @@ class ProtonVPNReconnector:
                 vpn_iface.Delete()
             except dbus.exceptions.DBusException as e:
                 logger.error(
-                    "[!] Unable to remove connection. "
+                    "Unable to remove connection. "
                     + "Exception: {}".format(e)
                 )
             except AttributeError:
@@ -154,7 +159,7 @@ class ProtonVPNReconnector:
             ) or (
                 self.failed_attempts < self.max_attempts
             ):
-                logger.info("[!] Connection failed, attempting to reconnect.")
+                logger.info("Connection failed, attempting to reconnect.")
                 self.failed_attempts += 1
                 glib_reconnect = True
                 GLib.timeout_add(
@@ -162,7 +167,7 @@ class ProtonVPNReconnector:
                 )
             else:
                 logger.warning(
-                    "[!] Connection failed, exceeded {} max attempts.".format(
+                    "Connection failed, exceeded {} max attempts.".format(
                         self.max_attempts
                     )
                 )
@@ -205,6 +210,7 @@ class ProtonVPNReconnector:
                     "KS manager reconnect exception: {}".format(e)
                 )
                 return False
+        logger.info("Created routed interface")
 
         new_active_connection = self.dbus_wrapper.get_active_connection()
         logger.info(
@@ -292,7 +298,7 @@ class ProtonVPNReconnector:
             is_protonvpn, state, conn
         ) = self.dbus_wrapper.is_protonvpn_being_prepared()
         # Check if connection is being prepared
-        server_ip = ExecutionEnvironment().connection_metadata.get_server_ip()
+        server_ip = connection_metadata.get_server_ip()
         logger.info("Reconnecting to server IP \"{}\"".format(server_ip))
 
         if is_protonvpn and state == 1:
