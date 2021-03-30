@@ -1,5 +1,6 @@
-import subprocess as _subprocess
 import os
+import platform
+import subprocess as _subprocess
 
 
 class SubprocessWrapper():
@@ -105,10 +106,21 @@ class SubprocessWrapper():
         # Replace the path with the one we wanted
         args[0] = self._path_to_binaries[args[0]]
 
-        return _subprocess.run(
-            args, input=input, stdout=stdout,
-            stderr=stderr, capture_output=capture_output,
-            timeout=timeout, check=check
-        )
+        # Replace the path with the one we wanted
+        args[0] = self._path_to_binaries[args[0]]
+
+        # Python below 3.7.0 does not support capture_output
+        if platform.python_version() < "3.7.0":
+            return _subprocess.run(
+                args, input=input, stdout=stdout,
+                stderr=stderr,
+                timeout=timeout, check=check
+            )
+        else:
+            return _subprocess.run(
+                args, input=input, stdout=stdout,
+                stderr=stderr, capture_output=capture_output,
+                timeout=timeout, check=check
+            )
 
 subprocess = SubprocessWrapper() # noqa
