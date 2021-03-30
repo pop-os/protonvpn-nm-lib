@@ -49,3 +49,7 @@ class ConnectionMetadataBackend(SubclassesMixin, metaclass=ABCMeta):
     @abstractmethod
     def get_connection_metadata():
         """Get state metadata."""
+
+    @abstractmethod
+    def remove_all_metadata():
+        """Remove all metadata."""

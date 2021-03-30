@@ -1,12 +1,13 @@
 from ... import exceptions
 from ...constants import KILLSWITCH_STATUS_TEXT, SUPPORTED_PROTOCOLS
-from ...enums import (DisplayUserSettingsEnum, NetshieldTranslationEnum,
-                      ProtocolEnum, ProtocolImplementationEnum,
-                      UserSettingStatusEnum, ServerTierEnum)
+from ...enums import (DisplayUserSettingsEnum, KillswitchStatusEnum,
+                      NetshieldTranslationEnum, ProtocolEnum,
+                      ProtocolImplementationEnum, ServerTierEnum,
+                      UserSettingStatusEnum)
 from ...logger import logger
-from .settings_configurator import SettingsConfigurator
 from ..environment import ExecutionEnvironment
 from .settings_backend import SettingsBackend
+from .settings_configurator import SettingsConfigurator
 
 
 class Settings(SettingsBackend):
@@ -207,9 +208,13 @@ class Settings(SettingsBackend):
         """Reset user configuration to default values."""
         # should it disconnect prior to resetting user configurations ?
         try:
-            self.__user_conf_manager.reset_default_configs()
+            self.settings_configurator.reset_default_configs()
         except (exceptions.ProtonVPNException, Exception) as e:
             raise Exception(e)
+
+        ExecutionEnvironment().killswitch.update_from_user_configuration_menu( # noqa
+            KillswitchStatusEnum.DISABLED
+        )
 
     def get_user_settings(self, readeable_format):
         """Get user settings.

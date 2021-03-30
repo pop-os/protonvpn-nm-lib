@@ -10,20 +10,17 @@ from .environment import ExecutionEnvironment
 class Utilities:
 
     @staticmethod
-    def ensure_connectivity(killswith_setting):
+    def ensure_connectivity():
         utils = Utilities()
 
-        utils.ensure_internet_connection_is_available(
-            killswith_setting
-        )
-        utils.ensure_api_is_reacheable(
-            killswith_setting
-        )
+        utils.ensure_internet_connection_is_available()
+        utils.ensure_api_is_reacheable()
 
     @staticmethod
-    def ensure_internet_connection_is_available(killswith_setting):
-        logger.info("Checking internet connectivity")
-        if killswith_setting == KillswitchStatusEnum.HARD:
+    def ensure_internet_connection_is_available():
+        logger.info("Checking for internet connectivity")
+        if ExecutionEnvironment().killswitch != KillswitchStatusEnum.DISABLED:
+            logger.info("Skipping as killswitch is enabled")
             return
 
         try:
@@ -45,10 +42,11 @@ class Utilities:
             )
 
     @staticmethod
-    def ensure_api_is_reacheable(ks_status):
+    def ensure_api_is_reacheable():
         logger.info("Checking API connectivity")
 
-        if ks_status == KillswitchStatusEnum.HARD:
+        if ExecutionEnvironment().killswitch != KillswitchStatusEnum.DISABLED:
+            logger.info("Skipping as killswitch is enabled")
             return
 
         try:
@@ -145,7 +143,7 @@ class Utilities:
         Returns:
             bool
         """
-        logger.info("ensuring that protocol is valid")
+        logger.info("Ensuring provided protocol is valid")
         if not Utilities.is_protocol_valid(protocol):
             raise Exception(
                 "Invalid protocol \"{}\"".format(

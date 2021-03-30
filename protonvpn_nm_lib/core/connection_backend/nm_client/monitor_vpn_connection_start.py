@@ -57,7 +57,9 @@ class MonitorVPNConnectionStart:
             elif env.settings.killswitch == KillswitchStatusEnum.SOFT: # noqa
                 env.killswitch.manage(KillSwitchActionEnum.SOFT)
 
-            logger.info(msg)
+            logger.info("State: {} ; Reason{} ; Message: {}".format(
+                state, reason, msg
+            ))
             self.dbus_response[ConnectionStartStatusEnum.STATE] = state
             self.dbus_response[ConnectionStartStatusEnum.MESSAGE] = msg
             self.dbus_response[ConnectionStartStatusEnum.REASON] = reason
@@ -84,11 +86,13 @@ class MonitorVPNConnectionStart:
                     == VPNConnectionReasonEnum.CONN_ATTEMPT_TO_SERVICE_TIMED_OUT # noqa
                 ):
                     msg += "VPN connection time out."
-                if (
+                elif (
                     reason
                     == VPNConnectionReasonEnum.SECRETS_WERE_NOT_PROVIDED
                 ):
-                    msg += "Incorrect openvpn credentials."
+                    msg += "incorrect openvpn credentials."
+                else:
+                    msg += "unknown reason."
             else:
                 msg = msg + "unknown reasons."
 
@@ -96,7 +100,9 @@ class MonitorVPNConnectionStart:
                 msg = "ProtonVPN connection has been disconnected. "\
                     "Reason: {}".format(reason)
 
-            logger.error(msg)
+            logger.error("State: {} ; Reason{} ; Message: {}".format(
+                state, reason, msg
+            ))
             self.dbus_response[ConnectionStartStatusEnum.STATE] = state
             self.dbus_response[ConnectionStartStatusEnum.MESSAGE] = msg
             self.dbus_response[ConnectionStartStatusEnum.REASON] = reason

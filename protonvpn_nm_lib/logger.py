@@ -22,9 +22,12 @@ def get_logger():
     console_handler.setFormatter(FORMATTER)
 
     logging_level = logging.INFO
-    # Only log to console when using PROTONVPN_DEBUG=1
+    # Only log debug when using PROTONVPN_DEBUG=1
     if str(os.environ.get("PROTONVPN_DEBUG", False)).lower() == "true":
         logging_level = logging.DEBUG
+
+    # Only log to console when using PROTONVPN_DEBUG_CONSOLE=1
+    if str(os.environ.get("PROTONVPN_DEBUG_CONSOLE", False)).lower() == "true":
         logger.addHandler(console_handler)
 
     logger.setLevel(logging_level)

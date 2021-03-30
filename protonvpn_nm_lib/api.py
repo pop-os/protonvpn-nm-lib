@@ -15,7 +15,6 @@ class ProtonVPNClientAPI:
         self._env = ExecutionEnvironment()
         self.country = Country()
         self.utils = Utilities
-        self.status = Status()
 
     def login(self, username, password):
         """Login user with provided username and password.
@@ -25,7 +24,7 @@ class ProtonVPNClientAPI:
             username (string)
             password (string)
         """
-        self.utils.ensure_connectivity(self._env.settings.killswitch)
+        self.utils.ensure_connectivity()
         self._env.api_session.authenticate(username, password)
 
     def logout(self):
@@ -37,6 +36,8 @@ class ProtonVPNClientAPI:
             pass
 
         self._env.api_session.logout()
+        self._env.connection_metadata.remove_all_metadata()
+        self._env.settings.reset_to_default_configs()
 
     def connect(self):
         """Connect to ProtonVPN.
@@ -44,11 +45,8 @@ class ProtonVPNClientAPI:
         Should be user either after setup_connection() or
         setup_reconnect_to_previously_connected_server().
         """
-        self.utils.ensure_internet_connection_is_available(
-            self._env.settings.killswitch
-        )
+        self.utils.ensure_internet_connection_is_available()
         connect_result = self._env.connection_backend.connect()
-        # print(self._env.connection_metadata.get_connection_metadata(MetadataEnum.CONNECTION))
         self._env.connection_metadata.save_connect_time()
         return connect_result
 
@@ -81,11 +79,12 @@ class ProtonVPNClientAPI:
         Returns:
             dict: dbus response
         """
+        logger.info("Setting up connection")
         if not self._env.api_session.is_valid:
             raise exceptions.UserSessionNotFound(
                 "User session was not found, please login first."
             )
-        self.utils.ensure_connectivity(self._env.settings.killswitch)
+        self.utils.ensure_connectivity()
 
         (
             _connection_type,
@@ -141,7 +140,7 @@ class ProtonVPNClientAPI:
 
         logger.info("Stored metadata to file")
         configuration = physical_server.get_configuration(_protocol)
-        logger.info("Received confiuration object")
+        logger.info("Received configuration object")
         self._env.connection_backend.vpn_configuration = configuration
 
         logger.info("Setting up {}".format(server.name))
@@ -207,7 +206,7 @@ class ProtonVPNClientAPI:
 
         Should be called before calling connect().
         """
-        logger.info("Attemtping to recconnect to previous server")
+        logger.info("Gathering data for recconnect to previous server")
         last_connection_metadata = self._env.connection_metadata\
             .get_connection_metadata(
                 MetadataEnum.LAST_CONNECTION
@@ -233,9 +232,12 @@ class ProtonVPNClientAPI:
         except KeyError:
             protocol = None
 
-        logger.info("Passed all check, will reconnecto to \"{}\"".format(
-            previous_server
-        ))
+        logger.info(
+            "Gathered all data from previous connection \"{}\". "
+            "Proceeding to setup connection.".format(
+                previous_server
+            )
+        )
 
         self.setup_connection(
             connection_type=ConnectionTypeEnum.SERVERNAME,
@@ -263,7 +265,7 @@ class ProtonVPNClientAPI:
         Returns:
             dict
         """
-        return self.status.get_active_connection_status(readeable_format)
+        return Status().get_active_connection_status(readeable_format)
 
     def get_settings(self):
         """Get user settings."""
@@ -315,8 +317,6 @@ class ProtonVPNClientAPI:
         1) It checks if there is internet connection
         2) It checks if API can be reached
         """
-        self.utils.ensure_connectivity(
-            self._env.settings.killswitch
-        )
+        self.utils.ensure_connectivity()
 
 protonvpn = ProtonVPNClientAPI() # noqa

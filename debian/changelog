@@ -1,3 +1,10 @@
+protonvpn-nm-lib (0.5.1-1) unstable; urgency=medium
+
+  * Improve reconnection logic when computer goes to sleep or there is no internet connectivity
+  * Improve logging
+
+ -- Proton Technologies AG <opensource@proton.me>  Tue, 30 Mar 2021 12:15:00 +0100
+
 protonvpn-nm-core (0.5.0-2) unstable; urgency=medium
 
   * Refactor library
