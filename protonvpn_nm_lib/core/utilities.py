@@ -18,8 +18,9 @@ class Utilities:
 
     @staticmethod
     def ensure_internet_connection_is_available():
-        logger.info("Checking internet connectivity")
+        logger.info("Checking for internet connectivity")
         if ExecutionEnvironment().killswitch != KillswitchStatusEnum.DISABLED:
+            logger.info("Skipping as killswitch is enabled")
             return
 
         try:
@@ -45,6 +46,7 @@ class Utilities:
         logger.info("Checking API connectivity")
 
         if ExecutionEnvironment().killswitch != KillswitchStatusEnum.DISABLED:
+            logger.info("Skipping as killswitch is enabled")
             return
 
         try:
@@ -141,7 +143,7 @@ class Utilities:
         Returns:
             bool
         """
-        logger.info("ensuring that protocol is valid")
+        logger.info("Ensuring provided protocol is valid")
         if not Utilities.is_protocol_valid(protocol):
             raise Exception(
                 "Invalid protocol \"{}\"".format(
