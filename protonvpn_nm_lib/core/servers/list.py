@@ -334,7 +334,7 @@ class ServerList:
         return server_list
 
     def get_random_server(self):
-        if len(self) == 0:
+        if self._toplevel.__data is None:
             logger.error("Server cache not found")
             raise exceptions.ServerCacheNotFound("Server cache not found")
 
@@ -343,7 +343,7 @@ class ServerList:
 
     def get_fastest_server(self):
         # Get the fastest enabled server
-        if len(self) == 0:
+        if self._toplevel.__data is None:
             logger.error("Server cache not found")
             raise exceptions.ServerCacheNotFound("Server cache not found")
 
