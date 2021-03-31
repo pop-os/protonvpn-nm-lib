@@ -424,7 +424,10 @@ class APISession:
             self._update_next_fetch_logicals()
             self._update_next_fetch_loads()
 
-        self.update_servers_if_needed()
+        try:
+            self.update_servers_if_needed()
+        except Exception as e:
+            logger.exception(e)
 
         return self.__vpn_logicals
 
@@ -484,7 +487,11 @@ class APISession:
 
             self._update_next_fetch_client_config()
 
-        self.update_client_config_if_needed()
+        try:
+            self.update_client_config_if_needed()
+        except Exception as e:
+            logger.exception(e)
+
         return self.__clientconfig
 
     @property
