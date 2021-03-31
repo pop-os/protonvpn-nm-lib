@@ -199,7 +199,7 @@ class NetworkManagerClient(ConnectionBackend, NMClientMixin):
         logger.info("Running pre-setup connection.")
         if ipv6_lp.enable_ipv6_leak_protection:
             ipv6_lp.manage(KillSwitchActionEnum.ENABLE)
-        if settings.killswitch == KillswitchStatusEnum.HARD: # noqa
+        if settings.killswitch != KillswitchStatusEnum.DISABLED: # noqa
             killswitch.manage(
                 KillSwitchActionEnum.PRE_CONNECTION,
                 server_ip=entry_ip
