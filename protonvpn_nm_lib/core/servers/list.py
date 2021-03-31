@@ -334,11 +334,19 @@ class ServerList:
         return server_list
 
     def get_random_server(self):
+        if len(self) == 0:
+            logger.error("Server cache not found")
+            raise exceptions.ServerCacheNotFound("Server cache not found")
+
         server_list = self.filter_servers_by_tier()
         return server_list[random.randint(0, len(server_list) - 1)]
 
     def get_fastest_server(self):
         # Get the fastest enabled server
+        if len(self) == 0:
+            logger.error("Server cache not found")
+            raise exceptions.ServerCacheNotFound("Server cache not found")
+
         servers_ordered = list(
             self.filter(
                 lambda server: server.enabled
@@ -347,7 +355,6 @@ class ServerList:
                 lambda server: server.score
             )
         )
-
         if len(servers_ordered) == 0:
             logger.error("List of logical servers is empty")
             raise exceptions.EmptyServerListError(

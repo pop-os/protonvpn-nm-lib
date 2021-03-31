@@ -153,7 +153,12 @@ class ProtonVPNClientAPI:
         Returns:
             LogicalServer
         """
-        return self._env.api_session.servers.get_fastest_server()
+        try:
+            return self._env.api_session.servers.get_fastest_server()
+        except exceptions.EmptyServerListError:
+            raise exceptions.FastestServerNotFound(
+                "Fastest server could not be found."
+            )
 
     def config_for_fastest_server_in_country(self, country_code):
         """Select server by country code.
@@ -161,9 +166,14 @@ class ProtonVPNClientAPI:
         Returns:
             LogicalServer
         """
-        return self._env.api_session.servers.filter(
-            lambda server: server.exit_country.lower() == country_code.lower() # noqa
-        ).get_fastest_server()
+        try:
+            return self._env.api_session.servers.filter(
+                lambda server: server.exit_country.lower() == country_code.lower() # noqa
+            ).get_fastest_server()
+        except exceptions.EmptyServerListError:
+            raise exceptions.FastestServerInCountryNotFound(
+                "Fastest server could not be found."
+            )
 
     def config_for_fastest_server_with_feature(self, feature):
         """Select server by specified feature.
@@ -176,11 +186,18 @@ class ProtonVPNClientAPI:
             ConnectionTypeEnum.PEER2PEER: FeatureEnum.P2P,
             ConnectionTypeEnum.TOR: FeatureEnum.TOR,
         }
-        return self._env.api_session.servers.filter(
-            lambda server: (
-                server.features == connection_dict[feature]
+        try:
+            return self._env.api_session.servers.filter(
+                lambda server: (
+                    server.features == connection_dict[feature]
+                )
+            ).get_fastest_server()
+        except exceptions.EmptyServerListError:
+            raise exceptions.FeatureServerNotFound(
+                "Server with specified feature could not be found.\n"
+                "Either the server went into maintenance or "
+                "you don't have access to the server with your plan."
             )
-        ).get_fastest_server()
 
     def config_for_server_with_servername(self, servername):
         """Select server by servername.
@@ -188,9 +205,16 @@ class ProtonVPNClientAPI:
         Returns:
             LogicalServer
         """
-        return self._env.api_session.servers.filter(
-            lambda server: server.name.lower() == servername.lower() # noqa
-        ).get_fastest_server()
+        try:
+            return self._env.api_session.servers.filter(
+                lambda server: server.name.lower() == servername.lower() # noqa
+            ).get_fastest_server()
+        except exceptions.EmptyServerListError:
+            raise exceptions.ServernameServerNotFound(
+                "The specified servername could not be found.\n"
+                "Either the server went into maintenance or "
+                "you don't have access to the server with your plan."
+            )
 
     def config_for_random_server(self, *_):
         """Select server for random connection.
@@ -198,7 +222,12 @@ class ProtonVPNClientAPI:
         Returns:
             LogicalServer
         """
-        return self._env.api_session.servers.get_random_server()
+        try:
+            return self._env.api_session.servers.get_random_server()
+        except exceptions.EmptyServerListError:
+            raise exceptions.RandomServerNotFound(
+                "Random server could not be found."
+            )
 
     def setup_reconnect(self):
         """Setup and configure VPN connection to

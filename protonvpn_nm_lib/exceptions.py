@@ -83,8 +83,8 @@ class CacheLogicalServersFallbackError(CacheServersError):
     """Cache logical servers fallback error"""
 
 
-class MissingCacheError(CacheServersError):
-    """Missing cache error."""
+class ServerCacheNotFound(CacheServersError):
+    """Server cache was not found."""
 
 
 class DefaultOVPNPortsNotFoundError(CacheError):
@@ -269,7 +269,6 @@ class IllegalMetadataTypeError(MetadataError):
 
 
 
-
 class ConfigurationsSelectedOptionError(ProtonVPNException): # noqa
     """Selected option error."""
 
@@ -322,13 +321,41 @@ class IllegalServername(ProtonVPNException):
     """Unexpected servername."""
 
 
-class EmptyServerListError(ProtonVPNException):
-    """Empty server list error."""
-
-
 class InvalidCountryCode(ProtonVPNException):
     """Illegal country code."""
 
 
 class InvalidUsernameFormat(ProtonVPNException):
     """Invalid username format."""
+
+
+
+class ServerListError(ProtonVPNException): # noqa
+    """Server list error."""
+
+
+# class Server
+
+
+class EmptyServerListError(ServerListError):
+    """Empty server list error."""
+
+
+class FastestServerNotFound(EmptyServerListError):
+    """Fastest server not found."""
+
+
+class FastestServerInCountryNotFound(EmptyServerListError):
+    """Fastest server in specified country not found."""
+
+
+class FeatureServerNotFound(EmptyServerListError):
+    """Server with specified feature was not found."""
+
+
+class ServernameServerNotFound(EmptyServerListError):
+    """Server with specified servername not found."""
+
+
+class RandomServerNotFound(EmptyServerListError):
+    """Random server not found."""
