@@ -1,6 +1,6 @@
 %define unmangled_name protonvpn-nm-lib
 %define version 0.5.1
-%define release 3
+%define release 4
 
 Prefix: %{_prefix}
 
@@ -61,6 +61,10 @@ rm -rf $RPM_BUILD_ROOT
 - Improve logging
 - Impove Kill Switch --on option after reboot
 - Improve error handling
+- Disconnect after logout
+- Return server object after successfully reconnecting
+- Add secure core settings for GUI purpose
+- Rename Kill Switch always-on to permanent
 
 * Thu Feb 25 2021 Proton Technologies AG <opensource@proton.me> 0.5.0-2
 - Refactor library

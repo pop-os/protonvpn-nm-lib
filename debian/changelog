@@ -1,9 +1,13 @@
-protonvpn-nm-lib (0.5.1-3) unstable; urgency=medium
+protonvpn-nm-lib (0.5.1-4) unstable; urgency=medium
 
   * Improve reconnection logic when computer goes to sleep or there is no internet connectivity
   * Improve logging
   * Impove Kill Switch --on option after reboot
   * Improve error handling
+  * Disconnect after logout
+  * Return server object after successfully reconnecting
+  * Add secure core settings for GUI purpose
+  * Rename Kill Switch always-on to permanent
 
  -- Proton Technologies AG <opensource@proton.me>  Tue, 30 Mar 2021 12:15:00 +0100
 
