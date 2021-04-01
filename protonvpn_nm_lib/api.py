@@ -36,8 +36,10 @@ class ProtonVPNClientAPI:
             pass
 
         self._env.api_session.logout()
-        self._env.connection_metadata.remove_all_metadata()
-        self._env.settings.reset_to_default_configs()
+        try:
+            self.disconnect()
+        except: # noqa
+            pass
 
     def connect(self):
         """Connect to ProtonVPN.
