@@ -43,7 +43,7 @@ class ProtonVPNClientAPI:
         """Connect to ProtonVPN.
 
         Should be user either after setup_connection() or
-        setup_reconnect_to_previously_connected_server().
+        setup_reconnect().
         """
         self.utils.ensure_internet_connection_is_available()
         connect_result = self._env.connection_backend.connect()
@@ -268,7 +268,7 @@ class ProtonVPNClientAPI:
             )
         )
 
-        self.setup_connection(
+        return self.setup_connection(
             connection_type=ConnectionTypeEnum.SERVERNAME,
             connection_type_extra_arg=previous_server,
             protocol=protocol
