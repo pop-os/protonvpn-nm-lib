@@ -117,6 +117,24 @@ class Settings(SettingsBackend):
             self.settings_configurator.set_killswitch(killswitch_enum)
 
     @property
+    def secure_core(self):
+        """Get Secure Core setting.
+
+        Returns:
+            KillswitchStatusEnum
+        """
+        return self.settings_configurator.get_secure_core()
+
+    @secure_core.setter
+    def secure_core(self, newvalue):
+        """Get Secure Core setting.
+
+        Returns:
+            SecureCoreStatusEnum
+        """
+        return self.settings_configurator.set_secure_core(newvalue)
+
+    @property
     def protocol(self):
         """Get default protocol.
 
