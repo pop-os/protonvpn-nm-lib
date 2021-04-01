@@ -89,7 +89,7 @@ NETSHIELD_STATUS_DICT = {
     NetshieldTranslationEnum.ADS_MALWARE: NetshieldStatusEnum.ADS_MALWARE # noqa
 }
 KILLSWITCH_STATUS_TEXT = {
-    KillswitchStatusEnum.HARD: "Always-on",
+    KillswitchStatusEnum.HARD: "Permanent",
     KillswitchStatusEnum.SOFT: "On",
     KillswitchStatusEnum.DISABLED: "Off",
 }
