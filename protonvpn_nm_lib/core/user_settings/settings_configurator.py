@@ -147,7 +147,7 @@ class SettingsConfigurator:
         user_configs[
             UserSettingConnectionEnum.SECURE_CORE
         ] = status # noqa
-        print(user_configs)
+
         self.set_user_configurations(user_configs)
 
     def set_netshield(self, status):

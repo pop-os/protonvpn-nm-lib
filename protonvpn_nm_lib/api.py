@@ -155,8 +155,19 @@ class ProtonVPNClientAPI:
         Returns:
             LogicalServer
         """
+        secure_core = bool(self._env.settings.secure_core.value)
+        logger.info("Fastest with secure core \"{}\"".format(secure_core))
         try:
-            return self._env.api_session.servers.get_fastest_server()
+            return self._env.api_session.servers.filter(
+                lambda server:
+                    (
+                        secure_core
+                        and FeatureEnum.SECURE_CORE in server.features
+                    ) or (
+                        not secure_core
+                        and FeatureEnum.SECURE_CORE not in server.features
+                    )
+            ).get_fastest_server()
         except exceptions.EmptyServerListError:
             raise exceptions.FastestServerNotFound(
                 "Fastest server could not be found."
@@ -168,9 +179,21 @@ class ProtonVPNClientAPI:
         Returns:
             LogicalServer
         """
+        secure_core = bool(self._env.settings.secure_core.value)
+        logger.info("Country with secure core \"{}\"".format(secure_core))
         try:
             return self._env.api_session.servers.filter(
-                lambda server: server.exit_country.lower() == country_code.lower() # noqa
+                lambda server:
+                server.exit_country.lower() == country_code.lower()
+                and (
+                    (
+                        secure_core
+                        and FeatureEnum.SECURE_CORE in server.features
+                    ) or (
+                        not secure_core
+                        and FeatureEnum.SECURE_CORE not in server.features
+                    )
+                )
             ).get_fastest_server()
         except exceptions.EmptyServerListError:
             raise exceptions.FastestServerInCountryNotFound(

@@ -174,7 +174,10 @@ class NetworkManagerClient(ConnectionBackend, NMClientMixin):
                     conn_for_vpn = conn.get_connection()
                     conn = conn_for_vpn
 
-                vpn_settings = conn_for_vpn.get_setting_vpn()
+                try:
+                    vpn_settings = conn_for_vpn.get_setting_vpn()
+                except AttributeError:
+                    return False
 
                 if (
                     vpn_settings.get_data_item("dev")
