@@ -1,6 +1,6 @@
 %define unmangled_name protonvpn-nm-lib
 %define version 0.5.1
-%define release 4
+%define release 5
 
 Prefix: %{_prefix}
 
@@ -56,7 +56,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
-* Tue Feb 30 2021 Proton Technologies AG <opensource@proton.me> 0.5.1-3
+* Tue Feb 30 2021 Proton Technologies AG <opensource@proton.me> 0.5.1-5
 - Improve reconnection logic when computer goes to sleep or there is no internet connectivity
 - Improve logging
 - Impove Kill Switch --on option after reboot
@@ -65,6 +65,7 @@ rm -rf $RPM_BUILD_ROOT
 - Return server object after successfully reconnecting
 - Add secure core settings for GUI purpose
 - Rename Kill Switch always-on to permanent
+- Add option to connect to fastest server and fastest server in country based on secure core setting
 
 * Thu Feb 25 2021 Proton Technologies AG <opensource@proton.me> 0.5.0-2
 - Refactor library

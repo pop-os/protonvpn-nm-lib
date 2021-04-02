@@ -140,8 +140,8 @@ class APISession:
         # FIXME: be more precise here to show correct message to the user
         except Exception as e:
             # What is thrown here are errors for accessing/parsing the keyring.
+            # print("Couldn't load session, you'll have to login again")
             logger.exception(e)
-            print("Couldn't load session, you'll have to login again")
 
     def __session_create(self):
         from proton.api import Session
@@ -180,7 +180,7 @@ class APISession:
         if keyring_data.get('api_url') != self.__proton_api.dump()['api_url']:
             # Don't reuse a session with different api url
             # FIXME
-            print("Wrong session url")
+            # print("Wrong session url")
             return
 
         # We need a username there
