@@ -13,7 +13,7 @@ from .enums import (FeatureEnum, KillswitchStatusEnum, NetshieldStatusEnum,
                     ServerTierEnum, UserSettingConnectionEnum,
                     UserSettingStatusEnum)
 
-APP_VERSION = '0.5.1'
+APP_VERSION = '0.5.2'
 
 IPv6_LEAK_PROTECTION_CONN_NAME = "pvpn-ipv6leak-protection"
 IPv6_LEAK_PROTECTION_IFACE_NAME = "ipv6leakintrf0"
