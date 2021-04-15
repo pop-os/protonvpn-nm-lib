@@ -271,6 +271,13 @@ class APISession:
 
         self.__proton_user = username
 
+        # immediatly cache client config and server
+        try:
+            self.servers
+            self._clientconfig
+        except Exception as e:
+            logger.exception(e)
+
     @property
     def is_valid(self):
         """
