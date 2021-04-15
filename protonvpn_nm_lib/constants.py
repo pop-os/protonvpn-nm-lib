@@ -7,11 +7,11 @@ import os
 
 from xdg import BaseDirectory
 
-from .enums import (FeatureEnum, KillswitchStatusEnum,
+from .enums import (FeatureEnum, KillswitchStatusEnum, NetshieldStatusEnum,
                     NetshieldTranslationEnum, ProtocolEnum,
-                    ProtocolImplementationEnum, ServerTierEnum,
-                    UserSettingConnectionEnum,
-                    UserSettingStatusEnum, NetshieldStatusEnum)
+                    ProtocolImplementationEnum, SecureCoreStatusEnum,
+                    ServerTierEnum, UserSettingConnectionEnum,
+                    UserSettingStatusEnum)
 
 APP_VERSION = '0.5.1'
 
@@ -80,7 +80,8 @@ USER_CONFIG_TEMPLATE = {
         UserSettingConnectionEnum.SPLIT_TUNNELING_STATUS: UserSettingStatusEnum.DISABLED, # noqa
         UserSettingConnectionEnum.IP_LIST: []
     },
-    UserSettingConnectionEnum.NETSHIELD: NetshieldTranslationEnum.DISABLED  # noqa
+    UserSettingConnectionEnum.NETSHIELD: NetshieldTranslationEnum.DISABLED,  # noqa
+    UserSettingConnectionEnum.SECURE_CORE: SecureCoreStatusEnum.OFF  # noqa
 }
 NETSHIELD_STATUS_DICT = {
     NetshieldTranslationEnum.DISABLED: NetshieldStatusEnum.DISABLED, # noqa
@@ -88,7 +89,7 @@ NETSHIELD_STATUS_DICT = {
     NetshieldTranslationEnum.ADS_MALWARE: NetshieldStatusEnum.ADS_MALWARE # noqa
 }
 KILLSWITCH_STATUS_TEXT = {
-    KillswitchStatusEnum.HARD: "Always-on",
+    KillswitchStatusEnum.HARD: "Permanent",
     KillswitchStatusEnum.SOFT: "On",
     KillswitchStatusEnum.DISABLED: "Off",
 }

@@ -42,6 +42,25 @@ class SettingsBackend(SubclassesMixin, metaclass=ABCMeta):
 
     @property
     @abstractmethod
+    def secure_core():
+        """Get Secure Core setting.
+
+        This is mostly for GUI as it might not be very
+        relevant for CLIs.
+        """
+        pass
+
+    @secure_core.setter
+    @abstractmethod
+    def secure_core():
+        """Get Secure Core setting.
+
+        This is mostly for GUI as it might not be very
+        relevant for CLIs."""
+        pass
+
+    @property
+    @abstractmethod
     def protocol(self):
         """Get default protocol."""
         pass

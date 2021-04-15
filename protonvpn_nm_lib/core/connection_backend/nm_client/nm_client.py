@@ -174,7 +174,10 @@ class NetworkManagerClient(ConnectionBackend, NMClientMixin):
                     conn_for_vpn = conn.get_connection()
                     conn = conn_for_vpn
 
-                vpn_settings = conn_for_vpn.get_setting_vpn()
+                try:
+                    vpn_settings = conn_for_vpn.get_setting_vpn()
+                except AttributeError:
+                    return False
 
                 if (
                     vpn_settings.get_data_item("dev")
@@ -199,7 +202,7 @@ class NetworkManagerClient(ConnectionBackend, NMClientMixin):
         logger.info("Running pre-setup connection.")
         if ipv6_lp.enable_ipv6_leak_protection:
             ipv6_lp.manage(KillSwitchActionEnum.ENABLE)
-        if settings.killswitch == KillswitchStatusEnum.HARD: # noqa
+        if settings.killswitch != KillswitchStatusEnum.DISABLED: # noqa
             killswitch.manage(
                 KillSwitchActionEnum.PRE_CONNECTION,
                 server_ip=entry_ip

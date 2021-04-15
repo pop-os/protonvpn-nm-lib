@@ -33,23 +33,23 @@ If you would like to run the the CLI from within a virtual environment (for eith
 # How to use:
 
 ### Login
-``` protonvpn._login("protonvpn@protonmail.com", "ProtonPassword") ```
+``` protonvpn.login("protonvpn@protonmail.com", "ProtonPassword") ```
 
 <br>
 
 ### Logout
-``` protonvpn._logout() ```
+``` protonvpn.logout() ```
 
 <br>
 
 ### Connect
-``` protonvpn._setup_connection(ConnectionTypeEnum.SERVERNAME, "PT#12", ProtocolEnum.TCP) ``` <br>
-``` protonvpn._connect() ``` 
+``` protonvpn.setup_connection(ConnectionTypeEnum.SERVERNAME, "PT#12", ProtocolEnum.TCP) ``` <br>
+``` protonvpn.connect() ``` 
 
 <br>
 
 ### Disconnect
-``` protonvpn._disconnect() ```
+``` protonvpn.disconnect() ```
 
 | **API**                              | **Description**                                                                                                     |
 |:------------------------------------------------|:----------------------------------------------------------------------------------------------------------------|

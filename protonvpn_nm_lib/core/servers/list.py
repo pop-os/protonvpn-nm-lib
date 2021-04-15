@@ -334,11 +334,13 @@ class ServerList:
         return server_list
 
     def get_random_server(self):
+        self.__ensure_cache_exists()
         server_list = self.filter_servers_by_tier()
         return server_list[random.randint(0, len(server_list) - 1)]
 
     def get_fastest_server(self):
         # Get the fastest enabled server
+        self.__ensure_cache_exists()
         servers_ordered = list(
             self.filter(
                 lambda server: server.enabled
@@ -347,13 +349,23 @@ class ServerList:
                 lambda server: server.score
             )
         )
-
         if len(servers_ordered) == 0:
             logger.error("List of logical servers is empty")
             raise exceptions.EmptyServerListError(
                 "No logical server could be found"
             )
         return servers_ordered[0]
+
+    def __ensure_cache_exists(self):
+        """Ensure that cache exists."""
+        try:
+            if self._toplevel.__data is None:
+                logger.error("Server cache not found")
+                raise exceptions.ServerCacheNotFound("Server cache not found")
+        except AttributeError:
+            if self.__data is None:
+                logger.error("Server cache not found")
+                raise exceptions.ServerCacheNotFound("Server cache not found")
 
     def match_server_domain(self, physical_server):
         domain = physical_server.domain

@@ -13,7 +13,8 @@ from ...constants import (
 from ...enums import (
     ProtocolEnum,
     UserSettingConnectionEnum,
-    KillswitchStatusEnum
+    KillswitchStatusEnum,
+    SecureCoreStatusEnum
 )
 
 
@@ -57,6 +58,14 @@ class SettingsConfigurator:
         """Killswitch get property."""
         user_configs = self.get_user_configurations()
         return user_configs[UserSettingConnectionEnum.KILLSWITCH]
+
+    def get_secure_core(self):
+        """Secure Core get property."""
+        user_configs = self.get_user_configurations()
+        try:
+            return user_configs[UserSettingConnectionEnum.SECURE_CORE]
+        except KeyError:
+            return SecureCoreStatusEnum.OFF
 
     def get_netshield(self):
         """Netshield get property."""
@@ -123,6 +132,22 @@ class SettingsConfigurator:
         user_configs[
             UserSettingConnectionEnum.KILLSWITCH
         ] = status # noqa
+        self.set_user_configurations(user_configs)
+
+    def set_secure_core(self, status):
+        """Set Secure Core setting.
+
+        Args:
+            status (SecureCoreStatusEnum): Secure Core status
+        """
+        if not isinstance(status, SecureCoreStatusEnum):
+            raise KeyError("Illegal options")
+
+        user_configs = self.get_user_configurations()
+        user_configs[
+            UserSettingConnectionEnum.SECURE_CORE
+        ] = status # noqa
+
         self.set_user_configurations(user_configs)
 
     def set_netshield(self, status):

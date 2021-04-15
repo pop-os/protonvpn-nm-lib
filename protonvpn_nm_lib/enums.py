@@ -91,6 +91,11 @@ class NetshieldStatusEnum(Enum):
     ADS_MALWARE = ClientSuffixEnum.NETSHIELD_ADS_TRACKING.value
 
 
+class SecureCoreStatusEnum(Enum):
+    OFF = 0
+    ON = 1
+
+
 class NetshieldTranslationEnum(Enum):
     DISABLED = 0
     MALWARE = 1
@@ -107,6 +112,7 @@ class UserSettingConnectionEnum(Enum):
     SPLIT_TUNNELING_STATUS = "split_tunneling_status"
     IP_LIST = "ip_list"
     NETSHIELD = "netshield"
+    SECURE_CORE = "secure_core"
 
 
 class ProtonSessionAPIMethodEnum(Enum):
