@@ -110,7 +110,16 @@ class LogicalServer:
     # We do not expose on purpose the domain, it should be deprecated soob
     @property
     def features(self):
-        return FeatureEnum(self._data['Features'])
+        return self.__unpack_bitmap_features(self._data['Features'])
+
+    def __unpack_bitmap_features(self, server_value):
+        server_features = [
+            feature_enum
+            for feature_enum
+            in FeatureEnum.list()
+            if (server_value & feature_enum) != 0
+        ]
+        return server_features
 
     @property
     def region(self):

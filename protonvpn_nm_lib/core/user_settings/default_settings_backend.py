@@ -1,9 +1,6 @@
 from ... import exceptions
-from ...constants import KILLSWITCH_STATUS_TEXT, SUPPORTED_PROTOCOLS
 from ...enums import (DisplayUserSettingsEnum, KillswitchStatusEnum,
-                      NetshieldTranslationEnum, ProtocolEnum,
-                      ProtocolImplementationEnum, ServerTierEnum,
-                      UserSettingStatusEnum)
+                      ProtocolEnum, ServerTierEnum, UserSettingStatusEnum)
 from ...logger import logger
 from ..environment import ExecutionEnvironment
 from .settings_backend import SettingsBackend
@@ -234,7 +231,7 @@ class Settings(SettingsBackend):
             KillswitchStatusEnum.DISABLED
         )
 
-    def get_user_settings(self, readeable_format):
+    def get_user_settings(self):
         """Get user settings.
 
         Args:
@@ -255,57 +252,4 @@ class Settings(SettingsBackend):
             DisplayUserSettingsEnum.NETSHIELD: self.netshield,
         }
 
-        if not readeable_format:
-            return settings_dict
-
-        return self.__transform_user_setting_to_readable_format(settings_dict)
-
-    def __transform_user_setting_to_readable_format(self, raw_format):
-        """Transform the dict in raw_format to human readeable format.
-
-        Args:
-            raw_format (dict)
-
-        Returns:
-            dict
-        """
-        raw_protocol = raw_format[DisplayUserSettingsEnum.PROTOCOL]
-        raw_ks = raw_format[DisplayUserSettingsEnum.KILLSWITCH]
-        raw_dns = raw_format[DisplayUserSettingsEnum.DNS]
-        raw_custom_dns = raw_format[DisplayUserSettingsEnum.CUSTOM_DNS]
-        raw_ns = raw_format[DisplayUserSettingsEnum.NETSHIELD]
-
-        # protocol
-        if raw_protocol in SUPPORTED_PROTOCOLS[ProtocolImplementationEnum.OPENVPN]: # noqa
-            transformed_protocol = "OpenVPN ({})".format(
-                raw_protocol.value.upper()
-            )
-        else:
-            transformed_protocol = raw_protocol.value.upper()
-
-        # killswitch
-        transformed_ks = KILLSWITCH_STATUS_TEXT[raw_ks]
-
-        # dns
-        dns_status = {
-            UserSettingStatusEnum.ENABLED: "Automatic",
-            UserSettingStatusEnum.CUSTOM: "Custom: {}".format(
-                ", ".join(raw_custom_dns)
-            ),
-        }
-        transformed_dns = dns_status[raw_dns]
-
-        # netshield
-        netshield_status = {
-            NetshieldTranslationEnum.MALWARE: "Malware", # noqa
-            NetshieldTranslationEnum.ADS_MALWARE: "Ads and malware", # noqa
-            NetshieldTranslationEnum.DISABLED: "Disabled" # noqa
-        }
-        transformed_ns = netshield_status[raw_ns]
-
-        return {
-            DisplayUserSettingsEnum.PROTOCOL: transformed_protocol,
-            DisplayUserSettingsEnum.KILLSWITCH: transformed_ks,
-            DisplayUserSettingsEnum.DNS: transformed_dns,
-            DisplayUserSettingsEnum.NETSHIELD: transformed_ns,
-        }
+        return settings_dict

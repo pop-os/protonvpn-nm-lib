@@ -307,19 +307,13 @@ class ProtonVPNClientAPI:
         """
         return self._env.api_session.is_valid
 
-    def get_connection_status(self, readeable_format=True):
+    def get_connection_status(self):
         """Get active connection status.
-
-        Args:
-            readeable_format (bool):
-                If true then all content will be returned in
-                human readeable format, else all content is returned in
-                enum objects.
 
         Returns:
             dict
         """
-        return Status().get_active_connection_status(readeable_format)
+        return Status().get_active_connection_status()
 
     def get_settings(self):
         """Get user settings."""
