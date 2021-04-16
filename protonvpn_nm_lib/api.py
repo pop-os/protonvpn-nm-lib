@@ -200,21 +200,36 @@ class ProtonVPNClientAPI:
                 "Fastest server could not be found."
             )
 
-    def config_for_fastest_server_with_feature(self, feature):
+    def config_for_fastest_server_with_feature(self, features):
         """Select server by specified feature.
+
+        By transforming features into a list and generating possible_features
+        we can easily implement the possibility to specify multiple features
+        to connect.
 
         Returns:
             LogicalServer
         """
-        connection_dict = {
+        connection_type_translation = {
             ConnectionTypeEnum.SECURE_CORE: FeatureEnum.SECURE_CORE,
             ConnectionTypeEnum.PEER2PEER: FeatureEnum.P2P,
             ConnectionTypeEnum.TOR: FeatureEnum.TOR,
         }
+        feature = [features]
+        possible_features = [
+            connection_type_translation[f]
+            for f in feature
+            if f in connection_type_translation
+        ]
         try:
             return self._env.api_session.servers.filter(
                 lambda server: (
-                    server.features == connection_dict[feature]
+                    all(
+                        chosen_feature
+                        in server.features
+                        for chosen_feature
+                        in possible_features
+                    )
                 )
             ).get_fastest_server()
         except exceptions.EmptyServerListError:
