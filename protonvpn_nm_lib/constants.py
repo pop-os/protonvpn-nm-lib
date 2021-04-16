@@ -7,13 +7,12 @@ import os
 
 from xdg import BaseDirectory
 
-from .enums import (FeatureEnum, KillswitchStatusEnum, NetshieldStatusEnum,
+from .enums import (KillswitchStatusEnum, NetshieldStatusEnum,
                     NetshieldTranslationEnum, ProtocolEnum,
                     ProtocolImplementationEnum, SecureCoreStatusEnum,
-                    ServerTierEnum, UserSettingConnectionEnum,
-                    UserSettingStatusEnum)
+                    UserSettingConnectionEnum, UserSettingStatusEnum)
 
-APP_VERSION = '0.5.2'
+APP_VERSION = "3.0.0"
 
 IPv6_LEAK_PROTECTION_CONN_NAME = "pvpn-ipv6leak-protection"
 IPv6_LEAK_PROTECTION_IFACE_NAME = "ipv6leakintrf0"
@@ -43,26 +42,11 @@ SUPPORTED_PROTOCOLS = {
     # ProtocolImplementationEnum.WIREGUARD: [ProtocolEnum.WIREGUARD],
 }
 
-SERVER_TIERS = {
-    ServerTierEnum.FREE: "Free",
-    ServerTierEnum.BASIC: "Basic",
-    ServerTierEnum.PLUS_VISIONARY: "Plus/Visionary",
-    ServerTierEnum.PM: "PMTEAM"
-}
-
 FLAT_SUPPORTED_PROTOCOLS = [
     proto for proto_list
     in [v for k, v in SUPPORTED_PROTOCOLS.items()]
     for proto in proto_list
 ]
-SUPPORTED_FEATURES = {
-    FeatureEnum.NORMAL: "",
-    FeatureEnum.SECURE_CORE: "Secure-Core",
-    FeatureEnum.TOR: "Tor",
-    FeatureEnum.P2P: "P2P",
-    FeatureEnum.STREAMING: "Streaming",
-    FeatureEnum.IPv6: "IPv6"
-}
 
 CONFIG_STATUSES = [
     UserSettingStatusEnum.DISABLED,
@@ -87,11 +71,6 @@ NETSHIELD_STATUS_DICT = {
     NetshieldTranslationEnum.DISABLED: NetshieldStatusEnum.DISABLED, # noqa
     NetshieldTranslationEnum.MALWARE: NetshieldStatusEnum.MALWARE,
     NetshieldTranslationEnum.ADS_MALWARE: NetshieldStatusEnum.ADS_MALWARE # noqa
-}
-KILLSWITCH_STATUS_TEXT = {
-    KillswitchStatusEnum.HARD: "Permanent",
-    KillswitchStatusEnum.SOFT: "On",
-    KillswitchStatusEnum.DISABLED: "Off",
 }
 
 # Constant folders

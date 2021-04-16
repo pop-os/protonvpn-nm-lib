@@ -20,12 +20,16 @@ class ProtocolPortEnum(Enum):
 
 
 class FeatureEnum(IntFlag):
-    NORMAL = 0
-    SECURE_CORE = 1
-    TOR = 2
-    P2P = 4
-    STREAMING = 8
-    IPv6 = 16
+    NORMAL = 0            # 0
+    SECURE_CORE = 1 << 0  # 1
+    TOR = 1 << 1          # 2
+    P2P = 1 << 2          # 4
+    STREAMING = 1 << 3    # 8
+    IPv6 = 1 << 4         # 16
+
+    @classmethod
+    def list(cls):
+        return list(map(lambda feature: feature, cls))
 
 
 class ServerTierEnum(Enum):
