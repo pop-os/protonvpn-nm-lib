@@ -1,4 +1,10 @@
-protonvpn-nm-lib (0.5.1-5) unstable; urgency=medium
+protonvpn-nm-lib (0.5.2-1) unstable; urgency=medium
+
+  * Cache servers and client configurations upon login
+
+ -- Proton Technologies AG <opensource@proton.me>  Thu, 15 Apr 2021 18:30:00 +0100
+ 
+ protonvpn-nm-lib (0.5.1-5) unstable; urgency=medium
 
   * Improve reconnection logic when computer goes to sleep or there is no internet connectivity
   * Improve logging

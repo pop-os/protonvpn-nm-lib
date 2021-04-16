@@ -12,6 +12,7 @@ class KeyringBackendLinux(KeyringBackend):
         self.__keyring_service = KeyringEnum.DEFAULT_KEYRING_SERVICE.value
 
     def __getitem__(self, key):
+        logger.info("Get key {}".format(key))
         import keyring
 
         self._ensure_key_is_valid(key)
@@ -49,6 +50,7 @@ class KeyringBackendLinux(KeyringBackend):
             raise exceptions.JSONDataError(e)
 
     def __delitem__(self, key):
+        logger.info("Delete key {}".format(key))
         import keyring
 
         self._ensure_key_is_valid(key)
@@ -72,6 +74,7 @@ class KeyringBackendLinux(KeyringBackend):
             # capture_exception(e)
 
     def __setitem__(self, key, value):
+        logger.info("Set key {}".format(key))
         """Add data entry to keyring.
 
         Args:
