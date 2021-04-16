@@ -1,5 +1,5 @@
 %define unmangled_name protonvpn-nm-lib
-%define version 0.5.2
+%define version 3.0.0
 %define release 1
 
 Prefix: %{_prefix}
@@ -56,6 +56,9 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
+* Fri Apr 16 2021 Proton Technologies AG <opensource@proton.me> 3.0.0-1
+- Treat server features as bitmaps
+
 * Thu Apr 15 2021 Proton Technologies AG <opensource@proton.me> 0.5.2-1
 - Cache servers and client configurations upon login
 
