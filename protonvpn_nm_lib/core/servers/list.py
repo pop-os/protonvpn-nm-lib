@@ -117,7 +117,7 @@ class LogicalServer:
             feature_enum
             for feature_enum
             in FeatureEnum.list()
-            if (server_value & feature_enum) != 0
+            if (server_value & feature_enum) != 0 or feature_enum == 0
         ]
         return server_features
 
