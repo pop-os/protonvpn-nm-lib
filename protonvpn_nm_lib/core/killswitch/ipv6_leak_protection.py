@@ -80,6 +80,10 @@ class IPv6LeakProtection:
 
         if not self.interface_state_tracker[self.conn_name][
             KillSwitchInterfaceTrackerEnum.EXISTS
+        ] or self.interface_state_tracker[self.conn_name][
+            KillSwitchInterfaceTrackerEnum.EXISTS
+        ] and not self.interface_state_tracker[self.conn_name][
+            KillSwitchInterfaceTrackerEnum.IS_RUNNING
         ]:
             self.manage(KillSwitchActionEnum.DISABLE)
             self.run_subprocess(
