@@ -17,37 +17,37 @@ class PhysicalServer:
 
     @property
     def entry_ip(self):
-        return self._data['EntryIP']
+        return self._data["EntryIP"]
 
     @property
     def exit_ip(self):
-        return self._data['ExitIP']
+        return self._data["ExitIP"]
 
     @property
     def domain(self):
-        return self._data['Domain']
+        return self._data["Domain"]
 
     # Domain can be set to new value when
     # searching for matching domain
     @domain.setter
     def domain(self, newvalue):
-        self._data['Domain'] = newvalue
+        self._data["Domain"] = newvalue
 
     @property
     def enabled(self):
-        return self._data['Status'] == 1
+        return self._data["Status"] == 1
 
     @property
     def generation(self):
-        return self._data['Generation']
+        return self._data["Generation"]
 
     @property
     def label(self):
-        return self._data['Label']
+        return self._data["Label"]
 
     @property
     def services_down_reason(self):
-        return self._data['ServicesDownReason']
+        return self._data["ServicesDownReason"]
 
     def get_configuration(self, proto):
         from ..vpn import VPNConfiguration
@@ -75,42 +75,46 @@ class LogicalServer:
 
     @property
     def id(self):
-        return self._data['ID']
+        return self._data["ID"]
 
     # Score and load can be modified (needed to update loads)
     @property
     def load(self):
-        return self._data['Load']
+        return self._data["Load"]
 
     @load.setter
     def load(self, newvalue):
-        self._data['Load'] = int(newvalue)
+        self._data["Load"] = int(newvalue)
 
     @property
     def score(self):
-        return self._data['Score']
+        return self._data["Score"]
 
     @score.setter
     def score(self, newvalue):
-        self._data['Score'] = float(newvalue)
+        self._data["Score"] = float(newvalue)
 
     # Every other propriety is readonly
     @property
     def name(self):
-        return self._data['Name']
+        return self._data["Name"]
 
     @property
     def entry_country(self):
-        return self._data['EntryCountry']
+        return self._data["EntryCountry"]
 
     @property
     def exit_country(self):
-        return self._data['ExitCountry']
+        return self._data["ExitCountry"]
+
+    @property
+    def host_country(self):
+        return self._data["HostCountry"]
 
     # We do not expose on purpose the domain, it should be deprecated soob
     @property
     def features(self):
-        return self.__unpack_bitmap_features(self._data['Features'])
+        return self.__unpack_bitmap_features(self._data["Features"])
 
     def __unpack_bitmap_features(self, server_value):
         server_features = [
@@ -123,29 +127,29 @@ class LogicalServer:
 
     @property
     def region(self):
-        return self._data['Region']
+        return self._data["Region"]
 
     @property
     def city(self):
-        return self._data['City']
+        return self._data["City"]
 
     @property
     def enabled(self):
-        return self._data['Status'] == 1 and all(
+        return self._data["Status"] == 1 and all(
             x.enabled for x in self.physical_servers
         )
 
     @property
     def tier(self):
-        return self._data['Tier']
+        return self._data["Tier"]
 
     @property
     def latitude(self):
-        return self._data['Location']['Lat']
+        return self._data["Location"]["Lat"]
 
     @property
     def longitude(self):
-        return self._data['Location']['Long']
+        return self._data["Location"]["Long"]
 
     @property
     def data(self):
@@ -153,7 +157,7 @@ class LogicalServer:
 
     @property
     def physical_servers(self):
-        return [PhysicalServer(x) for x in self._data['Servers']]
+        return [PhysicalServer(x) for x in self._data["Servers"]]
 
     def get_random_physical_server(self):
         enabled_servers = [x for x in self.physical_servers if x.enabled]
@@ -249,13 +253,13 @@ class ServerList:
 
         self.ensure_toplevel()
 
-        if data['Code'] != 1000:
+        if data["Code"] != 1000:
             raise ValueError("Invalid data with code != 1000")
 
         self.__data = data
         # We update both LastLogicalUpdate and LastLoadUpdate, as Load contains
-        self.__data['LogicalsUpdateTimestamp'] = time.time()
-        self.__data['LoadsUpdateTimestamp'] = time.time()
+        self.__data["LogicalsUpdateTimestamp"] = time.time()
+        self.__data["LoadsUpdateTimestamp"] = time.time()
 
         self.refresh_indexes()
 
@@ -265,19 +269,19 @@ class ServerList:
 
         self.ensure_toplevel()
 
-        if data['Code'] != 1000:
+        if data["Code"] != 1000:
             raise ValueError("Invalid data with code != 1000")
 
-        self.__data['LoadsUpdateTimestamp'] = time.time()
+        self.__data["LoadsUpdateTimestamp"] = time.time()
 
-        for s in data['LogicalServers']:
-            if s['ID'] not in self._logicals_by_id:
+        for s in data["LogicalServers"]:
+            if s["ID"] not in self._logicals_by_id:
                 # This server doesn't exists in the cached list
                 continue
-            server = self[s['ID']]
+            server = self[s["ID"]]
 
-            server.load = s['Load']
-            server.score = s['Score']
+            server.load = s["Load"]
+            server.score = s["Score"]
 
         # Required to sort lists again if needed
         self.refresh_indexes()
@@ -289,11 +293,11 @@ class ServerList:
         self._logicals_by_name = {}
 
         # Re-apply filter condition (if any)
-        for logical_id, logical in enumerate(self._data['LogicalServers']):
+        for logical_id, logical in enumerate(self._data["LogicalServers"]):
             server = LogicalServer(logical)
             if self._condition is None or self._condition(server):
-                self._logicals_by_id[logical['ID']] = logical_id
-                self._logicals_by_name[logical['ID']] = logical_id
+                self._logicals_by_id[logical["ID"]] = logical_id
+                self._logicals_by_name[logical["ID"]] = logical_id
                 self._ids.append(logical_id)
 
         # Re-apply filter condition on children (if any)
@@ -312,7 +316,7 @@ class ServerList:
         else:
             internal_idx = self._ids[idx]
 
-        return LogicalServer(self._data['LogicalServers'][internal_idx])
+        return LogicalServer(self._data["LogicalServers"][internal_idx])
 
     def __iter__(self):
         for idx in range(len(self)):
@@ -411,7 +415,7 @@ class ServerList:
         else:
             self._ids.sort(
                 key=lambda i: self._sort_key(
-                    LogicalServer(self._data['LogicalServers'][i])
+                    LogicalServer(self._data["LogicalServers"][i])
                 ),
                 reverse=self._sort_reverse
             )
