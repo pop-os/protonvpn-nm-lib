@@ -135,7 +135,7 @@ class LogicalServer:
 
     @property
     def enabled(self):
-        return self._data["Status"] == 1 and all(
+        return self._data["Status"] == 1 and any(
             x.enabled for x in self.physical_servers
         )
 
