@@ -370,12 +370,13 @@ class APISession:
             self.LOADS_CACHE_TIME_EXPIRE * self.__generate_random_component()
 
     def _update_next_fetch_client_config(self):
-        self.__next_fetch_client_config = self\
+        self.__next_fetch_client_config = self \
             .__clientconfig.client_config_timestamp + \
             self.CLIENT_CONFIG_TIME_EXPIRE * self.__generate_random_component()
 
     def _update_next_fetch_streaming_services(self):
-        self.__next_fetch_streaming_service = self.streaming_services_timestamp + \
+        self.__next_fetch_streaming_service = self \
+            .__streaming_services.streaming_services_timestamp + \
             self.STREAMING_SERVICES_TIME_EXPIRE * self.__generate_random_component()
 
     @ErrorStrategyNormalCall
@@ -507,27 +508,6 @@ class APISession:
 
         return self.__clientconfig
 
-    @property
-    def streaming(self):
-        if self.__streaming_services is None:
-            # Try to load from file
-            try:
-                with open(STREAMING_SERVICES, "r") as f:
-                    self.__streaming_services.json_loads(f.read())
-            except FileNotFoundError:
-                # This is not fatal,
-                # we only were not capable of loading the cache.
-                logger.info("Could not load server cache")
-
-            self._update_next_fetch_streaming_services()
-
-        try:
-            self.update_streaming_data_if_needed()
-        except Exception as e:
-            logger.exception(e)
-
-        return self.__streaming_services
-
     @ErrorStrategyNormalCall
     def update_streaming_data_if_needed(self, force=False):
         changed = False
@@ -541,7 +521,7 @@ class APISession:
 
         if self.__next_fetch_streaming_service < time.time() or force:
             # Update streaming services
-            self.update_streaming_services_data(
+            self.__streaming_services.update_streaming_services_data(
                 self.__proton_api.api_request(
                     "/vpn/streamingservices"
                 )
@@ -552,7 +532,7 @@ class APISession:
             self._update_next_fetch_streaming_services()
             try:
                 with open(STREAMING_SERVICES, "w") as f:
-                    f.write(json.dumps(self.__streaming_services))
+                    f.write(self.__streaming_services.json_dumps())
             except Exception as e:
                 # This is not fatal, we only were not capable
                 # of storing the cache.
@@ -560,28 +540,22 @@ class APISession:
                     e
                 ))
 
-    def update_streaming_services_data(self, data):
-        assert 'Code' in data
-        assert 'ResourceBaseURL' in data
-        assert 'StreamingServices' in data
-
-        if data['Code'] != 1000:
-            raise ValueError("Invalid data with code != 1000")
-
-        data['StreamingServicesUpdateTimestamp'] = time.time()
-        self.__streaming_services = data
-
     @property
-    def _streaming_services(self):
+    def streaming(self):
         if self.__streaming_services is None:
+            from ..streaming import Streaming
+
+            # create new Streaming object
+            self.__streaming_services = Streaming()
+
             # Try to load from file
             try:
                 with open(STREAMING_SERVICES, "r") as f:
-                    self.__streaming_services = json.loads(f.read())
+                    self.__streaming_services.json_loads(f.read())
             except FileNotFoundError:
                 # This is not fatal,
                 # we only were not capable of loading the cache.
-                logger.info("Could not load streaming services cache")
+                logger.info("Could not load streaming cache")
 
             self._update_next_fetch_streaming_services()
 
@@ -591,13 +565,6 @@ class APISession:
             logger.exception(e)
 
         return self.__streaming_services
-
-    @property
-    def streaming_services_timestamp(self):
-        try:
-            return self.__streaming_services.get('StreamingServicesUpdateTimestamp', 0.0)
-        except AttributeError:
-            return 0.0
 
     @property
     def vpn_ports_openvpn_udp(self):
