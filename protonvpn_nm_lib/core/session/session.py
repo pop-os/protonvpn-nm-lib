@@ -276,7 +276,7 @@ class APISession:
         # immediatly cache client config and server
         try:
             self.servers
-            self._clientconfig
+            self.clientconfig
         except Exception as e:
             logger.exception(e)
 
@@ -370,7 +370,8 @@ class APISession:
             self.LOADS_CACHE_TIME_EXPIRE * self.__generate_random_component()
 
     def _update_next_fetch_client_config(self):
-        self.__next_fetch_client_config = self.client_config_timestamp + \
+        self.__next_fetch_client_config = self\
+            .__clientconfig.client_config_timestamp + \
             self.CLIENT_CONFIG_TIME_EXPIRE * self.__generate_random_component()
 
     def _update_next_fetch_streaming_services(self):
@@ -448,6 +449,64 @@ class APISession:
 
         return self.__vpn_logicals
 
+    @ErrorStrategyNormalCall
+    def update_client_config_if_needed(self, force=False):
+        changed = False
+
+        if (
+            ExecutionEnvironment().settings.killswitch
+            == KillswitchStatusEnum.HARD
+            and not force
+        ):
+            return
+
+        if self.__next_fetch_client_config < time.time() or force:
+            # Update client config
+            self.__clientconfig.update_client_config_data(
+                self.__proton_api.api_request(
+                    "/vpn/clientconfig"
+                )
+            )
+            changed = True
+
+        if changed:
+            self._update_next_fetch_client_config()
+            try:
+                with open(CLIENT_CONFIG, "w") as f:
+                    f.write(self.__clientconfig.json_dumps())
+            except Exception as e:
+                # This is not fatal, we only were not capable
+                # of storing the cache.
+                logger.info("Could not save client config cache {}".format(
+                    e
+                ))
+
+    @property
+    def clientconfig(self):
+        if self.__clientconfig is None:
+            from ..client_config import ClientConfig
+
+            # Create a new client config
+            self.__clientconfig = ClientConfig()
+
+            # Try to load from file
+            try:
+                with open(CLIENT_CONFIG, "r") as f:
+                    self.__clientconfig.json_loads(f.read())
+            except FileNotFoundError:
+                # This is not fatal,
+                # we only were not capable of loading the cache.
+                logger.info("Could not load client config cache")
+
+            self._update_next_fetch_client_config()
+
+        try:
+            self.update_client_config_if_needed()
+        except Exception as e:
+            logger.exception(e)
+
+        return self.__clientconfig
+
     @property
     def streaming(self):
         if self.__streaming_services is None:
@@ -468,76 +527,6 @@ class APISession:
             logger.exception(e)
 
         return self.__streaming_services
-
-    @ErrorStrategyNormalCall
-    def update_client_config_if_needed(self, force=False):
-        changed = False
-
-        if (
-            ExecutionEnvironment().settings.killswitch
-            == KillswitchStatusEnum.HARD
-            and not force
-        ):
-            return
-
-        if self.__next_fetch_client_config < time.time() or force:
-            # Update client config
-            self.update_client_config_data(
-                self.__proton_api.api_request(
-                    "/vpn/clientconfig"
-                )
-            )
-            changed = True
-
-        if changed:
-            self._update_next_fetch_client_config()
-            try:
-                with open(CLIENT_CONFIG, "w") as f:
-                    f.write(json.dumps(self.__clientconfig))
-            except Exception as e:
-                # This is not fatal, we only were not capable
-                # of storing the cache.
-                logger.info("Could not save client config cache {}".format(
-                    e
-                ))
-
-    def update_client_config_data(self, data):
-        assert 'Code' in data
-        assert 'OpenVPNConfig' in data
-
-        if data['Code'] != 1000:
-            raise ValueError("Invalid data with code != 1000")
-
-        data['ClientConfigUpdateTimestamp'] = time.time()
-        self.__clientconfig = data
-
-    @property
-    def _clientconfig(self):
-        if self.__clientconfig is None:
-            # Try to load from file
-            try:
-                with open(CLIENT_CONFIG, "r") as f:
-                    self.__clientconfig = json.loads(f.read())
-            except FileNotFoundError:
-                # This is not fatal,
-                # we only were not capable of loading the cache.
-                logger.info("Could not load client config cache")
-
-            self._update_next_fetch_client_config()
-
-        try:
-            self.update_client_config_if_needed()
-        except Exception as e:
-            logger.exception(e)
-
-        return self.__clientconfig
-
-    @property
-    def client_config_timestamp(self):
-        try:
-            return self.__clientconfig.get('ClientConfigUpdateTimestamp', 0.0)
-        except AttributeError:
-            return 0.0
 
     @ErrorStrategyNormalCall
     def update_streaming_data_if_needed(self, force=False):
@@ -613,7 +602,7 @@ class APISession:
     @property
     def vpn_ports_openvpn_udp(self):
         try:
-            return self._clientconfig['OpenVPNConfig']['DefaultPorts']['UDP']
+            return self.clientconfig.default_udp_ports
         except (TypeError, KeyError) as e:
             logger.exception(e)
             raise DefaultOVPNPortsNotFoundError(
@@ -623,7 +612,7 @@ class APISession:
     @property
     def vpn_ports_openvpn_tcp(self):
         try:
-            return self._clientconfig['OpenVPNConfig']['DefaultPorts']['TCP']
+            return self.clientconfig.default_tcp_ports
         except (TypeError, KeyError) as e:
             logger.exception(e)
             raise DefaultOVPNPortsNotFoundError(
