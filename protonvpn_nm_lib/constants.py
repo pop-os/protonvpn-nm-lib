@@ -109,6 +109,9 @@ LAST_CONNECTION_METADATA_FILEPATH = os.path.join(
 CLIENT_CONFIG = os.path.join(
     PROTON_XDG_CACHE_HOME, "client_config.json"
 )
+STREAMING_SERVICES = os.path.join(
+    PROTON_XDG_CACHE_HOME, "streaming_services.json"
+)
 USER_CONFIGURATIONS_FILEPATH = os.path.join(
     PROTON_XDG_CONFIG_HOME, "user_configurations.json"
 )

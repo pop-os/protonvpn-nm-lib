@@ -3,7 +3,7 @@ import os
 import random
 import time
 
-from ...constants import APP_VERSION, CACHED_SERVERLIST, CLIENT_CONFIG
+from ...constants import APP_VERSION, CACHED_SERVERLIST, CLIENT_CONFIG, STREAMING_SERVICES
 from ...enums import KeyringEnum, KillswitchStatusEnum
 from ...exceptions import (APISessionIsNotValidError,
                            DefaultOVPNPortsNotFoundError, JSONDataError)
@@ -117,8 +117,9 @@ class APISession:
 
     # Probably would be better to have that somewhere else
     FULL_CACHE_TIME_EXPIRE = 180 * 60  # 180min in seconds
+    STREAMING_SERVICES_TIME_EXPIRE = FULL_CACHE_TIME_EXPIRE
+    CLIENT_CONFIG_TIME_EXPIRE = FULL_CACHE_TIME_EXPIRE
     LOADS_CACHE_TIME_EXPIRE = 15 * 60  # 15min in seconds
-    CLIENT_CONFIG_TIME_EXPIRE = 180 * 60  # 180min in seconds
     RANDOM_FRACTION = 0.22  # Generate a value of the timeout, +/- up to 22%, at random
 
     def __init__(self, api_url=None, enforce_pinning=True):
@@ -133,6 +134,7 @@ class APISession:
         self.__vpn_data = None
         self.__vpn_logicals = None
         self.__clientconfig = None
+        self.__streaming_services = None
 
         # Load session
         try:
@@ -371,6 +373,10 @@ class APISession:
         self.__next_fetch_client_config = self.client_config_timestamp + \
             self.CLIENT_CONFIG_TIME_EXPIRE * self.__generate_random_component()
 
+    def _update_next_fetch_streaming_services(self):
+        self.__next_fetch_streaming_service = self.streaming_services_timestamp + \
+            self.STREAMING_SERVICES_TIME_EXPIRE * self.__generate_random_component()
+
     @ErrorStrategyNormalCall
     def update_servers_if_needed(self, force=False):
         changed = False
@@ -382,12 +388,16 @@ class APISession:
         ):
             return
 
+        if not os.path.isfile(STREAMING_SERVICES):
+            self.streaming
+
         if self.__next_fetch_logicals < time.time() or force:
             # Update logicals
             self.__vpn_logicals.update_logical_data(
                 self.__proton_api.api_request('/vpn/logicals')
             )
             changed = True
+            self.streaming
         elif self.__next_fetch_load < time.time():
             # Update loads
             self.__vpn_logicals.update_load_data(
@@ -437,6 +447,27 @@ class APISession:
             logger.exception(e)
 
         return self.__vpn_logicals
+
+    @property
+    def streaming(self):
+        if self.__streaming_services is None:
+            # Try to load from file
+            try:
+                with open(STREAMING_SERVICES, "r") as f:
+                    self.__streaming_services.json_loads(f.read())
+            except FileNotFoundError:
+                # This is not fatal,
+                # we only were not capable of loading the cache.
+                logger.info("Could not load server cache")
+
+            self._update_next_fetch_streaming_services()
+
+        try:
+            self.update_streaming_data_if_needed()
+        except Exception as e:
+            logger.exception(e)
+
+        return self.__streaming_services
 
     @ErrorStrategyNormalCall
     def update_client_config_if_needed(self, force=False):
@@ -504,7 +535,78 @@ class APISession:
     @property
     def client_config_timestamp(self):
         try:
-            return self.__clientconfig.get('ClientConfigUpdateTimestamp', 0.)
+            return self.__clientconfig.get('ClientConfigUpdateTimestamp', 0.0)
+        except AttributeError:
+            return 0.0
+
+    @ErrorStrategyNormalCall
+    def update_streaming_data_if_needed(self, force=False):
+        changed = False
+
+        if (
+            ExecutionEnvironment().settings.killswitch
+            == KillswitchStatusEnum.HARD
+            and not force
+        ):
+            return
+
+        if self.__next_fetch_streaming_service < time.time() or force:
+            # Update streaming services
+            self.update_streaming_services_data(
+                self.__proton_api.api_request(
+                    "/vpn/streamingservices"
+                )
+            )
+            changed = True
+
+        if changed:
+            self._update_next_fetch_streaming_services()
+            try:
+                with open(STREAMING_SERVICES, "w") as f:
+                    f.write(json.dumps(self.__streaming_services))
+            except Exception as e:
+                # This is not fatal, we only were not capable
+                # of storing the cache.
+                logger.info("Could not save streaming services cache {}".format(
+                    e
+                ))
+
+    def update_streaming_services_data(self, data):
+        assert 'Code' in data
+        assert 'ResourceBaseURL' in data
+        assert 'StreamingServices' in data
+
+        if data['Code'] != 1000:
+            raise ValueError("Invalid data with code != 1000")
+
+        data['StreamingServicesUpdateTimestamp'] = time.time()
+        self.__streaming_services = data
+
+    @property
+    def _streaming_services(self):
+        if self.__streaming_services is None:
+            # Try to load from file
+            try:
+                with open(STREAMING_SERVICES, "r") as f:
+                    self.__streaming_services = json.loads(f.read())
+            except FileNotFoundError:
+                # This is not fatal,
+                # we only were not capable of loading the cache.
+                logger.info("Could not load streaming services cache")
+
+            self._update_next_fetch_streaming_services()
+
+        try:
+            self.update_streaming_data_if_needed()
+        except Exception as e:
+            logger.exception(e)
+
+        return self.__streaming_services
+
+    @property
+    def streaming_services_timestamp(self):
+        try:
+            return self.__streaming_services.get('StreamingServicesUpdateTimestamp', 0.0)
         except AttributeError:
             return 0.0
 
