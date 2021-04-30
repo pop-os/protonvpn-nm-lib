@@ -17,7 +17,7 @@ setup(
     author_email="contact@protonvpn.com",
     long_description=long_description,
     install_requires=[
-        "proton-client", "pyxdg", "keyring",
+        "proton-client~=0.5.0", "pyxdg", "keyring",
         "PyGObject", "Jinja2", "distro"
     ],
     include_package_data=True,

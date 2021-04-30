@@ -1,5 +1,5 @@
 %define unmangled_name protonvpn-nm-lib
-%define version 3.1.0
+%define version 3.1.1
 %define release 1
 
 Prefix: %{_prefix}
@@ -25,7 +25,7 @@ Requires: openvpn
 Requires: NetworkManager
 Requires: NetworkManager-openvpn
 Requires: gtk3
-Requires: python3-proton-client
+Requires: python3-proton-client >= 0.5.0, python3-proton-client < 0.6.0
 Requires: python3-keyring
 Requires: python3-distro
 Requires: python3-jinja2
@@ -56,9 +56,10 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
-* Fri Apr 30 2021 Proton Technologies AG <opensource@proton.me> 3.1.0-1
+* Fri Apr 30 2021 Proton Technologies AG <opensource@proton.me> 3.1.1-1
 - Add support for streaming and virtual locations
 - Refactor session.py so that clientconfig and streaming are own classes
+- Update python3-proton-client dependency version
 
 * Fri Apr 16 2021 Proton Technologies AG <opensource@proton.me> 3.0.0-1
 - Treat server features as bitmaps
