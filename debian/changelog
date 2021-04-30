@@ -1,7 +1,8 @@
-protonvpn-nm-lib (3.1.0-1) unstable; urgency=medium
+protonvpn-nm-lib (3.1.1-1) unstable; urgency=medium
 
   * Add support for streaming and virtual locations
   * Refactor session.py so that clientconfig and streaming are own classes
+  * Update python3-proton-client dependency version
 
  -- Proton Technologies AG <opensource@proton.me>  Fri, 30 Apr 2021 12:00:00 +0100
  
