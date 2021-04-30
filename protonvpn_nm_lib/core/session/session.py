@@ -1,9 +1,8 @@
-import json
 import os
 import random
 import time
 
-from ...constants import APP_VERSION, CACHED_SERVERLIST, CLIENT_CONFIG
+from ...constants import APP_VERSION, CACHED_SERVERLIST, CLIENT_CONFIG, STREAMING_SERVICES
 from ...enums import KeyringEnum, KillswitchStatusEnum
 from ...exceptions import (APISessionIsNotValidError,
                            DefaultOVPNPortsNotFoundError, JSONDataError)
@@ -117,8 +116,9 @@ class APISession:
 
     # Probably would be better to have that somewhere else
     FULL_CACHE_TIME_EXPIRE = 180 * 60  # 180min in seconds
+    STREAMING_SERVICES_TIME_EXPIRE = FULL_CACHE_TIME_EXPIRE
+    CLIENT_CONFIG_TIME_EXPIRE = FULL_CACHE_TIME_EXPIRE
     LOADS_CACHE_TIME_EXPIRE = 15 * 60  # 15min in seconds
-    CLIENT_CONFIG_TIME_EXPIRE = 180 * 60  # 180min in seconds
     RANDOM_FRACTION = 0.22  # Generate a value of the timeout, +/- up to 22%, at random
 
     def __init__(self, api_url=None, enforce_pinning=True):
@@ -133,6 +133,7 @@ class APISession:
         self.__vpn_data = None
         self.__vpn_logicals = None
         self.__clientconfig = None
+        self.__streaming_services = None
 
         # Load session
         try:
@@ -274,7 +275,7 @@ class APISession:
         # immediatly cache client config and server
         try:
             self.servers
-            self._clientconfig
+            self.clientconfig
         except Exception as e:
             logger.exception(e)
 
@@ -368,8 +369,14 @@ class APISession:
             self.LOADS_CACHE_TIME_EXPIRE * self.__generate_random_component()
 
     def _update_next_fetch_client_config(self):
-        self.__next_fetch_client_config = self.client_config_timestamp + \
+        self.__next_fetch_client_config = self \
+            .__clientconfig.client_config_timestamp + \
             self.CLIENT_CONFIG_TIME_EXPIRE * self.__generate_random_component()
+
+    def _update_next_fetch_streaming_services(self):
+        self.__next_fetch_streaming_service = self \
+            .__streaming_services.streaming_services_timestamp + \
+            self.STREAMING_SERVICES_TIME_EXPIRE * self.__generate_random_component()
 
     @ErrorStrategyNormalCall
     def update_servers_if_needed(self, force=False):
@@ -382,12 +389,16 @@ class APISession:
         ):
             return
 
+        if not os.path.isfile(STREAMING_SERVICES):
+            self.streaming
+
         if self.__next_fetch_logicals < time.time() or force:
             # Update logicals
             self.__vpn_logicals.update_logical_data(
                 self.__proton_api.api_request('/vpn/logicals')
             )
             changed = True
+            self.streaming
         elif self.__next_fetch_load < time.time():
             # Update loads
             self.__vpn_logicals.update_load_data(
@@ -451,7 +462,7 @@ class APISession:
 
         if self.__next_fetch_client_config < time.time() or force:
             # Update client config
-            self.update_client_config_data(
+            self.__clientconfig.update_client_config_data(
                 self.__proton_api.api_request(
                     "/vpn/clientconfig"
                 )
@@ -462,7 +473,7 @@ class APISession:
             self._update_next_fetch_client_config()
             try:
                 with open(CLIENT_CONFIG, "w") as f:
-                    f.write(json.dumps(self.__clientconfig))
+                    f.write(self.__clientconfig.json_dumps())
             except Exception as e:
                 # This is not fatal, we only were not capable
                 # of storing the cache.
@@ -470,23 +481,18 @@ class APISession:
                     e
                 ))
 
-    def update_client_config_data(self, data):
-        assert 'Code' in data
-        assert 'OpenVPNConfig' in data
-
-        if data['Code'] != 1000:
-            raise ValueError("Invalid data with code != 1000")
-
-        data['ClientConfigUpdateTimestamp'] = time.time()
-        self.__clientconfig = data
-
     @property
-    def _clientconfig(self):
+    def clientconfig(self):
         if self.__clientconfig is None:
+            from ..client_config import ClientConfig
+
+            # Create a new client config
+            self.__clientconfig = ClientConfig()
+
             # Try to load from file
             try:
                 with open(CLIENT_CONFIG, "r") as f:
-                    self.__clientconfig = json.loads(f.read())
+                    self.__clientconfig.json_loads(f.read())
             except FileNotFoundError:
                 # This is not fatal,
                 # we only were not capable of loading the cache.
@@ -501,17 +507,68 @@ class APISession:
 
         return self.__clientconfig
 
+    @ErrorStrategyNormalCall
+    def update_streaming_data_if_needed(self, force=False):
+        changed = False
+
+        if (
+            ExecutionEnvironment().settings.killswitch
+            == KillswitchStatusEnum.HARD
+            and not force
+        ):
+            return
+
+        if self.__next_fetch_streaming_service < time.time() or force:
+            # Update streaming services
+            self.__streaming_services.update_streaming_services_data(
+                self.__proton_api.api_request(
+                    "/vpn/streamingservices"
+                )
+            )
+            changed = True
+
+        if changed:
+            self._update_next_fetch_streaming_services()
+            try:
+                with open(STREAMING_SERVICES, "w") as f:
+                    f.write(self.__streaming_services.json_dumps())
+            except Exception as e:
+                # This is not fatal, we only were not capable
+                # of storing the cache.
+                logger.info("Could not save streaming services cache {}".format(
+                    e
+                ))
+
     @property
-    def client_config_timestamp(self):
+    def streaming(self):
+        if self.__streaming_services is None:
+            from ..streaming import Streaming
+
+            # create new Streaming object
+            self.__streaming_services = Streaming()
+
+            # Try to load from file
+            try:
+                with open(STREAMING_SERVICES, "r") as f:
+                    self.__streaming_services.json_loads(f.read())
+            except FileNotFoundError:
+                # This is not fatal,
+                # we only were not capable of loading the cache.
+                logger.info("Could not load streaming cache")
+
+            self._update_next_fetch_streaming_services()
+
         try:
-            return self.__clientconfig.get('ClientConfigUpdateTimestamp', 0.)
-        except AttributeError:
-            return 0.0
+            self.update_streaming_data_if_needed()
+        except Exception as e:
+            logger.exception(e)
+
+        return self.__streaming_services
 
     @property
     def vpn_ports_openvpn_udp(self):
         try:
-            return self._clientconfig['OpenVPNConfig']['DefaultPorts']['UDP']
+            return self.clientconfig.default_udp_ports
         except (TypeError, KeyError) as e:
             logger.exception(e)
             raise DefaultOVPNPortsNotFoundError(
@@ -521,7 +578,7 @@ class APISession:
     @property
     def vpn_ports_openvpn_tcp(self):
         try:
-            return self._clientconfig['OpenVPNConfig']['DefaultPorts']['TCP']
+            return self.clientconfig.default_tcp_ports
         except (TypeError, KeyError) as e:
             logger.exception(e)
             raise DefaultOVPNPortsNotFoundError(

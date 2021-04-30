@@ -149,39 +149,60 @@ class ProtonSessionWrapperError(ProtonVPNException): # noqa
 
 
 class API401Error(ProtonSessionWrapperError):
-    """Error 401."""
+    """Error 401.
+    
+    Access token is invalid and should be refreshed.
+    """
 
 
 class API403Error(ProtonSessionWrapperError):
-    """Error 403."""
+    """Error 403.
+
+    Missing scopes. Client needs to re-authenticate.
+    """
 
 
 class API429Error(ProtonSessionWrapperError):
-    """Error 429."""
+    """Error 429.
+
+    Too many requests, try after time specified
+    in header.
+    """
 
 
 class API503Error(ProtonSessionWrapperError):
-    """Error 503."""
+    """Error 503.
+
+    API unreacheable/unavailable, retry connecting to API.
+    """
 
 
 class API5002Error(ProtonSessionWrapperError):
-    """Error 5002."""
+    """Error 5002.
+
+    Version is invalid.
+    """
 
 
 class API5003Error(ProtonSessionWrapperError):
-    """Error 5003."""
+    """Error 5003.
+
+    Version is bad.
+    """
 
 
 class API8002Error(ProtonSessionWrapperError):
-    """Error 8002."""
+    """Error 8002.
 
-
-class API85032Error(ProtonSessionWrapperError):
-    """Error 85032."""
+    Wrong password.
+    """
 
 
 class API10013Error(ProtonSessionWrapperError):
-    """Error 85032."""
+    """Error 10013.
+
+    Refresh token is invalid, re-authentication is required.
+    """
 
 
 class APITimeoutError(ProtonSessionWrapperError):

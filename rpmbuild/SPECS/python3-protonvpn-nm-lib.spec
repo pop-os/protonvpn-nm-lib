@@ -1,5 +1,5 @@
 %define unmangled_name protonvpn-nm-lib
-%define version 3.0.0
+%define version 3.1.0
 %define release 1
 
 Prefix: %{_prefix}
@@ -56,6 +56,10 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
+* Fri Apr 30 2021 Proton Technologies AG <opensource@proton.me> 3.1.0-1
+- Add support for streaming and virtual locations
+- Refactor session.py so that clientconfig and streaming are own classes
+
 * Fri Apr 16 2021 Proton Technologies AG <opensource@proton.me> 3.0.0-1
 - Treat server features as bitmaps
 

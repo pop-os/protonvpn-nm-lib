@@ -58,6 +58,12 @@ class NetworkManagerClient(ConnectionBackend, NMClientMixin):
             "virtual_device_name": self.virtual_device_name,
             "vpn_configuration": self.vpn_configuration,
         }
+
+        try:
+            self.disconnect()
+        except: # noqa
+            pass
+
         self._pre_setup_connection(kwargs.get("entry_ip"))
         connection, protocol_implementation = NMPlugin.import_vpn_config(
             self.vpn_configuration
@@ -70,11 +76,6 @@ class NetworkManagerClient(ConnectionBackend, NMClientMixin):
             )
         else:
             raise NotImplementedError("Other implementationsa are not ready")
-
-        try:
-            self.disconnect()
-        except: # noqa
-            pass
 
         self._add_connection_async(connection)
 

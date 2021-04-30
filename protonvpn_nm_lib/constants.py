@@ -12,7 +12,7 @@ from .enums import (KillswitchStatusEnum, NetshieldStatusEnum,
                     ProtocolImplementationEnum, SecureCoreStatusEnum,
                     UserSettingConnectionEnum, UserSettingStatusEnum)
 
-APP_VERSION = "3.0.0"
+APP_VERSION = "3.1.0"
 
 IPv6_LEAK_PROTECTION_CONN_NAME = "pvpn-ipv6leak-protection"
 IPv6_LEAK_PROTECTION_IFACE_NAME = "ipv6leakintrf0"
@@ -108,6 +108,9 @@ LAST_CONNECTION_METADATA_FILEPATH = os.path.join(
 )
 CLIENT_CONFIG = os.path.join(
     PROTON_XDG_CACHE_HOME, "client_config.json"
+)
+STREAMING_SERVICES = os.path.join(
+    PROTON_XDG_CACHE_HOME, "streaming_services.json"
 )
 USER_CONFIGURATIONS_FILEPATH = os.path.join(
     PROTON_XDG_CONFIG_HOME, "user_configurations.json"
