@@ -1,4 +1,10 @@
-protonvpn-nm-lib (3.1.1-2) unstable; urgency=medium
+protonvpn-nm-lib (3.1.2-1) unstable; urgency=medium
+
+  * Exclude servers with TOR feature when getting fastest server
+
+ -- Proton Technologies AG <opensource@proton.me>  Tue, 04 May 2021 11:00:00 +0100
+ 
+ protonvpn-nm-lib (3.1.1-2) unstable; urgency=medium
 
   * Add support for streaming and virtual locations
   * Refactor session.py so that clientconfig and streaming are own classes
