@@ -1,5 +1,5 @@
 %define unmangled_name protonvpn-nm-lib
-%define version 3.1.1
+%define version 3.1.2
 %define release 1
 
 Prefix: %{_prefix}
@@ -56,6 +56,9 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
+* Tue May 04 2021 Proton Technologies AG <opensource@proton.me> 3.1.2-1
+- Exclude servers with TOR feature when getting fastest server
+
 * Fri Apr 30 2021 Proton Technologies AG <opensource@proton.me> 3.1.1-1
 - Add support for streaming and virtual locations
 - Refactor session.py so that clientconfig and streaming are own classes
