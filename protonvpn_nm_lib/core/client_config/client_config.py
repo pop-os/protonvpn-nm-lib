@@ -14,7 +14,7 @@ class ClientConfig:
     @data.setter
     def data(self, newdata):
         self.__data = newdata
-        self.__feature_flags = ClientFeatureConfig(newdata)
+        self.__feature_flags = ClientFeatureConfig(newdata.get("FeatureFlags", None))
 
     @property
     def default_udp_ports(self):
