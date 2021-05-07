@@ -14,6 +14,22 @@ class Streaming:
 
         return self.__data["StreamingServices"][country_code.upper()].get("2", {})
 
+    def __iter__(self):
+        return iter(self.__data["StreamingServices"])
+
+    @property
+    def base_url(self):
+        return self.__data.get("ResourceBaseURL", None)
+
+    def keys(self):
+        return self.__data["StreamingServices"].keys()
+
+    def items(self):
+        return self.__data["StreamingServices"].items()
+
+    def values(self):
+        return self.__data["StreamingServices"].values()
+
     def json_dumps(self):
         return json.dumps(self.__data)
 

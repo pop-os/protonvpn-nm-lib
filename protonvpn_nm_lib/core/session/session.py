@@ -2,7 +2,8 @@ import os
 import random
 import time
 
-from ...constants import APP_VERSION, CACHED_SERVERLIST, CLIENT_CONFIG, STREAMING_SERVICES
+from ...constants import (APP_VERSION, CACHED_SERVERLIST, CLIENT_CONFIG,
+                          STREAMING_ICONS_CACHE_TIME_PATH, STREAMING_SERVICES)
 from ...enums import KeyringEnum, KillswitchStatusEnum
 from ...exceptions import (APISessionIsNotValidError,
                            DefaultOVPNPortsNotFoundError, JSONDataError)
@@ -118,6 +119,7 @@ class APISession:
     FULL_CACHE_TIME_EXPIRE = 180 * 60  # 180min in seconds
     STREAMING_SERVICES_TIME_EXPIRE = FULL_CACHE_TIME_EXPIRE
     CLIENT_CONFIG_TIME_EXPIRE = FULL_CACHE_TIME_EXPIRE
+    STREAMING_ICON_TIME_EXPIRE = 480 * 60  # 480min in seconds
     LOADS_CACHE_TIME_EXPIRE = 15 * 60  # 15min in seconds
     RANDOM_FRACTION = 0.22  # Generate a value of the timeout, +/- up to 22%, at random
 
@@ -134,6 +136,7 @@ class APISession:
         self.__vpn_logicals = None
         self.__clientconfig = None
         self.__streaming_services = None
+        self.__streaming_icons = None
 
         # Load session
         try:
@@ -378,6 +381,11 @@ class APISession:
             .__streaming_services.streaming_services_timestamp + \
             self.STREAMING_SERVICES_TIME_EXPIRE * self.__generate_random_component()
 
+    def _update_next_fetch_streaming_icons(self):
+        self.__next_fetch_streaming_icons = self \
+            .__streaming_icons.streaming_icons_timestamp + \
+            self.STREAMING_ICON_TIME_EXPIRE * self.__generate_random_component()
+
     @ErrorStrategyNormalCall
     def update_servers_if_needed(self, force=False):
         changed = False
@@ -389,16 +397,12 @@ class APISession:
         ):
             return
 
-        if not os.path.isfile(STREAMING_SERVICES):
-            self.streaming
-
         if self.__next_fetch_logicals < time.time() or force:
             # Update logicals
             self.__vpn_logicals.update_logical_data(
                 self.__proton_api.api_request('/vpn/logicals')
             )
             changed = True
-            self.streaming
         elif self.__next_fetch_load < time.time():
             # Update loads
             self.__vpn_logicals.update_load_data(
@@ -447,6 +451,7 @@ class APISession:
         except Exception as e:
             logger.exception(e)
 
+        self.streaming
         return self.__vpn_logicals
 
     @ErrorStrategyNormalCall
@@ -563,7 +568,55 @@ class APISession:
         except Exception as e:
             logger.exception(e)
 
+        self.streaming_icons
+
         return self.__streaming_services
+
+    def update_streaming_icons_if_needed(self, force=False):
+        if (
+            ExecutionEnvironment().settings.killswitch
+            == KillswitchStatusEnum.HARD
+            and not force
+        ):
+            return
+
+        if self.__next_fetch_streaming_icons < time.time() or force:
+            self.__streaming_icons.update_streaming_icons_data(self.__streaming_services)
+
+            self._update_next_fetch_streaming_icons()
+            try:
+                with open(STREAMING_ICONS_CACHE_TIME_PATH, "w") as f:
+                    f.write(self.__streaming_icons.json_dumps())
+            except Exception as e:
+                # This is not fatal, we only were not capable
+                # of storing the cache.
+                logger.info("Could not save streaming services cache {}".format(
+                    e
+                ))
+
+    @property
+    def streaming_icons(self):
+        if self.__streaming_icons is None:
+            from ..streaming import StreamingIcons
+
+            # create new StreamingIcon object
+            self.__streaming_icons = StreamingIcons()
+            try:
+                with open(STREAMING_ICONS_CACHE_TIME_PATH, "r") as f:
+                    self.__streaming_icons.json_loads(f.read())
+            except FileNotFoundError:
+                # This is not fatal,
+                # we only were not capable of loading the cache.
+                logger.info("Could not load streaming time cache")
+
+            self._update_next_fetch_streaming_icons()
+
+        try:
+            self.update_streaming_icons_if_needed()
+        except Exception as e:
+            logger.exception(e)
+
+        return self.__streaming_icons
 
     @property
     def vpn_ports_openvpn_udp(self):
