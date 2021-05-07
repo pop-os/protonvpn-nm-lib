@@ -1,5 +1,5 @@
 %define unmangled_name protonvpn-nm-lib
-%define version 3.1.2
+%define version 3.1.3
 %define release 1
 
 Prefix: %{_prefix}
@@ -56,6 +56,10 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
+* Fri May 07 2021 Proton Technologies AG <opensource@proton.me> 3.1.3-1
+- Fix streaming services icons cache
+- Fix client config not properly getting feature flags
+
 * Tue May 04 2021 Proton Technologies AG <opensource@proton.me> 3.1.2-1
 - Exclude servers with TOR feature when getting fastest server
 
