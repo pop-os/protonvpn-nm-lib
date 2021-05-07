@@ -1,3 +1,4 @@
-from .streaming import Streaming
+from .streaming import Streaming # noqa
+from .icons import StreamingIcons # noqa
 
-__all__ = ['Streaming']
+__all__ = ['Streaming, StreamingIcons']
