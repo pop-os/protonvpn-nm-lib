@@ -11,6 +11,15 @@ class StreamingIcons:
         self.__data = None
         self.__streaming_services = None
 
+    def __getitem__(self, icon_name):
+        if not isinstance(icon_name, str):
+            raise TypeError("Expected type str (provided {})".format(type(icon_name)))
+
+        if not os.path.isfile(os.path.join(PROTON_XDG_CACHE_HOME_STREAMING_ICONS, icon_name)):
+            return None
+
+        return os.path.join(PROTON_XDG_CACHE_HOME_STREAMING_ICONS, icon_name)
+
     def update_streaming_icons_data(self, streaming_services):
         try:
             self.__cache_streaming_icons(streaming_services)
