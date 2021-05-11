@@ -12,7 +12,7 @@ from .enums import (KillswitchStatusEnum, NetshieldStatusEnum,
                     ProtocolImplementationEnum, SecureCoreStatusEnum,
                     UserSettingConnectionEnum, UserSettingStatusEnum)
 
-APP_VERSION = "3.1.3"
+APP_VERSION = "3.1.4"
 
 IPv6_LEAK_PROTECTION_CONN_NAME = "pvpn-ipv6leak-protection"
 IPv6_LEAK_PROTECTION_IFACE_NAME = "ipv6leakintrf0"
@@ -122,6 +122,8 @@ USER_CONFIGURATIONS_FILEPATH = os.path.join(
 
 # Constant templates
 SERVICE_TEMPLATE = """
+# v{}
+
 [Unit]
 Description=ProtonVPN Reconnector
 After=network-online.target
@@ -132,4 +134,4 @@ ExecStart=EXEC_START
 
 [Install]
 WantedBy=multi-user.target
-"""
+""".format(APP_VERSION)

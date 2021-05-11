@@ -1,3 +1,9 @@
+protonvpn-nm-lib (3.1.4-1) unstable; urgency=medium
+
+  * Force update systemd service after upgrading the package
+
+ -- Proton Technologies AG <opensource@proton.me>  Wed, 11 May 2021 11:00:00 +0100
+
 protonvpn-nm-lib (3.1.3-1) unstable; urgency=medium
 
   * Fix streaming services icons cache
