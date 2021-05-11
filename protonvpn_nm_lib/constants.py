@@ -122,6 +122,8 @@ USER_CONFIGURATIONS_FILEPATH = os.path.join(
 
 # Constant templates
 SERVICE_TEMPLATE = """
+# v{}
+
 [Unit]
 Description=ProtonVPN Reconnector
 After=network-online.target
@@ -132,4 +134,4 @@ ExecStart=EXEC_START
 
 [Install]
 WantedBy=multi-user.target
-"""
+""".format(APP_VERSION)
