@@ -1,5 +1,5 @@
 %define unmangled_name protonvpn-nm-lib
-%define version 3.1.3
+%define version 3.1.4
 %define release 1
 
 Prefix: %{_prefix}
@@ -56,6 +56,9 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
+* Wed May 11 2021 Proton Technologies AG <opensource@proton.me> 3.1.4-1
+- Force update systemd service after upgrading the package
+
 * Fri May 07 2021 Proton Technologies AG <opensource@proton.me> 3.1.3-1
 - Fix streaming services icons cache
 - Fix client config not properly getting feature flags
