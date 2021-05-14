@@ -166,6 +166,7 @@ class ProtonVPNClientAPI:
                     ) or (
                         not secure_core
                         and FeatureEnum.SECURE_CORE not in server.features
+                        and FeatureEnum.TOR not in server.features
                     )
             ).get_fastest_server()
         except exceptions.EmptyServerListError:
@@ -192,6 +193,7 @@ class ProtonVPNClientAPI:
                     ) or (
                         not secure_core
                         and FeatureEnum.SECURE_CORE not in server.features
+                        and FeatureEnum.TOR not in server.features
                     )
                 )
             ).get_fastest_server()
