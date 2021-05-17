@@ -358,7 +358,6 @@ class ServerList:
             self.filter(
                 lambda server: server.enabled
                 and server.tier <= ExecutionEnvironment().api_session.vpn_tier
-                and FeatureEnum.TOR not in server.features
             ).sort(
                 lambda server: server.score
             )
