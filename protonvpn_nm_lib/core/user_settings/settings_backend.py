@@ -95,6 +95,18 @@ class SettingsBackend(SubclassesMixin, metaclass=ABCMeta):
         """Set custom DNS lis."""
         pass
 
+    @property
+    @abstractmethod
+    def vpn_accelerator(self):
+        """Get user VPN Accelerator setting."""
+        pass
+
+    @vpn_accelerator.setter
+    @abstractmethod
+    def vpn_accelerator():
+        """Set VPN Accelerator lis."""
+        pass 
+
     @abstractmethod
     def reset_to_default_configs(self):
         """Reset user configuration to default values."""

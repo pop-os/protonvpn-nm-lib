@@ -30,12 +30,12 @@ class SettingsConfigurator:
         self.initialize_configuration_file()
 
     def get_protocol(self):
-        """Protocol get property."""
+        """Protocol get method."""
         user_configs = self.get_user_configurations()
         return user_configs[UserSettingConnectionEnum.DEFAULT_PROTOCOL]
 
     def get_dns(self):
-        """DNS get property."""
+        """DNS get method."""
         user_configs = self.get_user_configurations()
 
         dns_status = user_configs[UserSettingConnectionEnum.DNS][
@@ -55,12 +55,12 @@ class SettingsConfigurator:
         return custom_dns
 
     def get_killswitch(self):
-        """Killswitch get property."""
+        """Killswitch get method."""
         user_configs = self.get_user_configurations()
         return user_configs[UserSettingConnectionEnum.KILLSWITCH]
 
     def get_secure_core(self):
-        """Secure Core get property."""
+        """Secure Core get method."""
         user_configs = self.get_user_configurations()
         try:
             return user_configs[UserSettingConnectionEnum.SECURE_CORE]
@@ -68,15 +68,23 @@ class SettingsConfigurator:
             return SecureCoreStatusEnum.OFF
 
     def get_netshield(self):
-        """Netshield get property."""
+        """Netshield get method."""
         user_configs = self.get_user_configurations()
         try:
             return user_configs[UserSettingConnectionEnum.NETSHIELD]
         except KeyError:
             return 0
 
+    def get_vpn_accelerator(self):
+        """VPN Accelerator get method."""
+        user_configs = self.get_user_configurations()
+        try:
+            return user_configs[UserSettingConnectionEnum.VPN_ACCELERATOR]
+        except KeyError:
+            return 1
+
     def set_protocol(self, protocol):
-        """Set default protocol.
+        """Set default protocol method.
 
         Args:
             protocol (ProtocolEnum): protocol type
@@ -89,7 +97,7 @@ class SettingsConfigurator:
         self.set_user_configurations(user_configs)
 
     def set_dns_status(self, status):
-        """Set DNS setting.
+        """Set DNS setting method.
 
         Args:
             status (UserSettingStatusEnum): DNS status
@@ -107,7 +115,7 @@ class SettingsConfigurator:
         self.set_user_configurations(user_configs)
 
     def set_dns_custom_ip(self, custom_dns):
-        """Set customn DNS IP list.
+        """Set customn DNS IP list method.
 
         Args:
             custom_dns (list)
@@ -120,7 +128,7 @@ class SettingsConfigurator:
         self.set_user_configurations(user_configs)
 
     def set_killswitch(self, status):
-        """Set Kill Switch setting.
+        """Set Kill Switch setting method.
 
         Args:
             status (UserSettingStatusEnum): Kill Switch status
@@ -135,7 +143,7 @@ class SettingsConfigurator:
         self.set_user_configurations(user_configs)
 
     def set_secure_core(self, status):
-        """Set Secure Core setting.
+        """Set Secure Core setting method.
 
         Args:
             status (SecureCoreStatusEnum): Secure Core status
@@ -151,7 +159,7 @@ class SettingsConfigurator:
         self.set_user_configurations(user_configs)
 
     def set_netshield(self, status):
-        """Set NetShield setting.
+        """Set NetShield setting method.
 
         Args:
             status (int): matching value for NetShield
@@ -167,6 +175,19 @@ class SettingsConfigurator:
 
         user_configs = self.get_user_configurations()
         user_configs[UserSettingConnectionEnum.NETSHIELD] = status
+        self.set_user_configurations(user_configs)
+
+    def set_vpn_accelerator(self, status):
+        """Set VPN Accelerator setting method.
+
+        Args:
+            status (UserSettingStatusEnum)
+        """
+        if status not in CONFIG_STATUSES:
+            raise KeyError("Illegal option")
+
+        user_configs = self.get_user_configurations()
+        user_configs[UserSettingConnectionEnum.VPN_ACCELERATOR] = status
         self.set_user_configurations(user_configs)
 
     def reset_default_configs(self):

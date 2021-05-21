@@ -117,6 +117,7 @@ class UserSettingConnectionEnum(Enum):
     IP_LIST = "ip_list"
     NETSHIELD = "netshield"
     SECURE_CORE = "secure_core"
+    VPN_ACCELERATOR = "vpn_accelerator"
 
 
 class ProtonSessionAPIMethodEnum(Enum):

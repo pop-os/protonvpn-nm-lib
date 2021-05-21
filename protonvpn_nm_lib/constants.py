@@ -38,7 +38,6 @@ VIRTUAL_DEVICE_NAME = "proton0"
 
 SUPPORTED_PROTOCOLS = {
     ProtocolImplementationEnum.OPENVPN: [ProtocolEnum.TCP, ProtocolEnum.UDP],
-    # ProtocolImplementationEnum.STRONGSWAN: [ProtocolEnum.IKEV2],
     # ProtocolImplementationEnum.WIREGUARD: [ProtocolEnum.WIREGUARD],
 }
 
@@ -54,23 +53,24 @@ CONFIG_STATUSES = [
     UserSettingStatusEnum.CUSTOM,
 ]
 USER_CONFIG_TEMPLATE = {
-    UserSettingConnectionEnum.DEFAULT_PROTOCOL: ProtocolEnum.UDP, # noqa
-    UserSettingConnectionEnum.KILLSWITCH: KillswitchStatusEnum.DISABLED, # noqa
+    UserSettingConnectionEnum.DEFAULT_PROTOCOL: ProtocolEnum.UDP,
+    UserSettingConnectionEnum.KILLSWITCH: KillswitchStatusEnum.DISABLED,
     UserSettingConnectionEnum.DNS: {
-        UserSettingConnectionEnum.DNS_STATUS: UserSettingStatusEnum.ENABLED, # noqa
+        UserSettingConnectionEnum.DNS_STATUS: UserSettingStatusEnum.ENABLED,
         UserSettingConnectionEnum.CUSTOM_DNS: []
     },
     UserSettingConnectionEnum.SPLIT_TUNNELING: {
-        UserSettingConnectionEnum.SPLIT_TUNNELING_STATUS: UserSettingStatusEnum.DISABLED, # noqa
+        UserSettingConnectionEnum.SPLIT_TUNNELING_STATUS: UserSettingStatusEnum.DISABLED,
         UserSettingConnectionEnum.IP_LIST: []
     },
-    UserSettingConnectionEnum.NETSHIELD: NetshieldTranslationEnum.DISABLED,  # noqa
-    UserSettingConnectionEnum.SECURE_CORE: SecureCoreStatusEnum.OFF  # noqa
+    UserSettingConnectionEnum.NETSHIELD: NetshieldTranslationEnum.DISABLED,
+    UserSettingConnectionEnum.SECURE_CORE: SecureCoreStatusEnum.OFF,
+    UserSettingConnectionEnum.VPN_ACCELERATOR: UserSettingStatusEnum.ENABLED
 }
 NETSHIELD_STATUS_DICT = {
-    NetshieldTranslationEnum.DISABLED: NetshieldStatusEnum.DISABLED, # noqa
+    NetshieldTranslationEnum.DISABLED: NetshieldStatusEnum.DISABLED,
     NetshieldTranslationEnum.MALWARE: NetshieldStatusEnum.MALWARE,
-    NetshieldTranslationEnum.ADS_MALWARE: NetshieldStatusEnum.ADS_MALWARE # noqa
+    NetshieldTranslationEnum.ADS_MALWARE: NetshieldStatusEnum.ADS_MALWARE
 }
 
 # Constant folders
