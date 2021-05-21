@@ -12,12 +12,13 @@ class ConfigureOpenVPNConnection:
     def __init__(self):
         self.virtual_device_name = None
 
+        self.__env = ExecutionEnvironment()
         self.username = None
         self.password = None
         self.domain = None
         self.servername = None
-        self.dns_status = None
-        self.custom_dns = None
+        self.dns_status = self.__env.settings.dns
+        self.custom_dns = self.__env.settings.dns_custom_ips
 
         self.connection = None
         self._vpn_settings = None
@@ -35,10 +36,6 @@ class ConfigureOpenVPNConnection:
 
         setup_connection.domain = connection_data.get("domain")
         setup_connection.servername = connection_data.get("servername")
-
-        setup_connection.dns_status = ExecutionEnvironment().settings.dns
-        setup_connection.custom_dns = ExecutionEnvironment()\
-            .settings.dns_custom_ips
 
         setup_connection.virtual_device_name = connection_data.get(
             "virtual_device_name"
@@ -68,13 +65,16 @@ class ConfigureOpenVPNConnection:
         self._conn_settings.props.id = "ProtonVPN " + self.servername
 
     def append_suffixes(self):
-        suffixes = [
-            ClientSuffixEnum.PLATFORM,
-            NETSHIELD_STATUS_DICT[ExecutionEnvironment().settings.netshield]
-        ]
-        self.username = self.username + "+" + "+".join(
-            suffix.value for suffix in suffixes
-        )
+        # append platform suffix
+        self.username = self.username + "+{}".format(ClientSuffixEnum.PLATFORM.value)
+
+        # append netshielf suffix
+        if self.__env.api_session.clientconfig.features.netshield:
+            self.username = self.username + "+{}".format(NETSHIELD_STATUS_DICT[self.__env.settings.netshield].value)
+
+        # append vpn accelerator suffix       
+        if self.__env.api_session.clientconfig.features.vpn_accelerator and self.__env.settings.vpn_accelerator == UserSettingStatusEnum.DISABLED:
+                self.username = self.username + "+nst"
 
     def add_vpn_credentials(self):
         """Add OpenVPN credentials to ProtonVPN connection.

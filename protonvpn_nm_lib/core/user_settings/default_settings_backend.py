@@ -219,6 +219,24 @@ class Settings(SettingsBackend):
                 )
         self.settings_configurator.set_dns_custom_ip(custom_dns_ips)
 
+    @property
+    def vpn_accelerator(self):
+        """Get user VPN Accelerator setting."""
+        return self.settings_configurator.get_vpn_accelerator()
+
+    @vpn_accelerator.setter
+    def vpn_accelerator(self, setting_status):
+        """Set VPN Accelerator setting."""
+        if not isinstance(setting_status, UserSettingStatusEnum):
+            raise Exception("Invalid setting status \"{}\"".format(
+                setting_status
+            ))
+
+        try:
+            self.settings_configurator.set_vpn_accelerator(setting_status)
+        except (exceptions.ProtonVPNException, Exception) as e:
+            raise Exception(e) 
+
     def reset_to_default_configs(self):
         """Reset user configuration to default values."""
         # should it disconnect prior to resetting user configurations ?
