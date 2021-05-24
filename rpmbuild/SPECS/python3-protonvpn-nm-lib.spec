@@ -58,6 +58,7 @@ rm -rf $RPM_BUILD_ROOT
 %changelog
 * Fri May 21 2021 Proton Technologies AG <opensource@proton.me> 3.2.0-1
 - Add support for VPN Accelerator
+- Cache all necessary data after successfull authentication
 
 * Wed May 11 2021 Proton Technologies AG <opensource@proton.me> 3.1.4-2
 - Force update systemd service after upgrading the package
