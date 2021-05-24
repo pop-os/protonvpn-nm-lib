@@ -12,44 +12,6 @@ class APISessionIsNotValidError(ProtonVPNException):
     """
 
 
-class DBusException(ProtonVPNException):
-    """DBus exception."""
-
-class FinishError(DBusException): # noqa
-    """Finish async callback error."""
-
-
-class AddConnectionFinishError(DBusException):
-    """Add connection finish error."""
-
-
-class StartConnectionFinishError(DBusException):
-    """Start connection finish error."""
-
-
-class StopConnectionFinishError(DBusException):
-    """Stop connection finish error."""
-
-
-class RemoveConnectionFinishError(DBusException):
-    """Remove connection finish error."""
-
-
-
-
-class IllegalData(ProtonVPNException): # noqa
-    """Illegal/unexpected data type"""
-
-
-class IllegalSessionData(IllegalData):
-    """Illegal/unexpected SessionData type"""
-
-
-class IllegalUserData(IllegalData):
-    """Illegal/unexpected UserData type"""
-
-
-
 class JSONError(ProtonVPNException): # noqa
     """JSON generated errors"""
 
@@ -67,23 +29,12 @@ class JSONDataError(JSONError):
 
 
 
+
 class CacheError(ProtonVPNException): # noqa
     """Cache error base exception"""
 
 
-class CacheServersError(CacheError):
-    """Cache servers error"""
-
-
-class CacheLogicalServersError(CacheServersError):
-    """Cache logical servers error"""
-
-
-class CacheLogicalServersFallbackError(CacheServersError):
-    """Cache logical servers fallback error"""
-
-
-class ServerCacheNotFound(CacheServersError):
+class ServerCacheNotFound(CacheError):
     """Server cache was not found."""
 
 
@@ -94,12 +45,9 @@ class DefaultOVPNPortsNotFoundError(CacheError):
 
 
 
+
 class KeyringError(ProtonVPNException):  # noqa
     """Keyring error"""
-
-
-class OptimumBackendNotFound(KeyringError):
-    """Optimum keyring backend not found"""
 
 
 class AccessKeyringError(KeyringError):
@@ -110,20 +58,10 @@ class KeyringDataNotFound(KeyringError): # noqa
     """Keyring data not found"""
 
 
-class StoredSessionNotFound(KeyringDataNotFound):
-    """Stored session was not found"""
-
-
-class StoredUserDataNotFound(KeyringDataNotFound):
-    """Stored user data was not found"""
-
-
-class StoredProtonUsernameNotFound(KeyringDataNotFound):
-    """Stored user data was not found"""
-
-
 class UserSessionNotFound(KeyringError):
     """User session not found."""
+
+
 
 
 class IPv6LeakProtectionError(ProtonVPNException): # noqa
@@ -150,7 +88,7 @@ class ProtonSessionWrapperError(ProtonVPNException): # noqa
 
 class API401Error(ProtonSessionWrapperError):
     """Error 401.
-    
+
     Access token is invalid and should be refreshed.
     """
 
@@ -209,38 +147,30 @@ class APITimeoutError(ProtonSessionWrapperError):
     """API timeout error."""
 
 
-class ProtonSessionAPIError(ProtonSessionWrapperError):
-    """Proton session API error."""
-
-
 class APIError(ProtonSessionWrapperError):
     """API error."""
 
 
-class UnhandledAPIError(ProtonSessionWrapperError):
-    """Unhandled API error."""
+class UnknownAPIError(ProtonSessionWrapperError):
+    """Unknown API error."""
 
 
-class UnhandledAPIMethod(ProtonSessionWrapperError):
-    """Unhandled API method error."""
-
-
-class UnreacheableAPIError(ProtonSessionAPIError):
+class UnreacheableAPIError(ProtonSessionWrapperError):
     """APIBlockError"""
 
 
-class InternetConnectionError(ProtonSessionAPIError):
+class InternetConnectionError(ProtonSessionWrapperError):
     """Internet connection error"""
+
+
+class InsecureConnection(ProtonSessionWrapperError):
+    """Insecure connection. Triggered when pinned fingerprint does not match."""
 
 
 
 
 class KillswitchError(ProtonVPNException): # noqa
     """Killswitch error."""
-
-
-class KillswitchOptionError(KillswitchError):
-    """Killswitch option error."""
 
 
 class CreateKillswitchError(KillswitchError):
@@ -290,28 +220,13 @@ class IllegalMetadataTypeError(MetadataError):
 
 
 
-class ConfigurationsSelectedOptionError(ProtonVPNException): # noqa
-    """Selected option error."""
 
-
-class AddConnectionCredentialsError(ProtonVPNException):
+class AddConnectionCredentialsError(ProtonVPNException): # noqa
     """Add credentials to connection error."""
 
 
 class AddServerCertificateCheckError(ProtonVPNException):
     """Add server certificate check error"""
-
-
-class IncorrectCredentialsError(ProtonVPNException):
-    """Incorrect credentials error."""
-
-
-class APIAuthenticationError(ProtonVPNException):
-    """API authentication error."""
-
-
-class ImportConnectionError(ProtonVPNException):
-    """Import connection configurations error."""
 
 
 class VirtualDeviceNotFound(ProtonVPNException):
@@ -334,28 +249,14 @@ class ConnectionNotFound(ProtonVPNException):
     """ProtonVPN connection not found."""
 
 
-class ProtocolNotFound(ProtonVPNException):
-    """Protocol not found upon generate certificate."""
-
-
 class IllegalServername(ProtonVPNException):
     """Unexpected servername."""
 
-
-class InvalidCountryCode(ProtonVPNException):
-    """Illegal country code."""
-
-
-class InvalidUsernameFormat(ProtonVPNException):
-    """Invalid username format."""
 
 
 
 class ServerListError(ProtonVPNException): # noqa
     """Server list error."""
-
-
-# class Server
 
 
 class EmptyServerListError(ServerListError):
