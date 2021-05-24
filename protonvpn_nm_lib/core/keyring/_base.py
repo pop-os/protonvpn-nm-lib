@@ -14,6 +14,9 @@ class KeyringBackend(SubclassesMixin, metaclass=ABCMeta):
 
         for subclass in subclasses:
             try:
+                logger.info("Keyring backend: {}".format(
+                    subclass
+                ))
                 return subclass()
             except Exception:
                 pass

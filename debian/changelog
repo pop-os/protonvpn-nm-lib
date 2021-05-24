@@ -1,6 +1,7 @@
 protonvpn-nm-lib (3.2.0-1) unstable; urgency=medium
 
   * Add support for VPN Accelerator
+  * Cache all necessary data after successfull authentication
 
  -- Proton Technologies AG <opensource@proton.me>  Fri, 21 May 2021 13:00:00 +0100
 

@@ -5,8 +5,10 @@ import time
 from ...constants import (APP_VERSION, CACHED_SERVERLIST, CLIENT_CONFIG,
                           STREAMING_ICONS_CACHE_TIME_PATH, STREAMING_SERVICES)
 from ...enums import KeyringEnum, KillswitchStatusEnum
-from ...exceptions import (APISessionIsNotValidError,
-                           DefaultOVPNPortsNotFoundError, JSONDataError)
+from ...exceptions import (API403Error, API10013Error, APIError,
+                           APISessionIsNotValidError,
+                           DefaultOVPNPortsNotFoundError, InsecureConnection,
+                           JSONDataError, UnknownAPIError, APITimeoutError)
 from ...logger import logger
 from ..environment import ExecutionEnvironment
 
@@ -16,17 +18,33 @@ class ErrorStrategy:
         self._func = func
 
     def __call__(self, session, *args, **kwargs):
-        from proton.api import ProtonError
+        from proton.exceptions import (ConnectionTimeOutError,
+                                       NewConnectionError, ProtonError,
+                                       ProtonNetworkError, TLSPinningError,
+                                       UnknownConnectionError)
         try:
             result = self._func(session, *args, **kwargs)
         except ProtonError as e:
             # Do we handle that error code?
+            logger.exception(e)
             if hasattr(self, f'_handle_{e.code}'):
                 return getattr(
                     self,
                     f'_handle_{e.code}')(e, session, *args, **kwargs)
             else:
                 raise self._remap_protonerror(e)
+        except ConnectionTimeOutError as e:
+            logger.exception(e)
+            raise APITimeoutError("Connection to API timed out")
+        except TLSPinningError as e:
+            logger.exception(e)
+            raise InsecureConnection("TLS pinning failed, connection could be insecure")
+        except (NewConnectionError, ProtonNetworkError) as e:
+            logger.exception(e)
+            raise APIError("An error occured while attempting to reach API")
+        except UnknownConnectionError as e:
+            logger.exception(e)
+            raise UnknownAPIError("Unknown API error occured")
 
         return result
 
@@ -90,6 +108,16 @@ class ErrorStrategyNormalCall(ErrorStrategy):
         session.refresh()
         # Retry (without error handling this time)
         return self._call_without_error_handling(session, *args, **kwargs)
+
+    def _handle_403(self, error, session, *args, **kwargs):
+        raise API403Error("Missing scopes. Required user re-authentication.")
+
+    def _handle_10013(self, error, session, *args, **kwargs):
+        raise API10013Error("Refresh token is invalid. Required user re-authentication.")
+
+
+class ErrorStrategyAuthenticate(ErrorStrategy):
+    pass
 
 
 class ErrorStrategyRefresh(ErrorStrategy):
@@ -252,6 +280,7 @@ class APISession:
             KeyringEnum.DEFAULT_KEYRING_SESSIONDATA.value
         ] = self.__proton_api.dump()
 
+    @ErrorStrategyAuthenticate
     def authenticate(self, username, password):
         """Authenticate using username/password.
 
@@ -275,12 +304,22 @@ class APISession:
 
         self.__proton_user = username
 
-        # immediatly cache client config and server
+        # immediatly cache all necessary data
+        data_to_cache_list = [
+            self.servers, self.clientconfig,
+            self.streaming, self.streaming_icons,
+            self._vpn_data
+        ]
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor() as executor:
+            executor.map(self.__cache_data_after_authenticate, data_to_cache_list)
+
+    def __cache_data_after_authenticate(self, data):
         try:
-            self.servers
-            self.clientconfig
+            data
         except Exception as e:
             logger.exception(e)
+            return
 
     @property
     def is_valid(self):
@@ -343,6 +382,7 @@ class APISession:
                 # We couldn't load it from the keyring,
                 # but that's really not something exceptional.
                 self.__vpn_data_fetch_from_api()
+
         return self.__vpn_data
 
     @property

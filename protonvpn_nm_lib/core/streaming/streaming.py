@@ -9,10 +9,16 @@ class Streaming:
     def __getitem__(self, country_code):
         if not isinstance(country_code, str):
             raise TypeError("Expected type str (provided {})".format(type(country_code)))
-        elif country_code.upper() not in self.__data["StreamingServices"]:
+        elif (
+            (self.__data is not None and len(self.__data) > 0)
+            and country_code.upper() not in self.__data["StreamingServices"]
+        ):
             raise KeyError("\"{}\" not found".format(country_code))
 
-        return self.__data["StreamingServices"][country_code.upper()].get("2", {})
+        try:
+            return self.__data["StreamingServices"][country_code.upper()].get("2", {})
+        except TypeError:
+            raise KeyError("\"{}\" not found".format(country_code))
 
     def __iter__(self):
         return iter(self.__data["StreamingServices"])

@@ -40,13 +40,13 @@ class KeyringBackendLinux(KeyringBackend):
         try:
             return json.loads(stored_data)
         except json.decoder.JSONDecodeError as e:
-            logger.exception("JSONDataEmptyError: {}".format(e))
+            logger.exception(e)
             raise exceptions.JSONDataEmptyError(e)
         except TypeError as e:
-            logger.exception("JSONDataNoneError: {}".format(e))
+            logger.exception(e)
             raise exceptions.JSONDataNoneError(e)
         except Exception as e:
-            logger.exception("JSONDataError: {}".format(e))
+            logger.exception(e)
             raise exceptions.JSONDataError(e)
 
     def __delitem__(self, key):
