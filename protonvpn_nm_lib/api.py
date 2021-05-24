@@ -29,16 +29,10 @@ class ProtonVPNClientAPI:
 
     def logout(self):
         """Logout user and delete current user session."""
-
-        try:
-            self._env.connection_backend.disconnect()
-        except exceptions.ConnectionNotFound:
-            pass
-
         self._env.api_session.logout()
         try:
             self.disconnect()
-        except: # noqa
+        except exceptions.ConnectionNotFound:
             pass
 
     def connect(self):
