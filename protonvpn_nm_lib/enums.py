@@ -170,6 +170,7 @@ class DisplayUserSettingsEnum(Enum):
     DNS = 2
     CUSTOM_DNS = 3
     NETSHIELD = 4
+    VPN_ACCELERATOR = 5
 
 
 class KillSwitchInterfaceTrackerEnum(Enum):

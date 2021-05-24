@@ -235,7 +235,7 @@ class Settings(SettingsBackend):
         try:
             self.settings_configurator.set_vpn_accelerator(setting_status)
         except (exceptions.ProtonVPNException, Exception) as e:
-            raise Exception(e) 
+            raise Exception(e)
 
     def reset_to_default_configs(self):
         """Reset user configuration to default values."""
@@ -268,6 +268,7 @@ class Settings(SettingsBackend):
             DisplayUserSettingsEnum.DNS: self.dns,
             DisplayUserSettingsEnum.CUSTOM_DNS: self.dns_custom_ips,
             DisplayUserSettingsEnum.NETSHIELD: self.netshield,
+            DisplayUserSettingsEnum.VPN_ACCELERATOR: self.vpn_accelerator,
         }
 
         return settings_dict
