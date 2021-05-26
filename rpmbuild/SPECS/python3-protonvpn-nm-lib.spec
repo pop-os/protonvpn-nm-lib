@@ -1,6 +1,6 @@
 %define unmangled_name protonvpn-nm-lib
 %define version 3.2.0
-%define release 1
+%define release 2
 
 Prefix: %{_prefix}
 
@@ -56,8 +56,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
-* Fri May 21 2021 Proton Technologies AG <opensource@proton.me> 3.2.0-1
-- Add support for VPN Accelerator
+* Fri May 21 2021 Proton Technologies AG <opensource@proton.me> 3.2.0-2
 - Cache all necessary data after successfull authentication
 
 * Wed May 11 2021 Proton Technologies AG <opensource@proton.me> 3.1.4-2
