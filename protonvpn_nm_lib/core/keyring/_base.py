@@ -11,14 +11,10 @@ class KeyringBackend(SubclassesMixin, metaclass=ABCMeta):
     def get_default(cls):
         subclasses = cls._get_subclasses_with('priority')
         subclasses.sort(key=lambda x: x.priority, reverse=True)
-
         for subclass in subclasses:
             try:
-                logger.info("Keyring backend: {}".format(
-                    subclass
-                ))
                 return subclass()
-            except Exception:
+            except: # noqa
                 pass
 
         raise RuntimeError("Couldn't initialize any keyring")
@@ -51,4 +47,9 @@ class KeyringBackend(SubclassesMixin, metaclass=ABCMeta):
     @abstractmethod
     def __setitem__(self, key, value):
         """Add or replace an item in the keyring"""
+        pass
+
+    @abstractmethod
+    def _ensure_backend_is_working(self):
+        """Ensure that a backend is working properly."""
         pass

@@ -29,7 +29,6 @@ class KeyringBackendLinux(KeyringBackend):
             )
         except (Exception, keyring.errors.KeyringError) as e:
             logger.exception("KeyringError: {}".format(e))
-            # capture_exception(e)
             raise exceptions.KeyringError(e)
 
         # Since we're borrowing the dict interface,
@@ -105,8 +104,32 @@ class KeyringBackendLinux(KeyringBackend):
             )
         except (Exception, keyring.errors.KeyringError) as e:
             logger.error("Exception: {}".format(e))
-            # capture_exception(e)
             raise exceptions.KeyringError(e)
+
+    def _ensure_backend_is_working(self):
+        """Ensure that a backend is working properly.
+
+        It can happen so that a backend is installed but it might be
+        missonfigured. But adding this test, we can asses if the backend
+        is working correctly or not. If not then another backend should be tried instead.
+
+        keyring.errors.InitError will be thrown if the backend system can not be initialized,
+        indicating that possibly it might be missconfigured.
+        """
+        import keyring
+        try:
+            self.__keyring_backend.get_password(
+                self.__keyring_service,
+                "TestingThatBackendIsWorking"
+            )
+        except (keyring.errors.InitError) as e:
+            logger.debug(e)
+            logger.exception("Unable to select {} backend".format(self.__keyring_backend))
+            raise exceptions.AccessKeyringError(
+                "Unable to select {} backend".format(self.__keyring_backend)
+            )
+        except: # noqa
+            pass
 
 
 class KeyringBackendLinuxKwallet(KeyringBackendLinux):
@@ -120,7 +143,9 @@ class KeyringBackendLinuxKwallet(KeyringBackendLinux):
 
     def __init__(self):
         from keyring.backends import kwallet
-        super().__init__(kwallet.DBusKeyring())
+        backend = kwallet.DBusKeyring()
+        super().__init__(backend)
+        self._ensure_backend_is_working()
 
 
 class KeyringBackendLinuxSecretService(KeyringBackendLinux):
@@ -128,4 +153,6 @@ class KeyringBackendLinuxSecretService(KeyringBackendLinux):
 
     def __init__(self):
         from keyring.backends import SecretService
-        super().__init__(SecretService.Keyring())
+        backend = SecretService.Keyring()
+        super().__init__(backend)
+        self._ensure_backend_is_working()

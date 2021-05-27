@@ -36,3 +36,6 @@ class KeyringBackendJsonFiles(KeyringBackend):
 
         with open(self.__get_filename_for_key(key), 'w') as f:
             json.dump(value, f)
+
+    def _ensure_backend_is_working(self):
+        pass
