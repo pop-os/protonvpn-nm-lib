@@ -1,6 +1,6 @@
 %define unmangled_name protonvpn-nm-lib
 %define version 3.2.0
-%define release 2
+%define release 3
 
 Prefix: %{_prefix}
 
@@ -56,8 +56,9 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
-* Fri May 21 2021 Proton Technologies AG <opensource@proton.me> 3.2.0-2
+* Fri May 21 2021 Proton Technologies AG <opensource@proton.me> 3.2.0-3
 - Cache all necessary data after successfull authentication
+- Bugfix: Select working backend
 
 * Wed May 11 2021 Proton Technologies AG <opensource@proton.me> 3.1.4-2
 - Force update systemd service after upgrading the package

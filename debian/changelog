@@ -1,6 +1,7 @@
-protonvpn-nm-lib (3.2.0-2) unstable; urgency=medium
+protonvpn-nm-lib (3.2.0-3) unstable; urgency=medium
 
   * Cache all necessary data after successfull authentication
+  * Bugfix: Select working backend
 
  -- Proton Technologies AG <opensource@proton.me>  Fri, 21 May 2021 13:00:00 +0100
 
