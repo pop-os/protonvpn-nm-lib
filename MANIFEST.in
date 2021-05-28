@@ -2,6 +2,7 @@ include *.cfg
 recursive-include protonvpn_nm_lib *.cfg
 recursive-include protonvpn_nm_lib *.j2
 include LICENSE
+include *.md
 exclude tests/
 exclude .gitignore
 exclude *.sh
