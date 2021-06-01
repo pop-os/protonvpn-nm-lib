@@ -1,10 +1,10 @@
-FROM IMAGE_URL_RPM
+FROM IMAGE_URL_CENTOS8
 ARG git_repo
 ENV git_repo=${git_repo:-GIT_REPO}
 ARG git_branch
 ENV git_branch=${git_branch:-GIT_BRANCH}
 
-RUN dnf update -y
+RUN dnf update -y && dnf install epel-release -y
 
 # Install a few useful packages
 
