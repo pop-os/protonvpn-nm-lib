@@ -60,7 +60,7 @@ rm -rf $RPM_BUILD_ROOT
 - Cache all necessary data after successfull authentication
 - Bugfix: Select working backend
 
-* Wed May 11 2021 Proton Technologies AG <opensource@proton.me> 3.1.4-2
+* Tue May 11 2021 Proton Technologies AG <opensource@proton.me> 3.1.4-2
 - Force update systemd service after upgrading the package
 - Bugfix: Filter out tor servers from connect fastest and fastest in country
 
@@ -82,7 +82,7 @@ rm -rf $RPM_BUILD_ROOT
 * Thu Apr 15 2021 Proton Technologies AG <opensource@proton.me> 0.5.2-1
 - Cache servers and client configurations upon login
 
-* Tue Feb 30 2021 Proton Technologies AG <opensource@proton.me> 0.5.1-5
+* Mon Mar 01 2021 Proton Technologies AG <opensource@proton.me> 0.5.1-5
 - Improve reconnection logic when computer goes to sleep or there is no internet connectivity
 - Improve logging
 - Impove Kill Switch --on option after reboot
@@ -99,7 +99,7 @@ rm -rf $RPM_BUILD_ROOT
 - Improved library overall stability 
 - Implement subprocess wrapper
 
-* Thu Feb 25 2021 Proton Technologies AG <opensource@proton.me> 0.4.2-1
+* Tue Feb 02 2021 Proton Technologies AG <opensource@proton.me> 0.4.2-1
 - Correctly apply server domain for TLS authentication
 
 * Wed Feb 24 2021 Proton Technologies AG <opensource@proton.me> 0.4.1-1
