@@ -99,7 +99,7 @@ rm -rf $RPM_BUILD_ROOT
 - Improved library overall stability 
 - Implement subprocess wrapper
 
-* Tue Feb 02 2021 Proton Technologies AG <opensource@proton.me> 0.4.2-1
+* Wed Feb 24 2021 Proton Technologies AG <opensource@proton.me> 0.4.2-1
 - Correctly apply server domain for TLS authentication
 
 * Wed Feb 24 2021 Proton Technologies AG <opensource@proton.me> 0.4.1-1
