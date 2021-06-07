@@ -488,8 +488,8 @@ class APISession:
 
         try:
             self.update_servers_if_needed()
-        except Exception as e:
-            logger.exception(e)
+        except: # noqa
+            pass
 
         self.streaming
         return self.__vpn_logicals
@@ -547,8 +547,8 @@ class APISession:
 
         try:
             self.update_client_config_if_needed()
-        except Exception as e:
-            logger.exception(e)
+        except: # noqa
+            pass
 
         return self.__clientconfig
 
@@ -605,8 +605,8 @@ class APISession:
 
         try:
             self.update_streaming_data_if_needed()
-        except Exception as e:
-            logger.exception(e)
+        except: # noqa
+            pass
 
         self.streaming_icons
 
@@ -653,8 +653,8 @@ class APISession:
 
         try:
             self.update_streaming_icons_if_needed()
-        except Exception as e:
-            logger.exception(e)
+        except: # noqa
+            pass
 
         return self.__streaming_icons
 
