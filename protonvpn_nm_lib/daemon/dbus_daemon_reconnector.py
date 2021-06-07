@@ -137,9 +137,12 @@ class ProtonVPNReconnector:
 
             logger.info("ProtonVPN connection has been manually removed.")
 
-            ipv6_leak_protection.manage(
-                KillSwitchActionEnum.DISABLE
-            )
+            try:
+                ipv6_leak_protection.manage(
+                    KillSwitchActionEnum.DISABLE
+                )
+            except: # noqa
+                pass
 
             if (
                 settings.killswitch
