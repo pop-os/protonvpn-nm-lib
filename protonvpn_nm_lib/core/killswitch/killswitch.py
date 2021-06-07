@@ -176,6 +176,8 @@ class KillSwitch:
         Args:
             post_attempts (int): number of setup attempts
         """
+        self.update_connection_status()
+
         if post_attempts >= 5:
             raise exceptions.KillswitchError(
                 "Unable to setup post-connection ks. "
@@ -222,7 +224,6 @@ class KillSwitch:
             raise Exception("Routed connection does not exist")
 
         post_attempts += 1
-        self.update_connection_status()
         self.setup_post_connection_ks(
             _, post_attempts=post_attempts,
             activating_soft_connection=activating_soft_connection
@@ -249,11 +250,16 @@ class KillSwitch:
             "ipv6.route-metric", "98"
         ]
 
-        self.create_connection(
-            self.ks_conn_name,
-            "Unable to activate {}".format(self.ks_conn_name),
-            subprocess_command, exceptions.CreateBlockingKillswitchError
-        )
+        if not self.interface_state_tracker[self.ks_conn_name][
+            KillSwitchInterfaceTrackerEnum.EXISTS
+        ] and not self.interface_state_tracker[self.ks_conn_name][
+            KillSwitchInterfaceTrackerEnum.IS_RUNNING
+        ]:
+            self.create_connection(
+                self.ks_conn_name,
+                "Unable to activate {}".format(self.ks_conn_name),
+                subprocess_command, exceptions.CreateBlockingKillswitchError
+            )
 
     def create_routed_connection(self, server_ip, try_route_addrs=False):
         """Create routed connection/interface.
