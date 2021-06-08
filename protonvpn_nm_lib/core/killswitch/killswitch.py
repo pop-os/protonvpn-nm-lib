@@ -118,11 +118,15 @@ class KillSwitch:
             server_ip (list | string): ProtonVPN server IP
             pre_attempts (int): number of setup attempts
         """
+        self.update_connection_status()
+
         if pre_attempts >= 5:
             raise exceptions.KillswitchError(
                 "Unable to setup pre-connection ks. "
                 "Exceeded maximum attempts."
             )
+
+        logger.info("Pre-setup attempts: {}".format(pre_attempts))
 
         # happy path
         if (
@@ -133,8 +137,19 @@ class KillSwitch:
                 KillSwitchInterfaceTrackerEnum.EXISTS
             ]
         ):
+            logger.info("Following happy path for pre setup")
             self.create_routed_connection(server_ip)
             self.deactivate_connection(self.ks_conn_name)
+            return
+        elif (
+            not self.interface_state_tracker[self.ks_conn_name][
+                KillSwitchInterfaceTrackerEnum.IS_RUNNING
+            ]
+            and self.interface_state_tracker[self.routed_conn_name][
+                KillSwitchInterfaceTrackerEnum.IS_RUNNING
+            ]
+        ):
+            logger.info("Both interfaces are correctly setup")
             return
 
         # check for routed ks and remove if present/running
@@ -142,30 +157,27 @@ class KillSwitch:
             self.interface_state_tracker[self.routed_conn_name][
                 KillSwitchInterfaceTrackerEnum.EXISTS
             ]
-            or self.interface_state_tracker[self.routed_conn_name][
+            and self.interface_state_tracker[self.routed_conn_name][
                 KillSwitchInterfaceTrackerEnum.IS_RUNNING
             ]
         ):
+            logger.info("Deleting routed kill switch interface")
             self.delete_connection(self.routed_conn_name)
 
         # check if ks exists. Start it if it does
+        # if not then create and start it
         if (
             self.interface_state_tracker[
                 self.ks_conn_name
             ][KillSwitchInterfaceTrackerEnum.EXISTS]
         ):
+            logger.info("Activating kill switch interface")
             self.activate_connection(self.ks_conn_name)
-
-        # check if ks does not exist, if not then create and start it
-        if (
-            not self.interface_state_tracker[
-                self.ks_conn_name
-            ][KillSwitchInterfaceTrackerEnum.EXISTS]
-        ):
+        else:
+            logger.info("Creating kill switch interface")
             self.create_killswitch_connection()
 
         pre_attempts += 1
-        self.update_connection_status()
         self.setup_pre_connection_ks(server_ip, pre_attempts=pre_attempts)
 
     def setup_post_connection_ks(
@@ -184,6 +196,8 @@ class KillSwitch:
                 "Exceeded maximum attempts."
             )
 
+        logger.info("Post-setup attempts: {}".format(post_attempts))
+
         # happy path
         if (
             not self.interface_state_tracker[self.ks_conn_name][
@@ -193,17 +207,35 @@ class KillSwitch:
                 KillSwitchInterfaceTrackerEnum.IS_RUNNING
             ]
         ):
+            logger.info("Following happy path for post setup")
             self.activate_connection(self.ks_conn_name)
             self.delete_connection(self.routed_conn_name)
             return
         elif (
             activating_soft_connection
             and (
-                not self.interface_state_tracker[self.routed_conn_name][KillSwitchInterfaceTrackerEnum.IS_RUNNING] # noqa
-                or not self.interface_state_tracker[self.routed_conn_name][KillSwitchInterfaceTrackerEnum.EXISTS] # noqa
+                not self.interface_state_tracker[self.routed_conn_name][
+                    KillSwitchInterfaceTrackerEnum.IS_RUNNING
+                ] or not self.interface_state_tracker[self.routed_conn_name][
+                    KillSwitchInterfaceTrackerEnum.EXISTS
+                ]
             )
         ):
+            logger.info("Following happy path for soft-connection post setup")
             self.activate_connection(self.ks_conn_name)
+            return
+        elif (
+            self.interface_state_tracker[self.ks_conn_name][
+                KillSwitchInterfaceTrackerEnum.IS_RUNNING
+            ] and (
+                not self.interface_state_tracker[self.routed_conn_name][
+                    KillSwitchInterfaceTrackerEnum.EXISTS
+                ] or not self.interface_state_tracker[self.routed_conn_name][
+                    KillSwitchInterfaceTrackerEnum.IS_RUNNING
+                ]
+            )
+        ):
+            logger.info("Both interfaces are correctly setup")
             return
 
         # check for ks and disable it if is running
@@ -212,6 +244,7 @@ class KillSwitch:
                 KillSwitchInterfaceTrackerEnum.IS_RUNNING
             ]
         ):
+            logger.info("Deactivating kill switch interface")
             self.deactivate_connection(self.ks_conn_name)
 
         # check if routed ks exists, if so then activate it
@@ -219,6 +252,7 @@ class KillSwitch:
         if (
             self.interface_state_tracker[self.routed_conn_name][KillSwitchInterfaceTrackerEnum.EXISTS] # noqa
         ):
+            logger.info("Activating kill routed interface")
             self.activate_connection(self.routed_conn_name)
         else:
             raise Exception("Routed connection does not exist")
@@ -249,11 +283,9 @@ class KillSwitch:
             "ipv4.route-metric", "98",
             "ipv6.route-metric", "98"
         ]
-
+        self.update_connection_status()
         if not self.interface_state_tracker[self.ks_conn_name][
             KillSwitchInterfaceTrackerEnum.EXISTS
-        ] and not self.interface_state_tracker[self.ks_conn_name][
-            KillSwitchInterfaceTrackerEnum.IS_RUNNING
         ]:
             self.create_connection(
                 self.ks_conn_name,
