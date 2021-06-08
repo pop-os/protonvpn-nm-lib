@@ -67,7 +67,7 @@ class IPv6LeakProtection:
 
     def add_leak_protection(self):
         """Add leak protection connection/interface."""
-        logger.info("Removing IPv6 leak protection")
+        logger.info("Adding IPv6 leak protection")
         subprocess_command = [
             "nmcli", "c", "a", "type", "dummy",
             "ifname", IPv6_LEAK_PROTECTION_IFACE_NAME,
