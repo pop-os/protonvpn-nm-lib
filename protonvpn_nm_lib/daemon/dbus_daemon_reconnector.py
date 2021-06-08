@@ -96,22 +96,10 @@ class ProtonVPNReconnector:
                 settings.killswitch
                 != KillswitchStatusEnum.DISABLED
             ):
-                killswitch.update_connection_status()
-                if (
-                    not killswitch.interface_state_tracker[
-                        killswitch.ks_conn_name
-                    ][KillSwitchInterfaceTrackerEnum.IS_RUNNING]
-                    or killswitch.interface_state_tracker[
-                        killswitch.routed_conn_name
-                    ][KillSwitchInterfaceTrackerEnum.IS_RUNNING]
-                ):
-                    killswitch.manage(KillSwitchActionEnum.SOFT)
-                    logger.info("Running killswitch soft-mode")
-                else:
-                    killswitch.manage(
-                        KillSwitchActionEnum.POST_CONNECTION
-                    )
-                    logger.info("Running killswitch post-conneciton mode")
+                killswitch.manage(
+                    KillSwitchActionEnum.POST_CONNECTION
+                )
+                logger.info("Running killswitch post-conneciton mode")
 
         elif (
             state == VPNConnectionStateEnum.DISCONNECTED
@@ -137,9 +125,12 @@ class ProtonVPNReconnector:
 
             logger.info("ProtonVPN connection has been manually removed.")
 
-            ipv6_leak_protection.manage(
-                KillSwitchActionEnum.DISABLE
-            )
+            try:
+                ipv6_leak_protection.manage(
+                    KillSwitchActionEnum.DISABLE
+                )
+            except: # noqa
+                pass
 
             if (
                 settings.killswitch

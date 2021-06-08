@@ -1,3 +1,15 @@
+protonvpn-nm-lib (3.2.2-1) unstable; urgency=medium
+
+  * Bugfix: Fix various Kill Switch issues
+
+ -- Proton Technologies AG <opensource@proton.me>  Tue, 8 Jun 2021 16:45:00 +0100
+ 
+protonvpn-nm-lib (3.2.1-1) unstable; urgency=medium
+
+  * Bugfix: Connect to re-configured Secure Core servers
+
+ -- Proton Technologies AG <opensource@proton.me>  Fri, 4 Jun 2021 11:00:00 +0100
+ 
 protonvpn-nm-lib (3.2.0-5) unstable; urgency=medium
 
   * Cache all necessary data after successfull authentication

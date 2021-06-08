@@ -5,9 +5,9 @@ from gi.repository import GLib
 
 from .... import exceptions
 from ....constants import VIRTUAL_DEVICE_NAME
-from ....enums import (KillSwitchActionEnum, KillswitchStatusEnum,
-                       NetworkManagerConnectionTypeEnum,
-                       ProtocolImplementationEnum)
+from ....enums import (ConnectionStartStatusEnum, KillSwitchActionEnum,
+                       KillswitchStatusEnum, NetworkManagerConnectionTypeEnum,
+                       ProtocolImplementationEnum, VPNConnectionStateEnum)
 from ....logger import logger
 from ...dbus.dbus_reconnect import DbusReconnect
 from ...environment import ExecutionEnvironment
@@ -47,6 +47,16 @@ class NetworkManagerClient(ConnectionBackend, NMClientMixin):
         starting the connection.
         """
         logger.info("Adding VPN connection")
+
+        connection, protocol_implementation = NMPlugin.import_vpn_config(
+            self.vpn_configuration
+        )
+
+        try:
+            self.disconnect()
+        except: # noqa
+            pass
+
         credentials = kwargs.get("credentials")
         connection_data = {
             "user_data": {
@@ -59,15 +69,6 @@ class NetworkManagerClient(ConnectionBackend, NMClientMixin):
             "vpn_configuration": self.vpn_configuration,
         }
 
-        try:
-            self.disconnect()
-        except: # noqa
-            pass
-
-        self._pre_setup_connection(kwargs.get("entry_ip"))
-        connection, protocol_implementation = NMPlugin.import_vpn_config(
-            self.vpn_configuration
-        )
         if protocol_implementation == ProtocolImplementationEnum.OPENVPN:
             from .openvpn.configure_openvpn_connection import \
                 ConfigureOpenVPNConnection
@@ -77,6 +78,7 @@ class NetworkManagerClient(ConnectionBackend, NMClientMixin):
         else:
             raise NotImplementedError("Other implementationsa are not ready")
 
+        self._pre_setup_connection(kwargs.get("entry_ip"))
         self._add_connection_async(connection)
 
     def connect(self):
@@ -99,6 +101,15 @@ class NetworkManagerClient(ConnectionBackend, NMClientMixin):
             response
         )
         dbus_loop.run()
+        if response[ConnectionStartStatusEnum.STATE] != VPNConnectionStateEnum.IS_ACTIVE:
+            logger.info("Restoring kill switch to previous state")
+            _env = ExecutionEnvironment()
+            _env.killswitch.update_from_user_configuration_menu(
+                KillswitchStatusEnum.HARD
+                if _env.settings.killswitch == KillswitchStatusEnum.HARD
+                else KillswitchStatusEnum.SOFT
+            )
+
         return response
 
     def disconnect(self):

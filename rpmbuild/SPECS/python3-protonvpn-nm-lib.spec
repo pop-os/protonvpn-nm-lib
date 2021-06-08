@@ -1,6 +1,6 @@
 %define unmangled_name protonvpn-nm-lib
-%define version 3.2.0
-%define release 5
+%define version 3.2.2
+%define release 1
 
 Prefix: %{_prefix}
 
@@ -56,6 +56,12 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
+* Tue Jun 08 2021 Proton Technologies AG <opensource@proton.me> 3.2.2-1
+- Bugfix: Fix various Kill Switch issues
+
+* Fri Jun 04 2021 Proton Technologies AG <opensource@proton.me> 3.2.1-1
+- Bugfix: Connect to re-configured Secure Core servers
+
 * Fri May 21 2021 Proton Technologies AG <opensource@proton.me> 3.2.0-5
 - Cache all necessary data after successfull authentication
 - Bugfix: Select working backend
