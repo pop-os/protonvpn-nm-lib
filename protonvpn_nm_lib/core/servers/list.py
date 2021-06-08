@@ -384,15 +384,18 @@ class ServerList:
         domain = physical_server.domain
 
         for logical_server in self:
-            servers = logical_server.physical_servers
-            servers = [
-                _physical_server
-                for _physical_server
-                in servers
-                if _physical_server.entry_ip == physical_server.exit_ip
-            ]
-            if len(servers) == 1:
-                domain = servers.pop().domain
+            if FeatureEnum.SECURE_CORE not in logical_server.features:
+                servers = logical_server.physical_servers
+                servers = [
+                    _physical_server
+                    for _physical_server
+                    in servers
+                    if _physical_server.exit_ip == physical_server.exit_ip
+                ]
+
+                if len(servers) > 0:
+                    domain = servers.pop().domain
+                    break
 
         physical_server.domain = domain
 
