@@ -58,7 +58,7 @@ class KillSwitch:
         }
 
         logger.info("Initialized killswitch manager")
-        _ = self.check_status_connectivity_check()
+        self.get_status_connectivity_check()
 
     def manage(self, action, server_ip=None):
         """Manage killswitch.
@@ -74,13 +74,8 @@ class KillSwitch:
                 action,
             )
         )
-        conn_check = self.connectivity_check()
 
-        if conn_check is not None:
-            logger.info("Attempting to disable connectivity check")
-            self.disable_connectivity_check(
-                conn_check[0], conn_check[1]
-            )
+        self._ensure_connectivity_check_is_disabled()
 
         self.update_connection_status()
 
@@ -100,6 +95,9 @@ class KillSwitch:
                 action,
             )
         )
+
+        self._ensure_connectivity_check_is_disabled()
+
         if action == KillswitchStatusEnum.HARD:
             self.create_killswitch_connection()
         elif action in [
@@ -521,7 +519,7 @@ class KillSwitch:
                 )
             )
             logger.error(
-                "[!] {}: {}. Raising exception.".format(
+                "{}: {}. Raising exception.".format(
                     exception,
                     subprocess_outpout
                 )
@@ -531,18 +529,29 @@ class KillSwitch:
                 subprocess_outpout
             )
 
+    def _ensure_connectivity_check_is_disabled(self):
+        conn_check = self.connectivity_check()
+
+        print(conn_check)
+
+        if len(conn_check) > 0:
+            logger.info("Attempting to disable connectivity check")
+            self.disable_connectivity_check(
+                conn_check[0], conn_check[1]
+            )
+
     def connectivity_check(self):
         (
             is_conn_check_available,
             is_conn_check_enabled,
-        ) = self.check_status_connectivity_check()
+        ) = self.get_status_connectivity_check()
 
         if not is_conn_check_enabled:
-            return None
+            return tuple()
 
         if not is_conn_check_available:
             logger.error(
-                "[!] AvailableConnectivityCheckError: "
+                "AvailableConnectivityCheckError: "
                 + "Unable to change connectivity check for killswitch."
                 + "Raising exception."
             )
@@ -552,7 +561,7 @@ class KillSwitch:
 
         return is_conn_check_available, is_conn_check_enabled
 
-    def check_status_connectivity_check(self):
+    def get_status_connectivity_check(self):
         """Check status of NM connectivity check."""
         nm_props = self.dbus_wrapper.get_network_manager_properties()
         is_conn_check_available = nm_props["ConnectivityCheckAvailable"]
@@ -582,7 +591,7 @@ class KillSwitch:
             nm_props = self.dbus_wrapper.get_network_manager_properties()
             if nm_props["ConnectivityCheckEnabled"]:
                 logger.error(
-                    "[!] DisableConnectivityCheckError: "
+                    "DisableConnectivityCheckError: "
                     + "Can not disable connectivity check for killswitch."
                     + "Raising exception."
                 )

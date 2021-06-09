@@ -43,6 +43,7 @@ class IPv6LeakProtection:
         }
         self.dbus_wrapper = dbus_wrapper(self.bus)
         logger.info("Intialized IPv6 leak protection manager")
+        self.get_status_connectivity_check()
 
     def manage(self, action):
         """Manage IPv6 leak protection.
@@ -51,6 +52,7 @@ class IPv6LeakProtection:
             action (string): either enable or disable
         """
         logger.info("Manage IPV6: {}".format(action))
+        self._ensure_connectivity_check_is_disabled()
         self.update_connection_status()
 
         if (
@@ -131,7 +133,7 @@ class IPv6LeakProtection:
                 )
             )
             logger.error(
-                "[!] {}: {}. Raising exception.".format(
+                "{}: {}. Raising exception.".format(
                     exception,
                     subprocess_outpout
                 )
@@ -178,3 +180,73 @@ class IPv6LeakProtection:
                 ] = True
 
         logger.info("IPv6 status: {}".format(self.interface_state_tracker))
+
+    def _ensure_connectivity_check_is_disabled(self):
+        conn_check = self.connectivity_check()
+
+        if len(conn_check) > 0:
+            logger.info("Attempting to disable connectivity check")
+            self.disable_connectivity_check(
+                conn_check[0], conn_check[1]
+            )
+
+    def connectivity_check(self):
+        (
+            is_conn_check_available,
+            is_conn_check_enabled,
+        ) = self.get_status_connectivity_check()
+
+        if not is_conn_check_enabled:
+            return tuple()
+
+        if not is_conn_check_available:
+            logger.error(
+                "AvailableConnectivityCheckError: "
+                + "Unable to change connectivity check for IPv6 Leak."
+                + "Raising exception."
+            )
+            raise exceptions.AvailableConnectivityCheckError(
+                "Unable to change connectivity check for IPv6 Leak"
+            )
+
+        return is_conn_check_available, is_conn_check_enabled
+
+    def get_status_connectivity_check(self):
+        """Check status of NM connectivity check."""
+        nm_props = self.dbus_wrapper.get_network_manager_properties()
+        is_conn_check_available = nm_props["ConnectivityCheckAvailable"]
+        is_conn_check_enabled = nm_props["ConnectivityCheckEnabled"]
+
+        logger.info(
+            "Conn check available ({}) - Conn check enabled ({})".format(
+                is_conn_check_available,
+                is_conn_check_enabled
+            )
+        )
+
+        return is_conn_check_available, is_conn_check_enabled
+
+    def disable_connectivity_check(
+        self, is_conn_check_available, is_conn_check_enabled
+    ):
+        """Disable NetworkManager connectivity check."""
+        if is_conn_check_enabled:
+            logger.info("Disabling connectivity check")
+            nm = self.dbus_wrapper.get_network_manager_properties_interface() # noqa
+            nm.Set(
+                "org.freedesktop.NetworkManager",
+                "ConnectivityCheckEnabled",
+                False
+            )
+            nm_props = self.dbus_wrapper.get_network_manager_properties()
+            if nm_props["ConnectivityCheckEnabled"]:
+                logger.error(
+                    "DisableConnectivityCheckError: "
+                    + "Can not disable connectivity check for IPv6 Leak."
+                    + "Raising exception."
+                )
+                raise exceptions.DisableConnectivityCheckError(
+                    "Can not disable connectivity check for IPv6 Leak"
+                )
+
+            logger.info("Check connectivity has been 'disabled'")
