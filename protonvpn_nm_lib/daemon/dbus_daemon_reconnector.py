@@ -88,10 +88,14 @@ class ProtonVPNReconnector:
 
             connection_metadata.save_connect_time()
 
-            if ipv6_leak_protection.enable_ipv6_leak_protection:
-                ipv6_leak_protection.manage(
-                    KillSwitchActionEnum.ENABLE
-                )
+            try:
+                if ipv6_leak_protection.enable_ipv6_leak_protection:
+                    ipv6_leak_protection.manage(
+                        KillSwitchActionEnum.ENABLE
+                    )
+            except: # noqa
+                pass
+
             if (
                 settings.killswitch
                 != KillswitchStatusEnum.DISABLED
@@ -203,7 +207,12 @@ class ProtonVPNReconnector:
                 return False
         logger.info("Created routed interface")
 
-        new_active_connection = self.dbus_wrapper.get_active_connection()
+        try:
+            new_active_connection = self.dbus_wrapper.get_active_connection()
+        except (dbus.exceptions.DBusException, Exception) as e:
+            logger.exception(e)
+            new_active_connection = None
+
         logger.info(
             "Active conn prior to "
             "setup manual connection: {} {}".format(
@@ -252,7 +261,12 @@ class ProtonVPNReconnector:
             ) + "ms;\n"
         )
         vpn_interface = self.dbus_wrapper.get_vpn_interface()
-        active_connection = self.dbus_wrapper.get_active_connection()
+
+        try:
+            active_connection = self.dbus_wrapper.get_active_connection()
+        except (dbus.exceptions.DBusException, Exception) as e:
+            logger.exception(e)
+            active_connection = None
 
         logger.info("VPN interface: {}".format(vpn_interface))
         logger.info("Active connection: {}".format(active_connection))
@@ -306,7 +320,14 @@ class ProtonVPNReconnector:
             return False
 
         if not self.manually_start_vpn_conn(server_ip, vpn_interface):
-            return True
+            if not glib_reconnect:
+                logger.info("Calling manually on vpn state changed")
+                self.on_vpn_state_changed(
+                    VPNConnectionStateEnum.FAILED,
+                    VPNConnectionReasonEnum.UNKNOWN
+                )
+            else:
+                return True
 
     def vpn_signal_handler(self, conn):
         """Add signal handler to ProtonVPN connection.

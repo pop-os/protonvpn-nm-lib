@@ -532,8 +532,6 @@ class KillSwitch:
     def _ensure_connectivity_check_is_disabled(self):
         conn_check = self.connectivity_check()
 
-        print(conn_check)
-
         if len(conn_check) > 0:
             logger.info("Attempting to disable connectivity check")
             self.disable_connectivity_check(

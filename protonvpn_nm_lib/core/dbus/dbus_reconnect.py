@@ -55,6 +55,7 @@ class DbusReconnect:
 
     def start_daemon_reconnector(self):
         """Start daemon reconnector."""
+        logger.info("Starting daemon reconnector")
         daemon_status = False
         try:
             daemon_status = self.check_daemon_reconnector_status()
@@ -66,14 +67,11 @@ class DbusReconnect:
         if daemon_status:
             return
 
-        if not os.environ.get(ENV_CI_NAME):
-            self.daemon_reconnector_manager(
-                DaemonReconnectorEnum.START,
-                daemon_status
-            )
+        self.daemon_reconnector_manager(DaemonReconnectorEnum.START, daemon_status)
 
     def stop_daemon_reconnector(self):
         """Stop daemon reconnector."""
+        logger.info("Stopping daemon reconnector")
         daemon_status = False
         try:
             daemon_status = self.check_daemon_reconnector_status()
@@ -84,8 +82,7 @@ class DbusReconnect:
             return
 
         logger.info("Daemon status: {}".format(daemon_status))
-        if not os.environ.get(ENV_CI_NAME):
-            self.daemon_reconnector_manager("stop", daemon_status)
+        self.daemon_reconnector_manager(DaemonReconnectorEnum.STOP, daemon_status)
 
     def daemon_reconnector_manager(self, callback_type, daemon_status):
         """Start/stop daemon reconnector.
@@ -99,8 +96,10 @@ class DbusReconnect:
             + "daemon_status -> \"{}\"".format(daemon_status)
         )
         if callback_type == DaemonReconnectorEnum.START and not daemon_status:
+            logger.info("Calling daemon reconnector for start")
             self.call_daemon_reconnector(callback_type)
         elif callback_type == DaemonReconnectorEnum.STOP and daemon_status:
+            logger.info("Calling daemon reconnector for stop")
             self.call_daemon_reconnector(callback_type)
             try:
                 daemon_status = self.check_daemon_reconnector_status()
@@ -110,6 +109,8 @@ class DbusReconnect:
                 logger.info(
                     "Daemon status after stopping: {}".format(daemon_status)
                 )
+        else:
+            logger.info("Something went wrong with the daemon reconnector")
 
     def check_daemon_reconnector_status(self):
         """Checks the status of the daemon reconnector and starts the process
