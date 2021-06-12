@@ -97,9 +97,21 @@ class KillSwitch:
         )
 
         self._ensure_connectivity_check_is_disabled()
+        self.update_connection_status()
 
         if action == KillswitchStatusEnum.HARD:
-            self.create_killswitch_connection()
+            try:
+                self.delete_connection(self.routed_conn_name)
+            except: # noqa
+                pass
+
+            if not self.interface_state_tracker[self.ks_conn_name][
+                KillSwitchInterfaceTrackerEnum.EXISTS
+            ]:
+                self.create_killswitch_connection()
+                return
+            else:
+                self.activate_connection(self.ks_conn_name)
         elif action in [
             KillswitchStatusEnum.SOFT, KillswitchStatusEnum.DISABLED
         ]:
