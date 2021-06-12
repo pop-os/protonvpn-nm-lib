@@ -110,6 +110,11 @@ class NetworkManagerClient(ConnectionBackend, NMClientMixin):
                 else KillswitchStatusEnum.SOFT
             )
 
+            try:
+                self.disconnect()
+            except: # noqa
+                pass
+
         return response
 
     def disconnect(self):
