@@ -3,6 +3,7 @@ from .core.country import Country
 from .core.environment import ExecutionEnvironment
 from .core.status import Status
 from .core.utilities import Utilities
+from .core.report import BugReport
 from .enums import (ConnectionMetadataEnum, ConnectionTypeEnum, FeatureEnum,
                     MetadataEnum)
 from .logger import logger
@@ -13,8 +14,9 @@ class ProtonVPNClientAPI:
         # The constructor should be where you initialize
         # the environment and it's parameter
         self._env = ExecutionEnvironment()
-        self.country = Country()
-        self.utils = Utilities
+        self._country = Country()
+        self._utils = Utilities
+        self._bug_report = BugReport()
 
     def login(self, username, password):
         """Login user with provided username and password.
@@ -24,7 +26,7 @@ class ProtonVPNClientAPI:
             username (string)
             password (string)
         """
-        self.utils.ensure_connectivity()
+        self._utils.ensure_connectivity()
         self._env.api_session.authenticate(username, password)
 
     def logout(self):
@@ -41,7 +43,7 @@ class ProtonVPNClientAPI:
         Should be user either after setup_connection() or
         setup_reconnect().
         """
-        self.utils.ensure_internet_connection_is_available()
+        self._utils.ensure_internet_connection_is_available()
         connect_result = self._env.connection_backend.connect()
         self._env.connection_metadata.save_connect_time()
         return connect_result
@@ -80,13 +82,13 @@ class ProtonVPNClientAPI:
             raise exceptions.UserSessionNotFound(
                 "User session was not found, please login first."
             )
-        self.utils.ensure_connectivity()
+        self._utils.ensure_connectivity()
 
         (
             _connection_type,
             _connection_type_extra_arg,
             _protocol
-        ) = self.utils.parse_user_input(
+        ) = self._utils.parse_user_input(
             {
                 "connection_type": connection_type,
                 "connection_type_extra_arg": connection_type_extra_arg,
@@ -327,16 +329,16 @@ class ProtonVPNClientAPI:
         return Status().get_active_connection_status()
 
     def get_settings(self):
-        """Get user settings."""
+        """Get user settings object."""
         return self._env.settings
 
     def get_session(self):
-        """Get user settings."""
+        """Get user session object."""
         return self._env.api_session
 
     def get_country(self):
         """Get country object."""
-        return self.country
+        return self._country
 
     def get_connection_metadata(self):
         """Get metadata of an active ProtonVPN connection.
@@ -376,6 +378,11 @@ class ProtonVPNClientAPI:
         1) It checks if there is internet connection
         2) It checks if API can be reached
         """
-        self.utils.ensure_connectivity()
+        self._utils.ensure_connectivity()
+
+    def get_bug_report(self):
+        """Get bug report object."""
+        return self._bug_report
+
 
 protonvpn = ProtonVPNClientAPI() # noqa
