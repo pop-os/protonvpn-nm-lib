@@ -31,6 +31,7 @@ Requires: python3-distro
 Requires: python3-jinja2
 Requires: python3-pyxdg
 Requires: python3-dbus
+Requires: python3-systemd
 
 %{?python_disable_dependency_generator}
 
