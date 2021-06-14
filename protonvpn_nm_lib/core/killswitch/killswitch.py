@@ -172,12 +172,7 @@ class KillSwitch:
             ]
         ):
             logger.info("Deleting routed kill switch interface")
-            # In some cases, the connection can fail to be deleted due to
-            # privileges, thus just disconnecting it should do the trick
-            try:
-                self.delete_connection(self.routed_conn_name)
-            except: # noqa
-                self.deactivate_connection(self.routed_conn_name)
+            self.delete_connection(self.routed_conn_name)
 
         # check if ks exists. Start it if it does
         # if not then create and start it
@@ -224,13 +219,7 @@ class KillSwitch:
         ):
             logger.info("Following happy path for post setup")
             self.activate_connection(self.ks_conn_name)
-
-            # In some cases, the connection can fail to be deleted due to
-            # privileges, thus just disconnecting it should do the trick
-            try:
-                self.delete_connection(self.routed_conn_name)
-            except: # noqa
-                self.deactivate_connection(self.routed_conn_name)
+            self.delete_connection(self.routed_conn_name)
 
             return
         elif (
@@ -460,6 +449,8 @@ class KillSwitch:
     def delete_connection(self, conn_name):
         """Delete a connection based on connection name.
 
+        If it fails to delete the connection, it will attempt to deactivate it.
+
         Args:
             conn_name (string): connection name (uid)
         """
@@ -468,11 +459,15 @@ class KillSwitch:
 
         self.update_connection_status()
         if self.interface_state_tracker[conn_name][KillSwitchInterfaceTrackerEnum.EXISTS]: # noqa
-            self.run_subprocess(
-                exceptions.DeleteKillswitchError,
-                "Unable to delete {}".format(conn_name),
-                subprocess_command
-            )
+            try:
+                self.run_subprocess(
+                    exceptions.DeleteKillswitchError,
+                    "Unable to delete {}".format(conn_name),
+                    subprocess_command
+                )
+            except exceptions.DeleteKillswitchError as e:
+                logger.exception(e)
+                self.deactivate_connection(conn_name)
 
     def deactivate_all_connections(self):
         """Deactivate all connections."""

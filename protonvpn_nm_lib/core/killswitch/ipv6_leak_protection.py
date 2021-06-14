@@ -107,11 +107,15 @@ class IPv6LeakProtection:
         if self.interface_state_tracker[self.conn_name][
             KillSwitchInterfaceTrackerEnum.EXISTS
         ]:
-            self.run_subprocess(
-                exceptions.DisableIPv6LeakProtectionError,
-                "Unable to remove IPv6 leak protection connection/interface",
-                subprocess_command
-            )
+            try:
+                self.run_subprocess(
+                    exceptions.DisableIPv6LeakProtectionError,
+                    "Unable to remove IPv6 leak protection connection/interface",
+                    subprocess_command
+                )
+            except exceptions.DisableIPv6LeakProtectionError as e:
+                logger.exception(e)
+                self.deactivate_connection()
 
     def deactivate_connection(self):
         """Deactivate a connection."""
