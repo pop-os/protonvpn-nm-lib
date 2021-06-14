@@ -172,7 +172,12 @@ class KillSwitch:
             ]
         ):
             logger.info("Deleting routed kill switch interface")
-            self.delete_connection(self.routed_conn_name)
+            # In some cases, the connection can fail to be deleted due to
+            # privileges, thus just disconnecting it should do the trick
+            try:
+                self.delete_connection(self.routed_conn_name)
+            except: # noqa
+                self.deactivate_connection(self.routed_conn_name)
 
         # check if ks exists. Start it if it does
         # if not then create and start it
@@ -219,7 +224,14 @@ class KillSwitch:
         ):
             logger.info("Following happy path for post setup")
             self.activate_connection(self.ks_conn_name)
-            self.delete_connection(self.routed_conn_name)
+
+            # In some cases, the connection can fail to be deleted due to
+            # privileges, thus just disconnecting it should do the trick
+            try:
+                self.delete_connection(self.routed_conn_name)
+            except: # noqa
+                self.deactivate_connection(self.routed_conn_name)
+
             return
         elif (
             activating_soft_connection

@@ -61,7 +61,10 @@ class IPv6LeakProtection:
         ):
             self.add_leak_protection()
         elif action == KillSwitchActionEnum.DISABLE:
-            self.remove_leak_protection()
+            try:
+                self.remove_leak_protection()
+            except: # noqa
+                self.deactivate_connection()
         else:
             raise exceptions.IPv6LeakProtectionOptionError(
                 "Incorrect option for IPv6 leak manager"
@@ -109,6 +112,29 @@ class IPv6LeakProtection:
                 "Unable to remove IPv6 leak protection connection/interface",
                 subprocess_command
             )
+
+    def deactivate_connection(self):
+        """Deactivate a connection."""
+        self.update_connection_status()
+        active_conn_dict = self.dbus_wrapper.search_for_connection( # noqa
+            IPv6_LEAK_PROTECTION_CONN_NAME, is_active=True,
+            return_active_conn_path=True
+        )
+        if (
+            self.interface_state_tracker[IPv6_LEAK_PROTECTION_CONN_NAME][
+                KillSwitchInterfaceTrackerEnum.IS_RUNNING
+            ] and active_conn_dict
+        ):
+            active_conn_path = str(active_conn_dict.get("active_conn_path"))
+            try:
+                self.dbus_wrapper.disconnect_connection(
+                    active_conn_path
+                )
+            except dbus.exceptions.DBusException as e:
+                logger.exception(e)
+                raise exceptions.DectivateKillswitchError(
+                    "Unable to deactivate {}".format(IPv6_LEAK_PROTECTION_CONN_NAME)
+                )
 
     def run_subprocess(self, exception, exception_msg, *args):
         """Run provided input via subprocess.
