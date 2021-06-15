@@ -1,4 +1,4 @@
-protonvpn-nm-lib (3.2.2-7) unstable; urgency=medium
+protonvpn-nm-lib (3.2.2-8) unstable; urgency=medium
 
   * Bugfix: Fix various Kill Switch issues
 

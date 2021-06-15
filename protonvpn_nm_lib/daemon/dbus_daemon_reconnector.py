@@ -299,25 +299,30 @@ class ProtonVPNReconnector:
             self.vpn_signal_handler(active_connection)
             return False
 
-        (
-            is_protonvpn, state, conn
-        ) = self.dbus_wrapper.is_protonvpn_being_prepared()
-        # Check if connection is being prepared
         server_ip = connection_metadata.get_server_ip()
         logger.info("Reconnecting to server IP \"{}\"".format(server_ip))
 
-        if is_protonvpn and state == 1:
-            logger.info("ProtonVPN connection is being prepared.")
-            if (
-                settings.killswitch
-                != KillswitchStatusEnum.DISABLED
-            ):
-                killswitch.manage(
-                    KillSwitchActionEnum.PRE_CONNECTION,
-                    server_ip=server_ip
-                )
-            self.vpn_signal_handler(conn)
-            return False
+        try:
+            (
+                is_protonvpn, state, conn
+            ) = self.dbus_wrapper.is_protonvpn_being_prepared()
+        except dbus.exceptions.DBusException as e:
+            logger.exception(e)
+        else:
+
+            # Check if connection is being prepared
+            if is_protonvpn and state == 1:
+                logger.info("ProtonVPN connection is being prepared.")
+                if (
+                    settings.killswitch
+                    != KillswitchStatusEnum.DISABLED
+                ):
+                    killswitch.manage(
+                        KillSwitchActionEnum.PRE_CONNECTION,
+                        server_ip=server_ip
+                    )
+                self.vpn_signal_handler(conn)
+                return False
 
         if not self.manually_start_vpn_conn(server_ip, vpn_interface):
             if not glib_reconnect:
