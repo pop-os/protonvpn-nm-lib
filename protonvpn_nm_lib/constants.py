@@ -126,8 +126,6 @@ SERVICE_TEMPLATE = """
 
 [Unit]
 Description=ProtonVPN Reconnector
-After=multi-user.target
-Wants=multi-user.target
 
 [Service]
 ExecStart=EXEC_START
