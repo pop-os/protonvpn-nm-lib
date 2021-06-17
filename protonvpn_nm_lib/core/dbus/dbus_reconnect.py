@@ -4,7 +4,7 @@ import sys
 
 import protonvpn_nm_lib
 
-from ...constants import (ENV_CI_NAME, LOCAL_SERVICE_FILEPATH,
+from ...constants import (LOCAL_SERVICE_FILEPATH,
                           SERVICE_TEMPLATE, XDG_CONFIG_SYSTEMD_USER)
 from ...enums import DaemonReconnectorEnum
 from ...logger import logger

@@ -4,10 +4,11 @@ from ....constants import VIRTUAL_DEVICE_NAME
 from ....enums import (ConnectionStartStatusEnum, KillSwitchActionEnum,
                        KillswitchStatusEnum, VPNConnectionReasonEnum,
                        VPNConnectionStateEnum)
-from ...dbus import DbusReconnect
+from ...dbus.dbus_reconnect import DbusReconnect
 from ...environment import ExecutionEnvironment
 from ....logger import logger
-from ...dbus import DbusWrapper
+from ...dbus.dbus_login1_wrapper import Login1UnitWrapper
+from ...dbus.dbus_network_manager_wrapper import NetworkManagerUnitWrapper
 env = ExecutionEnvironment()
 
 
@@ -21,11 +22,12 @@ class MonitorVPNConnectionStart:
         self.virtual_device_name = VIRTUAL_DEVICE_NAME
         self.dbus_reconnector = DbusReconnect()
         self.bus = dbus.SystemBus()
-        self.dbus_wrapper = DbusWrapper(self.bus)
+        self.nm_wrapper = NetworkManagerUnitWrapper(self.bus)
+        self.login1_wrapper = Login1UnitWrapper(self.bus)
         self.vpn_check()
 
     def vpn_check(self):
-        vpn_interface = self.dbus_wrapper.get_vpn_interface()
+        vpn_interface = self.nm_wrapper.get_vpn_interface()
 
         if not isinstance(vpn_interface, tuple):
             self.dbus_response[ConnectionStartStatusEnum.STATE] =\
@@ -38,7 +40,7 @@ class MonitorVPNConnectionStart:
 
         (
             is_protonvpn, state, conn
-        ) = self.dbus_wrapper.is_protonvpn_being_prepared()
+        ) = self.nm_wrapper.is_protonvpn_being_prepared()
         if is_protonvpn and state == 1:
             self.vpn_signal_handler(conn)
 
@@ -123,7 +125,7 @@ class MonitorVPNConnectionStart:
         )
 
         try:
-            active_conn_props = self.dbus_wrapper.get_active_conn_props(conn)
+            active_conn_props = self.nm_wrapper.get_active_connection_properties(conn)
             logger.info("Adding listener to active {} connection at {}".format(
                 active_conn_props["Id"],
                 conn)

@@ -7,7 +7,7 @@ from ...constants import (IPv6_DUMMY_ADDRESS, IPv6_DUMMY_GATEWAY,
                           IPv6_LEAK_PROTECTION_IFACE_NAME)
 from ...enums import KillSwitchActionEnum, KillSwitchInterfaceTrackerEnum
 from ...logger import logger
-from ..dbus.dbus_wrapper import DbusWrapper
+from ..dbus.dbus_network_manager_wrapper import NetworkManagerUnitWrapper
 from ..subprocess_wrapper import subprocess
 
 
@@ -25,7 +25,7 @@ class IPv6LeakProtection:
 
     def __init__(
         self,
-        dbus_wrapper=DbusWrapper,
+        nm_wrapper=NetworkManagerUnitWrapper,
         iface_name=IPv6_LEAK_PROTECTION_IFACE_NAME,
         conn_name=IPv6_LEAK_PROTECTION_CONN_NAME,
         ipv6_dummy_addrs=IPv6_DUMMY_ADDRESS,
@@ -41,7 +41,7 @@ class IPv6LeakProtection:
                 KillSwitchInterfaceTrackerEnum.IS_RUNNING: False
             }
         }
-        self.dbus_wrapper = dbus_wrapper(self.bus)
+        self.nm_wrapper = nm_wrapper(self.bus)
         logger.info("Intialized IPv6 leak protection manager")
         self.get_status_connectivity_check()
 
@@ -120,7 +120,7 @@ class IPv6LeakProtection:
     def deactivate_connection(self):
         """Deactivate a connection."""
         self.update_connection_status()
-        active_conn_dict = self.dbus_wrapper.search_for_connection( # noqa
+        active_conn_dict = self.nm_wrapper.search_for_connection(
             IPv6_LEAK_PROTECTION_CONN_NAME, is_active=True,
             return_active_conn_path=True
         )
@@ -131,7 +131,7 @@ class IPv6LeakProtection:
         ):
             active_conn_path = str(active_conn_dict.get("active_conn_path"))
             try:
-                self.dbus_wrapper.disconnect_connection(
+                self.nm_wrapper.disconnect_connection(
                     active_conn_path
                 )
             except dbus.exceptions.DBusException as e:
@@ -172,8 +172,8 @@ class IPv6LeakProtection:
 
     def update_connection_status(self):
         """Update connection/interface status."""
-        all_conns = self.dbus_wrapper.get_all_conns()
-        active_conns = self.dbus_wrapper.get_all_active_conns()
+        all_conns = self.nm_wrapper.get_all_connections()
+        active_conns = self.nm_wrapper.get_all_active_connections()
 
         self.interface_state_tracker[self.conn_name][
             KillSwitchInterfaceTrackerEnum.EXISTS
@@ -185,7 +185,7 @@ class IPv6LeakProtection:
 
         for conn in all_conns:
             try:
-                conn_name = str(self.dbus_wrapper.get_all_conn_settings(
+                conn_name = str(self.nm_wrapper.get_settings_from_connection(
                     conn
                 )["connection"]["id"])
             except dbus.exceptions.DBusException:
@@ -198,7 +198,7 @@ class IPv6LeakProtection:
 
         for active_conn in active_conns:
             try:
-                conn_name = str(self.dbus_wrapper.get_active_conn_props(
+                conn_name = str(self.nm_wrapper.get_active_connection_properties(
                     conn
                 )["connection"]["id"])
             except dbus.exceptions.DBusException:
@@ -243,7 +243,7 @@ class IPv6LeakProtection:
 
     def get_status_connectivity_check(self):
         """Check status of NM connectivity check."""
-        nm_props = self.dbus_wrapper.get_network_manager_properties()
+        nm_props = self.nm_wrapper.get_network_manager_properties()
         is_conn_check_available = nm_props["ConnectivityCheckAvailable"]
         is_conn_check_enabled = nm_props["ConnectivityCheckEnabled"]
 
@@ -262,13 +262,13 @@ class IPv6LeakProtection:
         """Disable NetworkManager connectivity check."""
         if is_conn_check_enabled:
             logger.info("Disabling connectivity check")
-            nm = self.dbus_wrapper.get_network_manager_properties_interface() # noqa
+            nm = self.nm_wrapper.get_network_manager_settings_interface() # noqa
             nm.Set(
                 "org.freedesktop.NetworkManager",
                 "ConnectivityCheckEnabled",
                 False
             )
-            nm_props = self.dbus_wrapper.get_network_manager_properties()
+            nm_props = self.nm_wrapper.get_network_manager_properties()
             if nm_props["ConnectivityCheckEnabled"]:
                 logger.error(
                     "DisableConnectivityCheckError: "
