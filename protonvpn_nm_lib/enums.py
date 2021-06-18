@@ -278,3 +278,26 @@ class VPNConnectionReasonEnum(Enum):
 class ServerStatusEnum(Enum):
     ACTIVE = 1
     UNDER_MAINTENANCE = 0
+
+
+# ## Dbus/Systemd related
+class SystemBusLogin1ObjectPathEnum(Enum):
+    USER_SELF = "/org/freedesktop/login1/user/self"
+
+
+class SystemBusLogin1InterfaceEnum(Enum):
+    LOGIN1_USER = "org.freedesktop.login1.User"
+    SESSION = "org.freedesktop.login1.Session"
+
+
+class SystemBusNMObjectPathEnum(Enum):
+    NETWORK_MANAGER = "/org/freedesktop/NetworkManager"
+    NM_SETTINGS = "/org/freedesktop/NetworkManager/Settings"
+
+
+class SystemBusNMInterfaceEnum(Enum):
+    NETWORK_MANAGER = "org.freedesktop.NetworkManager"
+    NM_CONNECTION_SETTINGS = "org.freedesktop.NetworkManager.Settings.Connection"
+    NM_SETTINGS = "org.freedesktop.NetworkManager.Settings"
+    NM_CONNECTION_ACTIVE = "org.freedesktop.NetworkManager.Connection.Active"
+    NM_DEVICE = "org.freedesktop.NetworkManager.Device"

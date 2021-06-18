@@ -15,7 +15,6 @@ killswitch = env.killswitch
 ipv6_leak_protection = env.ipv6leak
 settings = env.settings
 
-# from protonvpn_nm_lib.core.dbus import DbusWrapper
 from protonvpn_nm_lib.core.dbus.dbus_login1_wrapper import Login1UnitWrapper
 from protonvpn_nm_lib.core.dbus.dbus_network_manager_wrapper import NetworkManagerUnitWrapper
 
