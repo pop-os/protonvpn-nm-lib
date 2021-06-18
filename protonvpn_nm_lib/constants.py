@@ -126,12 +126,7 @@ SERVICE_TEMPLATE = """
 
 [Unit]
 Description=ProtonVPN Reconnector
-After=network-online.target
-Wants=network-online.target systemd-networkd-wait-online.service
 
 [Service]
 ExecStart=EXEC_START
-
-[Install]
-WantedBy=multi-user.target
 """.format(APP_VERSION)

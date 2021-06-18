@@ -5,7 +5,6 @@ from protonvpn_nm_lib.constants import VIRTUAL_DEVICE_NAME
 from protonvpn_nm_lib.core.environment import ExecutionEnvironment
 from protonvpn_nm_lib.daemon.daemon_logger import logger
 from protonvpn_nm_lib.enums import (KillSwitchActionEnum,
-                                    KillSwitchInterfaceTrackerEnum,
                                     KillswitchStatusEnum,
                                     VPNConnectionReasonEnum,
                                     VPNConnectionStateEnum)
@@ -16,7 +15,9 @@ killswitch = env.killswitch
 ipv6_leak_protection = env.ipv6leak
 settings = env.settings
 
-from protonvpn_nm_lib.core.dbus import DbusWrapper
+# from protonvpn_nm_lib.core.dbus import DbusWrapper
+from protonvpn_nm_lib.core.dbus.dbus_login1_wrapper import Login1UnitWrapper
+from protonvpn_nm_lib.core.dbus.dbus_network_manager_wrapper import NetworkManagerUnitWrapper
 
 
 class ProtonVPNReconnector:
@@ -43,15 +44,42 @@ class ProtonVPNReconnector:
         self.delay = delay
         self.failed_attempts = 0
         self.bus = dbus.SystemBus()
-        self.dbus_wrapper = DbusWrapper(self.bus)
+        self.nm_wrapper = NetworkManagerUnitWrapper(self.bus)
+        self.login1_wrapper = Login1UnitWrapper(self.bus)
+        self.user_session_locked = None
         # Auto connect at startup (Listen for StateChanged going forward)
         self.vpn_activator()
-        try:
-            self.dbus_wrapper.get_network_manager_interface().connect_to_signal( # noqa
-                "StateChanged", self.on_network_state_changed
-            )
-        except Exception as e:
-            logger.exception("Exception: {}".format(e))
+        self.connect_signals()
+        logger.info("Is user session locked: {}".format(self.user_session_locked))
+
+    def connect_signals(self):
+        self.nm_wrapper.connect_network_manager_object_to_signal(
+            "StateChanged", self.on_network_state_changed
+        )
+        self.login1_wrapper.connect_user_session_object_to_signal(
+            "Lock", self.on_session_lock
+        )
+        self.login1_wrapper.connect_user_session_object_to_signal(
+            "Unlock", self.on_session_unlock
+        )
+
+        if self.login1_wrapper.get_properties_current_user_session()["State"] == "active":
+            self.user_session_locked = False
+
+    def on_session_lock(self):
+        logger.info("Inside session lock")
+        logger.info("Is user session locked: {}".format(self.user_session_locked))
+        logger.info("Session got \"locked\"")
+        self.user_session_locked = True
+        logger.info("Is user session locked: {}".format(self.user_session_locked))
+
+    def on_session_unlock(self):
+        logger.info("Inside session unlock")
+        logger.info("Is user session locked: {}".format(self.user_session_locked))
+        logger.info("Session got \"unlocked\"")
+        self.user_session_locked = False
+        logger.info("Is user session locked: {}".format(self.user_session_locked))
+        self.vpn_activator()
 
     def on_network_state_changed(self, state):
         """Network status signal handler.
@@ -78,7 +106,7 @@ class ProtonVPNReconnector:
                 reason
             )
         )
-        if state == VPNConnectionStateEnum.IS_ACTIVE:
+        if state == VPNConnectionStateEnum.IS_ACTIVE and not self.user_session_locked:
             logger.info(
                 "ProtonVPN with virtual device '{}' is running.".format(
                     self.virtual_device_name
@@ -88,10 +116,14 @@ class ProtonVPNReconnector:
 
             connection_metadata.save_connect_time()
 
-            if ipv6_leak_protection.enable_ipv6_leak_protection:
-                ipv6_leak_protection.manage(
-                    KillSwitchActionEnum.ENABLE
-                )
+            try:
+                if ipv6_leak_protection.enable_ipv6_leak_protection:
+                    ipv6_leak_protection.manage(
+                        KillSwitchActionEnum.ENABLE
+                    )
+            except: # noqa
+                pass
+
             if (
                 settings.killswitch
                 != KillswitchStatusEnum.DISABLED
@@ -104,12 +136,13 @@ class ProtonVPNReconnector:
         elif (
             state == VPNConnectionStateEnum.DISCONNECTED
             and reason == VPNConnectionReasonEnum.USER_HAS_DISCONNECTED
+            and not self.user_session_locked
         ):
             logger.info("ProtonVPN connection was manually disconnected.")
             self.failed_attempts = 0
 
             try:
-                vpn_iface = self.dbus_wrapper.get_vpn_interface()
+                vpn_iface = self.nm_wrapper.get_vpn_interface()
             except TypeError as e:
                 logger.exception(e)
 
@@ -143,6 +176,7 @@ class ProtonVPNReconnector:
         elif state in [
             VPNConnectionStateEnum.FAILED,
             VPNConnectionStateEnum.DISCONNECTED
+            and not self.user_session_locked
         ]:
             # reconnect if haven't reached max_attempts
             if (
@@ -162,7 +196,6 @@ class ProtonVPNReconnector:
                         self.max_attempts
                     )
                 )
-                self.failed_attempts = 0
 
     def setup_protonvpn_conn(self, active_connection, vpn_interface):
         """Setup and start new ProtonVPN connection.
@@ -171,7 +204,7 @@ class ProtonVPNReconnector:
             active_connection (string): path to active connection
             vpn_interface (dbus.Proxy): proxy interface to vpn connection
         """
-        new_con = self.dbus_wrapper.activate_connection(
+        new_con = self.nm_wrapper.activate_connection(
             vpn_interface,
             dbus.ObjectPath("/"),
             active_connection
@@ -203,7 +236,12 @@ class ProtonVPNReconnector:
                 return False
         logger.info("Created routed interface")
 
-        new_active_connection = self.dbus_wrapper.get_active_connection()
+        try:
+            new_active_connection = self.nm_wrapper.get_active_connection()
+        except (dbus.exceptions.DBusException, Exception) as e:
+            logger.exception(e)
+            new_active_connection = None
+
         logger.info(
             "Active conn prior to "
             "setup manual connection: {} {}".format(
@@ -251,8 +289,16 @@ class ProtonVPNReconnector:
                 self.failed_attempts, self.max_attempts, self.delay
             ) + "ms;\n"
         )
-        vpn_interface = self.dbus_wrapper.get_vpn_interface()
-        active_connection = self.dbus_wrapper.get_active_connection()
+        if self.user_session_locked:
+            return
+
+        vpn_interface = self.nm_wrapper.get_vpn_interface()
+
+        try:
+            active_connection = self.nm_wrapper.get_active_connection()
+        except (dbus.exceptions.DBusException, Exception) as e:
+            logger.exception(e)
+            active_connection = None
 
         logger.info("VPN interface: {}".format(vpn_interface))
         logger.info("Active connection: {}".format(active_connection))
@@ -270,7 +316,7 @@ class ProtonVPNReconnector:
         (
             is_active_conn_vpn,
             all_vpn_settings
-        ) = self.dbus_wrapper.check_active_vpn_conn(
+        ) = self.nm_wrapper.check_active_vpn_connection(
             active_connection
         )
 
@@ -285,28 +331,40 @@ class ProtonVPNReconnector:
             self.vpn_signal_handler(active_connection)
             return False
 
-        (
-            is_protonvpn, state, conn
-        ) = self.dbus_wrapper.is_protonvpn_being_prepared()
-        # Check if connection is being prepared
         server_ip = connection_metadata.get_server_ip()
         logger.info("Reconnecting to server IP \"{}\"".format(server_ip))
 
-        if is_protonvpn and state == 1:
-            logger.info("ProtonVPN connection is being prepared.")
-            if (
-                settings.killswitch
-                != KillswitchStatusEnum.DISABLED
-            ):
-                killswitch.manage(
-                    KillSwitchActionEnum.PRE_CONNECTION,
-                    server_ip=server_ip
-                )
-            self.vpn_signal_handler(conn)
-            return False
+        try:
+            (
+                is_protonvpn, state, conn
+            ) = self.nm_wrapper.is_protonvpn_being_prepared()
+        except dbus.exceptions.DBusException as e:
+            logger.exception(e)
+        else:
+
+            # Check if connection is being prepared
+            if is_protonvpn and state == 1:
+                logger.info("ProtonVPN connection is being prepared.")
+                if (
+                    settings.killswitch
+                    != KillswitchStatusEnum.DISABLED
+                ):
+                    killswitch.manage(
+                        KillSwitchActionEnum.PRE_CONNECTION,
+                        server_ip=server_ip
+                    )
+                self.vpn_signal_handler(conn)
+                return False
 
         if not self.manually_start_vpn_conn(server_ip, vpn_interface):
-            return True
+            if not glib_reconnect:
+                logger.info("Calling manually on vpn state changed")
+                self.on_vpn_state_changed(
+                    VPNConnectionStateEnum.FAILED,
+                    VPNConnectionReasonEnum.UNKNOWN
+                )
+            else:
+                return True
 
     def vpn_signal_handler(self, conn):
         """Add signal handler to ProtonVPN connection.
@@ -322,7 +380,7 @@ class ProtonVPNReconnector:
         )
 
         try:
-            active_conn_props = self.dbus_wrapper.get_active_conn_props(conn)
+            active_conn_props = self.nm_wrapper.get_active_connection_properties(conn)
             logger.info("Adding listener to active {} connection at {}".format(
                 active_conn_props["Id"],
                 conn)

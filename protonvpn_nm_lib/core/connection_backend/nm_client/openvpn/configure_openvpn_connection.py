@@ -70,11 +70,16 @@ class ConfigureOpenVPNConnection:
 
         # append netshielf suffix
         if self.__env.api_session.clientconfig.features.netshield:
-            self.username = self.username + "+{}".format(NETSHIELD_STATUS_DICT[self.__env.settings.netshield].value)
+            self.username = self.username + "+{}".format(
+                NETSHIELD_STATUS_DICT[self.__env.settings.netshield].value
+            )
 
-        # append vpn accelerator suffix       
-        if self.__env.api_session.clientconfig.features.vpn_accelerator and self.__env.settings.vpn_accelerator == UserSettingStatusEnum.DISABLED:
-                self.username = self.username + "+nst"
+        # append vpn accelerator suffix
+        if (
+            self.__env.api_session.clientconfig.features.vpn_accelerator
+            and self.__env.settings.vpn_accelerator == UserSettingStatusEnum.DISABLED
+        ):
+            self.username = self.username + "+nst"
 
     def add_vpn_credentials(self):
         """Add OpenVPN credentials to ProtonVPN connection.
@@ -201,8 +206,8 @@ class ConfigureOpenVPNConnection:
 
     def apply_automatic_dns_configuration(self, ipv4_config, ipv6_config):
         logger.info("Applying automatic DNS")
-        ipv4_config.props.dns_priority = -50
-        ipv6_config.props.dns_priority = -50
+        ipv4_config.props.dns_priority = -1500
+        ipv6_config.props.dns_priority = -1500
 
     def apply_custom_dns_configuration(self, ipv4_config, ipv6_config):
         custom_dns = self.custom_dns
@@ -210,6 +215,6 @@ class ConfigureOpenVPNConnection:
         ipv6_config.props.ignore_auto_dns = True
 
         logger.info("Applying custom DNS: {}".format(custom_dns))
-        ipv4_config.props.dns_priority = -50
-        ipv6_config.props.dns_priority = -50
+        ipv4_config.props.dns_priority = -1500
+        ipv6_config.props.dns_priority = -1500
         ipv4_config.props.dns = custom_dns

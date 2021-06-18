@@ -11,7 +11,7 @@ from ...constants import (KILLSWITCH_CONN_NAME, KILLSWITCH_INTERFACE_NAME,
 from ...enums import (KillSwitchActionEnum, KillSwitchInterfaceTrackerEnum,
                       KillswitchStatusEnum)
 from ...logger import logger
-from ..dbus.dbus_wrapper import DbusWrapper
+from ..dbus.dbus_network_manager_wrapper import NetworkManagerUnitWrapper
 from ..subprocess_wrapper import subprocess
 
 
@@ -27,7 +27,7 @@ class KillSwitch:
     """Manages killswitch connection/interfaces."""
     def __init__(
         self,
-        dbus_wrapper=DbusWrapper,
+        nm_wrapper=NetworkManagerUnitWrapper,
         ks_conn_name=KILLSWITCH_CONN_NAME,
         ks_interface_name=KILLSWITCH_INTERFACE_NAME,
         routed_conn_name=ROUTED_CONN_NAME,
@@ -45,7 +45,7 @@ class KillSwitch:
         self.ipv4_dummy_gateway = ipv4_dummy_gateway
         self.ipv6_dummy_addrs = ipv6_dummy_addrs
         self.ipv6_dummy_gateway = ipv6_dummy_gateway
-        self.dbus_wrapper = dbus_wrapper(self.bus)
+        self.nm_wrapper = nm_wrapper(self.bus)
         self.interface_state_tracker = {
             self.ks_conn_name: {
                 KillSwitchInterfaceTrackerEnum.EXISTS: False,
@@ -58,7 +58,7 @@ class KillSwitch:
         }
 
         logger.info("Initialized killswitch manager")
-        _ = self.check_status_connectivity_check()
+        self.get_status_connectivity_check()
 
     def manage(self, action, server_ip=None):
         """Manage killswitch.
@@ -74,13 +74,8 @@ class KillSwitch:
                 action,
             )
         )
-        conn_check = self.connectivity_check()
 
-        if conn_check is not None:
-            logger.info("Attempting to disable connectivity check")
-            self.disable_connectivity_check(
-                conn_check[0], conn_check[1]
-            )
+        self._ensure_connectivity_check_is_disabled()
 
         self.update_connection_status()
 
@@ -100,8 +95,23 @@ class KillSwitch:
                 action,
             )
         )
+
+        self._ensure_connectivity_check_is_disabled()
+        self.update_connection_status()
+
         if action == KillswitchStatusEnum.HARD:
-            self.create_killswitch_connection()
+            try:
+                self.delete_connection(self.routed_conn_name)
+            except: # noqa
+                pass
+
+            if not self.interface_state_tracker[self.ks_conn_name][
+                KillSwitchInterfaceTrackerEnum.EXISTS
+            ]:
+                self.create_killswitch_connection()
+                return
+            else:
+                self.activate_connection(self.ks_conn_name)
         elif action in [
             KillswitchStatusEnum.SOFT, KillswitchStatusEnum.DISABLED
         ]:
@@ -210,6 +220,7 @@ class KillSwitch:
             logger.info("Following happy path for post setup")
             self.activate_connection(self.ks_conn_name)
             self.delete_connection(self.routed_conn_name)
+
             return
         elif (
             activating_soft_connection
@@ -281,7 +292,13 @@ class KillSwitch:
             "ipv6.addresses", self.ipv6_dummy_addrs,
             "ipv6.gateway", self.ipv6_dummy_gateway,
             "ipv4.route-metric", "98",
-            "ipv6.route-metric", "98"
+            "ipv6.route-metric", "98",
+            "ipv4.dns-priority", "-1500",
+            "ipv6.dns-priority", "-1500",
+            "ipv4.ignore-auto-dns", "yes",
+            "ipv6.ignore-auto-dns", "yes",
+            "ipv4.dns", "0.0.0.0",
+            "ipv6.dns", "::1"
         ]
         self.update_connection_status()
         if not self.interface_state_tracker[self.ks_conn_name][
@@ -320,7 +337,13 @@ class KillSwitch:
             "ipv6.gateway", self.ipv6_dummy_gateway,
             "ipv4.route-metric", "97",
             "ipv6.route-metric", "97",
-            "ipv4.routes", route_data_str
+            "ipv4.routes", route_data_str,
+            "ipv4.dns-priority", "-1500",
+            "ipv6.dns-priority", "-1500",
+            "ipv4.ignore-auto-dns", "yes",
+            "ipv6.ignore-auto-dns", "yes",
+            "ipv4.dns", "0.0.0.0",
+            "ipv6.dns", "::1"
         ]
 
         if try_route_addrs:
@@ -334,7 +357,13 @@ class KillSwitch:
                 "ipv6.addresses", self.ipv6_dummy_addrs,
                 "ipv6.gateway", self.ipv6_dummy_gateway,
                 "ipv4.route-metric", "97",
-                "ipv6.route-metric", "97"
+                "ipv6.route-metric", "97",
+                "ipv4.dns-priority", "-1500",
+                "ipv6.dns-priority", "-1500",
+                "ipv4.ignore-auto-dns", "yes",
+                "ipv6.ignore-auto-dns", "yes",
+                "ipv4.dns", "0.0.0.0",
+                "ipv6.dns", "::1"
             ]
 
         logger.info(subprocess_command)
@@ -372,7 +401,7 @@ class KillSwitch:
             conn_name (string): connection name (uid)
         """
         self.update_connection_status()
-        conn_dict = self.dbus_wrapper.search_for_connection( # noqa
+        conn_dict = self.nm_wrapper.search_for_connection( # noqa
             conn_name,
             return_device_path=True,
             return_settings_path=True
@@ -390,7 +419,7 @@ class KillSwitch:
             settings_path = str(conn_dict.get("settings_path"))
 
             try:
-                active_conn = self.dbus_wrapper.activate_connection(
+                active_conn = self.nm_wrapper.activate_connection(
                     settings_path, device_path
                 )
             except dbus.exceptions.DBusException as e:
@@ -415,7 +444,7 @@ class KillSwitch:
             conn_name (string): connection name (uid)
         """
         self.update_connection_status()
-        active_conn_dict = self.dbus_wrapper.search_for_connection( # noqa
+        active_conn_dict = self.nm_wrapper.search_for_connection( # noqa
             conn_name, is_active=True,
             return_active_conn_path=True
         )
@@ -426,7 +455,7 @@ class KillSwitch:
         ):
             active_conn_path = str(active_conn_dict.get("active_conn_path"))
             try:
-                self.dbus_wrapper.disconnect_connection(
+                self.nm_wrapper.disconnect_connection(
                     active_conn_path
                 )
             except dbus.exceptions.DBusException as e:
@@ -437,6 +466,8 @@ class KillSwitch:
 
     def delete_connection(self, conn_name):
         """Delete a connection based on connection name.
+
+        If it fails to delete the connection, it will attempt to deactivate it.
 
         Args:
             conn_name (string): connection name (uid)
@@ -464,8 +495,8 @@ class KillSwitch:
 
     def update_connection_status(self):
         """Update connection/interface status."""
-        all_conns = self.dbus_wrapper.get_all_conns()
-        active_conns = self.dbus_wrapper.get_all_active_conns()
+        all_conns = self.nm_wrapper.get_all_connections()
+        active_conns = self.nm_wrapper.get_all_active_connections()
         self.interface_state_tracker[self.ks_conn_name][KillSwitchInterfaceTrackerEnum.EXISTS] = False # noqa
         self.interface_state_tracker[self.routed_conn_name][KillSwitchInterfaceTrackerEnum.EXISTS] = False  # noqa
         self.interface_state_tracker[self.ks_conn_name][KillSwitchInterfaceTrackerEnum.IS_RUNNING] = False # noqa
@@ -473,7 +504,7 @@ class KillSwitch:
 
         for conn in all_conns:
             try:
-                conn_name = str(self.dbus_wrapper.get_all_conn_settings(
+                conn_name = str(self.nm_wrapper.get_settings_from_connection(
                     conn
                 )["connection"]["id"])
             except dbus.exceptions.DBusException:
@@ -486,7 +517,7 @@ class KillSwitch:
 
         for active_conn in active_conns:
             try:
-                conn_name = str(self.dbus_wrapper.get_active_conn_props(
+                conn_name = str(self.nm_wrapper.get_active_connection_properties(
                     active_conn
                 )["Id"])
             except dbus.exceptions.DBusException:
@@ -521,7 +552,7 @@ class KillSwitch:
                 )
             )
             logger.error(
-                "[!] {}: {}. Raising exception.".format(
+                "{}: {}. Raising exception.".format(
                     exception,
                     subprocess_outpout
                 )
@@ -531,18 +562,27 @@ class KillSwitch:
                 subprocess_outpout
             )
 
+    def _ensure_connectivity_check_is_disabled(self):
+        conn_check = self.connectivity_check()
+
+        if len(conn_check) > 0:
+            logger.info("Attempting to disable connectivity check")
+            self.disable_connectivity_check(
+                conn_check[0], conn_check[1]
+            )
+
     def connectivity_check(self):
         (
             is_conn_check_available,
             is_conn_check_enabled,
-        ) = self.check_status_connectivity_check()
+        ) = self.get_status_connectivity_check()
 
         if not is_conn_check_enabled:
-            return None
+            return tuple()
 
         if not is_conn_check_available:
             logger.error(
-                "[!] AvailableConnectivityCheckError: "
+                "AvailableConnectivityCheckError: "
                 + "Unable to change connectivity check for killswitch."
                 + "Raising exception."
             )
@@ -552,9 +592,9 @@ class KillSwitch:
 
         return is_conn_check_available, is_conn_check_enabled
 
-    def check_status_connectivity_check(self):
+    def get_status_connectivity_check(self):
         """Check status of NM connectivity check."""
-        nm_props = self.dbus_wrapper.get_network_manager_properties()
+        nm_props = self.nm_wrapper.get_network_manager_properties()
         is_conn_check_available = nm_props["ConnectivityCheckAvailable"]
         is_conn_check_enabled = nm_props["ConnectivityCheckEnabled"]
 
@@ -573,16 +613,16 @@ class KillSwitch:
         """Disable NetworkManager connectivity check."""
         if is_conn_check_enabled:
             logger.info("Disabling connectivity check")
-            nm = self.dbus_wrapper.get_network_manager_properties_interface() # noqa
+            nm = self.nm_wrapper.get_network_manager_properties_interface() # noqa
             nm.Set(
                 "org.freedesktop.NetworkManager",
                 "ConnectivityCheckEnabled",
                 False
             )
-            nm_props = self.dbus_wrapper.get_network_manager_properties()
+            nm_props = self.nm_wrapper.get_network_manager_properties()
             if nm_props["ConnectivityCheckEnabled"]:
                 logger.error(
-                    "[!] DisableConnectivityCheckError: "
+                    "DisableConnectivityCheckError: "
                     + "Can not disable connectivity check for killswitch."
                     + "Raising exception."
                 )

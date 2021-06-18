@@ -7,7 +7,7 @@ from ...constants import (IPv6_DUMMY_ADDRESS, IPv6_DUMMY_GATEWAY,
                           IPv6_LEAK_PROTECTION_IFACE_NAME)
 from ...enums import KillSwitchActionEnum, KillSwitchInterfaceTrackerEnum
 from ...logger import logger
-from ..dbus.dbus_wrapper import DbusWrapper
+from ..dbus.dbus_network_manager_wrapper import NetworkManagerUnitWrapper
 from ..subprocess_wrapper import subprocess
 
 
@@ -25,7 +25,7 @@ class IPv6LeakProtection:
 
     def __init__(
         self,
-        dbus_wrapper=DbusWrapper,
+        nm_wrapper=NetworkManagerUnitWrapper,
         iface_name=IPv6_LEAK_PROTECTION_IFACE_NAME,
         conn_name=IPv6_LEAK_PROTECTION_CONN_NAME,
         ipv6_dummy_addrs=IPv6_DUMMY_ADDRESS,
@@ -41,8 +41,9 @@ class IPv6LeakProtection:
                 KillSwitchInterfaceTrackerEnum.IS_RUNNING: False
             }
         }
-        self.dbus_wrapper = dbus_wrapper(self.bus)
+        self.nm_wrapper = nm_wrapper(self.bus)
         logger.info("Intialized IPv6 leak protection manager")
+        self.get_status_connectivity_check()
 
     def manage(self, action):
         """Manage IPv6 leak protection.
@@ -51,6 +52,7 @@ class IPv6LeakProtection:
             action (string): either enable or disable
         """
         logger.info("Manage IPV6: {}".format(action))
+        self._ensure_connectivity_check_is_disabled()
         self.update_connection_status()
 
         if (
@@ -59,7 +61,10 @@ class IPv6LeakProtection:
         ):
             self.add_leak_protection()
         elif action == KillSwitchActionEnum.DISABLE:
-            self.remove_leak_protection()
+            try:
+                self.remove_leak_protection()
+            except: # noqa
+                self.deactivate_connection()
         else:
             raise exceptions.IPv6LeakProtectionOptionError(
                 "Incorrect option for IPv6 leak manager"
@@ -75,7 +80,13 @@ class IPv6LeakProtection:
             "ipv6.method", "manual",
             "ipv6.addresses", IPv6_DUMMY_ADDRESS,
             "ipv6.gateway", IPv6_DUMMY_GATEWAY,
-            "ipv6.route-metric", "95"
+            "ipv6.route-metric", "95",
+            "ipv4.dns-priority", "-1500",
+            "ipv6.dns-priority", "-1500",
+            "ipv4.ignore-auto-dns", "yes",
+            "ipv6.ignore-auto-dns", "yes",
+            "ipv4.dns", "0.0.0.0",
+            "ipv6.dns", "::1"
         ]
 
         if not self.interface_state_tracker[self.conn_name][
@@ -102,11 +113,38 @@ class IPv6LeakProtection:
         if self.interface_state_tracker[self.conn_name][
             KillSwitchInterfaceTrackerEnum.EXISTS
         ]:
-            self.run_subprocess(
-                exceptions.DisableIPv6LeakProtectionError,
-                "Unable to remove IPv6 leak protection connection/interface",
-                subprocess_command
-            )
+            try:
+                self.run_subprocess(
+                    exceptions.DisableIPv6LeakProtectionError,
+                    "Unable to remove IPv6 leak protection connection/interface",
+                    subprocess_command
+                )
+            except exceptions.DisableIPv6LeakProtectionError as e:
+                logger.exception(e)
+                self.deactivate_connection()
+
+    def deactivate_connection(self):
+        """Deactivate a connection."""
+        self.update_connection_status()
+        active_conn_dict = self.nm_wrapper.search_for_connection(
+            IPv6_LEAK_PROTECTION_CONN_NAME, is_active=True,
+            return_active_conn_path=True
+        )
+        if (
+            self.interface_state_tracker[IPv6_LEAK_PROTECTION_CONN_NAME][
+                KillSwitchInterfaceTrackerEnum.IS_RUNNING
+            ] and active_conn_dict
+        ):
+            active_conn_path = str(active_conn_dict.get("active_conn_path"))
+            try:
+                self.nm_wrapper.disconnect_connection(
+                    active_conn_path
+                )
+            except dbus.exceptions.DBusException as e:
+                logger.exception(e)
+                raise exceptions.DectivateKillswitchError(
+                    "Unable to deactivate {}".format(IPv6_LEAK_PROTECTION_CONN_NAME)
+                )
 
     def run_subprocess(self, exception, exception_msg, *args):
         """Run provided input via subprocess.
@@ -131,7 +169,7 @@ class IPv6LeakProtection:
                 )
             )
             logger.error(
-                "[!] {}: {}. Raising exception.".format(
+                "{}: {}. Raising exception.".format(
                     exception,
                     subprocess_outpout
                 )
@@ -140,8 +178,8 @@ class IPv6LeakProtection:
 
     def update_connection_status(self):
         """Update connection/interface status."""
-        all_conns = self.dbus_wrapper.get_all_conns()
-        active_conns = self.dbus_wrapper.get_all_active_conns()
+        all_conns = self.nm_wrapper.get_all_connections()
+        active_conns = self.nm_wrapper.get_all_active_connections()
 
         self.interface_state_tracker[self.conn_name][
             KillSwitchInterfaceTrackerEnum.EXISTS
@@ -153,7 +191,7 @@ class IPv6LeakProtection:
 
         for conn in all_conns:
             try:
-                conn_name = str(self.dbus_wrapper.get_all_conn_settings(
+                conn_name = str(self.nm_wrapper.get_settings_from_connection(
                     conn
                 )["connection"]["id"])
             except dbus.exceptions.DBusException:
@@ -166,7 +204,7 @@ class IPv6LeakProtection:
 
         for active_conn in active_conns:
             try:
-                conn_name = str(self.dbus_wrapper.get_active_conn_props(
+                conn_name = str(self.nm_wrapper.get_active_connection_properties(
                     conn
                 )["connection"]["id"])
             except dbus.exceptions.DBusException:
@@ -178,3 +216,73 @@ class IPv6LeakProtection:
                 ] = True
 
         logger.info("IPv6 status: {}".format(self.interface_state_tracker))
+
+    def _ensure_connectivity_check_is_disabled(self):
+        conn_check = self.connectivity_check()
+
+        if len(conn_check) > 0:
+            logger.info("Attempting to disable connectivity check")
+            self.disable_connectivity_check(
+                conn_check[0], conn_check[1]
+            )
+
+    def connectivity_check(self):
+        (
+            is_conn_check_available,
+            is_conn_check_enabled,
+        ) = self.get_status_connectivity_check()
+
+        if not is_conn_check_enabled:
+            return tuple()
+
+        if not is_conn_check_available:
+            logger.error(
+                "AvailableConnectivityCheckError: "
+                + "Unable to change connectivity check for IPv6 Leak."
+                + "Raising exception."
+            )
+            raise exceptions.AvailableConnectivityCheckError(
+                "Unable to change connectivity check for IPv6 Leak"
+            )
+
+        return is_conn_check_available, is_conn_check_enabled
+
+    def get_status_connectivity_check(self):
+        """Check status of NM connectivity check."""
+        nm_props = self.nm_wrapper.get_network_manager_properties()
+        is_conn_check_available = nm_props["ConnectivityCheckAvailable"]
+        is_conn_check_enabled = nm_props["ConnectivityCheckEnabled"]
+
+        logger.info(
+            "Conn check available ({}) - Conn check enabled ({})".format(
+                is_conn_check_available,
+                is_conn_check_enabled
+            )
+        )
+
+        return is_conn_check_available, is_conn_check_enabled
+
+    def disable_connectivity_check(
+        self, is_conn_check_available, is_conn_check_enabled
+    ):
+        """Disable NetworkManager connectivity check."""
+        if is_conn_check_enabled:
+            logger.info("Disabling connectivity check")
+            nm = self.nm_wrapper.get_network_manager_settings_interface() # noqa
+            nm.Set(
+                "org.freedesktop.NetworkManager",
+                "ConnectivityCheckEnabled",
+                False
+            )
+            nm_props = self.nm_wrapper.get_network_manager_properties()
+            if nm_props["ConnectivityCheckEnabled"]:
+                logger.error(
+                    "DisableConnectivityCheckError: "
+                    + "Can not disable connectivity check for IPv6 Leak."
+                    + "Raising exception."
+                )
+                raise exceptions.DisableConnectivityCheckError(
+                    "Can not disable connectivity check for IPv6 Leak"
+                )
+
+            logger.info("Check connectivity has been 'disabled'")
