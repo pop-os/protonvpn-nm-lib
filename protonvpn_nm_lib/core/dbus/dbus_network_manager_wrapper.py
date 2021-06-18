@@ -1,21 +1,8 @@
 from ...logger import logger
 from ...constants import VIRTUAL_DEVICE_NAME
-from enum import Enum
 from .dbus_wrapper import DbusWrapper
 from dbus import exceptions as dbus_excp
-
-
-class SystemBusNMObjectPathEnum(Enum):
-    NETWORK_MANAGER = "/org/freedesktop/NetworkManager"
-    NM_SETTINGS = "/org/freedesktop/NetworkManager/Settings"
-
-
-class SystemBusNMInterfaceEnum(Enum):
-    NETWORK_MANAGER = "org.freedesktop.NetworkManager"
-    NM_CONNECTION_SETTINGS = "org.freedesktop.NetworkManager.Settings.Connection"
-    NM_SETTINGS = "org.freedesktop.NetworkManager.Settings"
-    NM_CONNECTION_ACTIVE = "org.freedesktop.NetworkManager.Connection.Active"
-    NM_DEVICE = "org.freedesktop.NetworkManager.Device"
+from ...enums import SystemBusNMInterfaceEnum, SystemBusNMObjectPathEnum
 
 
 class NetworkManagerUnitWrapper:
@@ -48,6 +35,10 @@ class NetworkManagerUnitWrapper:
             - device_path
             - active_conn_path
         """
+        logger.info("Search for connection: ({} {} {} {} {} {})".format(
+            conn_name, interface_name, is_active, return_settings_path,
+            return_device_path, return_active_conn_path
+        ))
         if is_active:
             connection_list = self.get_all_active_connections()
         else:
@@ -107,6 +98,7 @@ class NetworkManagerUnitWrapper:
             string | None: either path to device if found
             or None if device was not found not.
         """
+        logger.info("Get connection device path: {}".format(connection_settings_path))
         devices = self._get_all_devices()
         for device in devices:
             device_available_conns = self._get_available_connections_from_device(device)
@@ -149,6 +141,13 @@ class NetworkManagerUnitWrapper:
             if connection was successfully activated
             or None if not.
         """
+        logger.info(
+            "Activate connection: {} {} {}".format(
+                connection_settings_path,
+                device_path,
+                specific_object
+            )
+        )
         nm_interface = self._get_network_manager_interface()
         active_conn_path = nm_interface.ActivateConnection(
             connection_settings_path,
@@ -164,6 +163,7 @@ class NetworkManagerUnitWrapper:
         Args:
             connection_path (string): path to active connection
         """
+        logger.info("Disconnect connection: {}".format(connection_path))
         nm_interface = self._get_network_manager_interface()
         nm_interface.DeactivateConnection(connection_path)
 
@@ -173,6 +173,7 @@ class NetworkManagerUnitWrapper:
         Args:
             connection_path (string): path to active connection
         """
+        logger.info("Delete connection: {}".format(connection_settings_path))
         connection_settings_interface = self._get_connection_settings_interface(
             connection_settings_path
         )
@@ -188,6 +189,7 @@ class NetworkManagerUnitWrapper:
             [0]: bool
             [1]: None | dict with all connection settings
         """
+        logger.info("Check active VPN connection: {}".format(active_conn))
         active_conn_all_settings = [False, None]
 
         if active_conn is None or len(active_conn) < 1:
@@ -223,6 +225,7 @@ class NetworkManagerUnitWrapper:
             [1]: None | int (NMActiveConnectionState)
             [2]: None | string (active connection path)
         """
+        logger.info("Check if VPN is being prepared")
         all_active_conns = self.get_all_active_connections()
 
         protonvpn_conn_info = [False, None, None]
@@ -371,6 +374,7 @@ class NetworkManagerUnitWrapper:
         return None
 
     def _get_connection_settings_interface(self, connection_object):
+        logger.info("Getting connection settings interface: {}".format(connection_object))
         iface = self.__dbus_wrapper.get_proxy_object_interface(
             self.__get_proxy_object(connection_object),
             SystemBusNMInterfaceEnum.NM_CONNECTION_SETTINGS.value
@@ -386,6 +390,7 @@ class NetworkManagerUnitWrapper:
         Returns:
             dict: properties of an active connection
         """
+        logger.info("Getting active connection properties: {}".format(active_conn))
         iface = self.__dbus_wrapper.get_proxy_object_properties_interface(
             self.__get_proxy_object(active_conn)
         )
@@ -406,6 +411,7 @@ class NetworkManagerUnitWrapper:
                 tuple: dict with properties is returned
                     and also the interface to the connection
         """
+        logger.info("Get settings from connection: {}".format(connection_path))
         iface = self._get_connection_settings_interface(connection_path)
         return iface.GetSettings()
 
@@ -415,6 +421,7 @@ class NetworkManagerUnitWrapper:
         Returns:
             list(string): yields path to all connections
         """
+        logger.info("Get all connection")
         iface = self.__dbus_wrapper.get_proxy_object_interface(
             self.__get_proxy_object(SystemBusNMObjectPathEnum.NM_SETTINGS.value),
             SystemBusNMInterfaceEnum.NM_SETTINGS.value
@@ -429,6 +436,7 @@ class NetworkManagerUnitWrapper:
         Returns:
             list(string): yields path to active connections
         """
+        logger.info("Get all active connections")
         iface = self.__dbus_wrapper.get_proxy_object_properties_interface(
             self.__get_proxy_object(SystemBusNMObjectPathEnum.NETWORK_MANAGER.value)
         )
@@ -446,6 +454,7 @@ class NetworkManagerUnitWrapper:
         Returns:
             Dict: contains all network manager properties
         """
+        logger.info("Get NetworkManager properties")
         nm_interface = self.__dbus_wrapper.get_proxy_object_properties_interface(
             self.get_network_manager_proxy_object()
         )
@@ -457,9 +466,17 @@ class NetworkManagerUnitWrapper:
         return nm_properties
 
     def get_network_manager_settings_interface(self):
+        logger.info("Get NetworkManager settings interface")
         return self.__get_proxy_object(SystemBusNMObjectPathEnum.NM_SETTINGS.value)
 
     def connect_network_manager_object_to_signal(self, signal_name, method):
+        """Connect a signal to network manager object.
+
+        Args:
+            signal_name (string): the name of the signal to listen to
+            method (func): the method that received the signal
+        """
+        logger.info("Connect network manager to signal: {} {}".format(signal_name, method))
         interface = self._get_network_manager_interface()
         interface.connect_to_signal(
             signal_name, method
@@ -483,9 +500,11 @@ class NetworkManagerUnitWrapper:
         Returns:
             dbus.proxies.ProxyObject: network manager proxy object
         """
+        logger.info("Get NetworkManager proxy object")
         return self.__get_proxy_object(SystemBusNMObjectPathEnum.NETWORK_MANAGER.value)
 
     def _get_all_devices(self):
+        logger.info("Get all devices")
         nm_interface = self.__dbus_wrapper.get_proxy_object_properties_interface(
             self.get_network_manager_proxy_object()
         )
@@ -496,6 +515,7 @@ class NetworkManagerUnitWrapper:
         return nm_properties["AllDevices"]
 
     def _get_available_connections_from_device(self, device):
+        logger.info("Get available connections from device: {}".format(device))
         device_props_interface = self.__dbus_wrapper.get_proxy_object_properties_interface(
             self.__get_proxy_object(device)
         )
