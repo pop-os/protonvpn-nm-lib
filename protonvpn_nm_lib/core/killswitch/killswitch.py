@@ -293,8 +293,12 @@ class KillSwitch:
             "ipv6.gateway", self.ipv6_dummy_gateway,
             "ipv4.route-metric", "98",
             "ipv6.route-metric", "98",
-            "ipv4.dns-priority", "-1400",
-            "ipv6.dns-priority", "-1400",
+            "ipv4.dns-priority", "-1500",
+            "ipv6.dns-priority", "-1500",
+            "ipv4.ignore-auto-dns", "yes",
+            "ipv6.ignore-auto-dns", "yes",
+            "ipv4.dns", "0.0.0.0",
+            "ipv6.dns", "::1"
         ]
         self.update_connection_status()
         if not self.interface_state_tracker[self.ks_conn_name][
@@ -334,8 +338,12 @@ class KillSwitch:
             "ipv4.route-metric", "97",
             "ipv6.route-metric", "97",
             "ipv4.routes", route_data_str,
-            "ipv4.dns-priority", "-1400",
-            "ipv6.dns-priority", "-1400",
+            "ipv4.dns-priority", "-1500",
+            "ipv6.dns-priority", "-1500",
+            "ipv4.ignore-auto-dns", "yes",
+            "ipv6.ignore-auto-dns", "yes",
+            "ipv4.dns", "0.0.0.0",
+            "ipv6.dns", "::1"
         ]
 
         if try_route_addrs:
@@ -350,8 +358,12 @@ class KillSwitch:
                 "ipv6.gateway", self.ipv6_dummy_gateway,
                 "ipv4.route-metric", "97",
                 "ipv6.route-metric", "97",
-                "ipv4.dns-priority", "-1400",
-                "ipv6.dns-priority", "-1400",
+                "ipv4.dns-priority", "-1500",
+                "ipv6.dns-priority", "-1500",
+                "ipv4.ignore-auto-dns", "yes",
+                "ipv6.ignore-auto-dns", "yes",
+                "ipv4.dns", "0.0.0.0",
+                "ipv6.dns", "::1"
             ]
 
         logger.info(subprocess_command)

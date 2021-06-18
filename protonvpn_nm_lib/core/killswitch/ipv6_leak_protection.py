@@ -81,8 +81,12 @@ class IPv6LeakProtection:
             "ipv6.addresses", IPv6_DUMMY_ADDRESS,
             "ipv6.gateway", IPv6_DUMMY_GATEWAY,
             "ipv6.route-metric", "95",
-            "ipv4.dns-priority", "-1400",
-            "ipv6.dns-priority", "-1400",
+            "ipv4.dns-priority", "-1500",
+            "ipv6.dns-priority", "-1500",
+            "ipv4.ignore-auto-dns", "yes",
+            "ipv6.ignore-auto-dns", "yes",
+            "ipv4.dns", "0.0.0.0",
+            "ipv6.dns", "::1"
         ]
 
         if not self.interface_state_tracker[self.conn_name][
