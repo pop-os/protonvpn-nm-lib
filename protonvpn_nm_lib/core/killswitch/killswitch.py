@@ -292,7 +292,9 @@ class KillSwitch:
             "ipv6.addresses", self.ipv6_dummy_addrs,
             "ipv6.gateway", self.ipv6_dummy_gateway,
             "ipv4.route-metric", "98",
-            "ipv6.route-metric", "98"
+            "ipv6.route-metric", "98",
+            "ipv4.dns-priority", "-1400",
+            "ipv6.dns-priority", "-1400",
         ]
         self.update_connection_status()
         if not self.interface_state_tracker[self.ks_conn_name][
@@ -331,7 +333,9 @@ class KillSwitch:
             "ipv6.gateway", self.ipv6_dummy_gateway,
             "ipv4.route-metric", "97",
             "ipv6.route-metric", "97",
-            "ipv4.routes", route_data_str
+            "ipv4.routes", route_data_str,
+            "ipv4.dns-priority", "-1400",
+            "ipv6.dns-priority", "-1400",
         ]
 
         if try_route_addrs:
@@ -345,7 +349,9 @@ class KillSwitch:
                 "ipv6.addresses", self.ipv6_dummy_addrs,
                 "ipv6.gateway", self.ipv6_dummy_gateway,
                 "ipv4.route-metric", "97",
-                "ipv6.route-metric", "97"
+                "ipv6.route-metric", "97",
+                "ipv4.dns-priority", "-1400",
+                "ipv6.dns-priority", "-1400",
             ]
 
         logger.info(subprocess_command)
