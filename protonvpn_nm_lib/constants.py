@@ -12,7 +12,7 @@ from .enums import (KillswitchStatusEnum, NetshieldStatusEnum,
                     ProtocolImplementationEnum, SecureCoreStatusEnum,
                     UserSettingConnectionEnum, UserSettingStatusEnum)
 
-APP_VERSION = "3.2.2"
+APP_VERSION = "3.3.0"
 
 IPv6_LEAK_PROTECTION_CONN_NAME = "pvpn-ipv6leak-protection"
 IPv6_LEAK_PROTECTION_IFACE_NAME = "ipv6leakintrf0"
@@ -88,6 +88,8 @@ TEMPLATES = os.path.join(PWD, "templates")
 # Constant filepaths
 APP_CONFIG = os.path.join(PWD, "app.cfg")
 LOGFILE = os.path.join(PROTON_XDG_CACHE_HOME_LOGS, "protonvpn.log")
+NETWORK_MANAGER_LOGFILE = os.path.join(PROTON_XDG_CACHE_HOME_LOGS, "network_manager.service.log")
+PROTONVPN_RECONNECT_LOGFILE = os.path.join(PROTON_XDG_CACHE_HOME_LOGS, "protonvpn_reconnect.service.log") # noqa
 
 LOCAL_SERVICE_FILEPATH = os.path.join(
     XDG_CONFIG_SYSTEMD_USER, "protonvpn_reconnect.service"

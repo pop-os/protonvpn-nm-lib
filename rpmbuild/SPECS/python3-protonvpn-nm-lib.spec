@@ -1,6 +1,6 @@
 %define unmangled_name protonvpn-nm-lib
-%define version 3.2.2
-%define release 11
+%define version 3.3.0
+%define release 1
 
 Prefix: %{_prefix}
 
@@ -31,6 +31,8 @@ Requires: python3-distro
 Requires: python3-jinja2
 Requires: python3-pyxdg
 Requires: python3-dbus
+Requires: python3-systemd
+Requires: xdg-utils
 
 %{?python_disable_dependency_generator}
 
@@ -56,8 +58,12 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
-* Tue Jun 08 2021 Proton Technologies AG <opensource@proton.me> 3.2.2-1
+* Fri Jun 18 2021 Proton Technologies AG <opensource@proton.me> 3.3.0-1
+- Feature: Generate logs and open folder with logs
+
+* Tue Jun 08 2021 Proton Technologies AG <opensource@proton.me> 3.2.2-11
 - Bugfix: Fix various Kill Switch issues
+- Improve: VPN reconnector after suspend
 
 * Fri Jun 04 2021 Proton Technologies AG <opensource@proton.me> 3.2.1-1
 - Bugfix: Connect to re-configured Secure Core servers

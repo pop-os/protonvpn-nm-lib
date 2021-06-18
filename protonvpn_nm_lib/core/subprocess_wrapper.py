@@ -3,7 +3,7 @@ import platform
 import subprocess as _subprocess
 
 
-class SubprocessWrapper():
+class SubprocessWrapper:
     """Subprocess wrapper.
     This should be used instead of directly reling on subprocess,
     as it assures that the specified executables are safe to use.
@@ -18,7 +18,7 @@ class SubprocessWrapper():
         is effectivtly a layer on top of subprocess.
     """
 
-    _acceptable_binaries = {"nmcli", "systemctl", "clear"}
+    _acceptable_binaries = {"nmcli", "systemctl", "clear", "xdg-open"}
     PIPE = _subprocess.PIPE
     STDOUT = _subprocess.STDOUT
     DEVNULL = _subprocess.DEVNULL
