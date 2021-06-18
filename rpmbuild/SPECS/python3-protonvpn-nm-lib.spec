@@ -1,6 +1,6 @@
 %define unmangled_name protonvpn-nm-lib
 %define version 3.2.2
-%define release 9
+%define release 10
 
 Prefix: %{_prefix}
 
