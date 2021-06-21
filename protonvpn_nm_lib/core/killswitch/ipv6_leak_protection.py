@@ -81,11 +81,11 @@ class IPv6LeakProtection:
             "ipv6.addresses", IPv6_DUMMY_ADDRESS,
             "ipv6.gateway", IPv6_DUMMY_GATEWAY,
             "ipv6.route-metric", "95",
-            "ipv4.dns-priority", KILLSWITCH_DNS_PRIORITY_VALUE,
+            # "ipv4.dns-priority", KILLSWITCH_DNS_PRIORITY_VALUE,
             "ipv6.dns-priority", KILLSWITCH_DNS_PRIORITY_VALUE,
-            "ipv4.ignore-auto-dns", "yes",
+            # "ipv4.ignore-auto-dns", "yes",
             "ipv6.ignore-auto-dns", "yes",
-            "ipv4.dns", "0.0.0.0",
+            # "ipv4.dns", "0.0.0.0",
             "ipv6.dns", "::1"
         ]
 
