@@ -1,7 +1,7 @@
 from getpass import getuser
 
 from ..... import exceptions
-from .....constants import CONFIG_STATUSES, NETSHIELD_STATUS_DICT
+from .....constants import CONFIG_STATUSES, NETSHIELD_STATUS_DICT, VPN_DNS_PRIORITY_VALUE
 from .....enums import UserSettingStatusEnum, ClientSuffixEnum
 from .....logger import logger
 from ....environment import ExecutionEnvironment
@@ -190,13 +190,10 @@ class ConfigureOpenVPNConnection:
         ipv4_config = self.connection.get_setting_ip4_config()
         ipv6_config = self.connection.get_setting_ip6_config()
 
+        ipv4_config.props.dns_priority = VPN_DNS_PRIORITY_VALUE
+        ipv6_config.props.dns_priority = VPN_DNS_PRIORITY_VALUE
         if self.dns_status == UserSettingStatusEnum.CUSTOM:
-
             self.apply_custom_dns_configuration(
-                ipv4_config, ipv6_config
-            )
-        else:
-            self.apply_automatic_dns_configuration(
                 ipv4_config, ipv6_config
             )
 
@@ -204,17 +201,10 @@ class ConfigureOpenVPNConnection:
         if self.dns_status == UserSettingStatusEnum.DISABLED:
             self.dns_status = UserSettingStatusEnum.ENABLED
 
-    def apply_automatic_dns_configuration(self, ipv4_config, ipv6_config):
-        logger.info("Applying automatic DNS")
-        ipv4_config.props.dns_priority = -1500
-        ipv6_config.props.dns_priority = -1500
-
     def apply_custom_dns_configuration(self, ipv4_config, ipv6_config):
         custom_dns = self.custom_dns
         ipv4_config.props.ignore_auto_dns = True
         ipv6_config.props.ignore_auto_dns = True
 
         logger.info("Applying custom DNS: {}".format(custom_dns))
-        ipv4_config.props.dns_priority = -1500
-        ipv6_config.props.dns_priority = -1500
         ipv4_config.props.dns = custom_dns
