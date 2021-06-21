@@ -13,6 +13,7 @@ class KeyringBackend(SubclassesMixin, metaclass=ABCMeta):
         subclasses.sort(key=lambda x: x.priority, reverse=True)
         for subclass in subclasses:
             try:
+                logger.info("Using \"{}\" keyring".format(subclass))
                 return subclass()
             except: # noqa
                 pass
