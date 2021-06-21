@@ -114,6 +114,8 @@ class NetworkManagerClient(ConnectionBackend, NMClientMixin):
                 self.disconnect()
             except: # noqa
                 pass
+        else:
+            self.daemon_reconnector.start_daemon_reconnector()
 
         return response
 

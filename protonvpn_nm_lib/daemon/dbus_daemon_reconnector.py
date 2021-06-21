@@ -202,6 +202,11 @@ class ProtonVPNReconnector:
             active_connection (string): path to active connection
             vpn_interface (dbus.Proxy): proxy interface to vpn connection
         """
+        logger.info(
+            "Setting up ProtonVPN connecton: {} {}".format(
+                active_connection, vpn_interface
+            )
+        )
         new_con = self.nm_wrapper.activate_connection(
             vpn_interface,
             dbus.ObjectPath("/"),
