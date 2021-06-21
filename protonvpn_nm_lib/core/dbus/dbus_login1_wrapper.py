@@ -1,6 +1,8 @@
+from .dbus_logger import logger
+
+from ...enums import (SystemBusLogin1InterfaceEnum,
+                      SystemBusLogin1ObjectPathEnum)
 from .dbus_wrapper import DbusWrapper
-from ...logger import logger
-from ...enums import SystemBusLogin1InterfaceEnum, SystemBusLogin1ObjectPathEnum
 
 
 class Login1UnitWrapper:

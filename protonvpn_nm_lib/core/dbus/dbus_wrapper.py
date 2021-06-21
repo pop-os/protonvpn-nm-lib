@@ -1,8 +1,6 @@
-import dbus
+from .dbus_logger import logger
 
-from ...logger import logger
-# from ...constants import VIRTUAL_DEVICE_NAME
-# from enum import Enum
+import dbus
 
 
 class DbusWrapper:

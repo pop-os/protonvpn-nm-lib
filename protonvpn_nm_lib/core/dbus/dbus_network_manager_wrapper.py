@@ -1,8 +1,10 @@
-from ...logger import logger
-from ...constants import VIRTUAL_DEVICE_NAME
-from .dbus_wrapper import DbusWrapper
+from .dbus_logger import logger
+
 from dbus import exceptions as dbus_excp
+
+from ...constants import VIRTUAL_DEVICE_NAME
 from ...enums import SystemBusNMInterfaceEnum, SystemBusNMObjectPathEnum
+from .dbus_wrapper import DbusWrapper
 
 
 class NetworkManagerUnitWrapper:
