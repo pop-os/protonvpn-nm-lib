@@ -175,8 +175,7 @@ class ProtonVPNReconnector:
         elif state in [
             VPNConnectionStateEnum.FAILED,
             VPNConnectionStateEnum.DISCONNECTED
-            and not self.user_session_locked
-        ]:
+        ] and not self.user_session_locked:
             # reconnect if haven't reached max_attempts
             if (
                 not self.max_attempts
