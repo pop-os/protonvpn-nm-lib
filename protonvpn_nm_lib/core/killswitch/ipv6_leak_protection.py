@@ -4,7 +4,7 @@ from dbus.mainloop.glib import DBusGMainLoop
 from ... import exceptions
 from ...constants import (IPv6_DUMMY_ADDRESS, IPv6_DUMMY_GATEWAY,
                           IPv6_LEAK_PROTECTION_CONN_NAME,
-                          IPv6_LEAK_PROTECTION_IFACE_NAME)
+                          IPv6_LEAK_PROTECTION_IFACE_NAME, KILLSWITCH_DNS_PRIORITY_VALUE)
 from ...enums import KillSwitchActionEnum, KillSwitchInterfaceTrackerEnum
 from ...logger import logger
 from ..dbus.dbus_network_manager_wrapper import NetworkManagerUnitWrapper
@@ -81,11 +81,11 @@ class IPv6LeakProtection:
             "ipv6.addresses", IPv6_DUMMY_ADDRESS,
             "ipv6.gateway", IPv6_DUMMY_GATEWAY,
             "ipv6.route-metric", "95",
-            "ipv4.dns-priority", "-1500",
-            "ipv6.dns-priority", "-1500",
-            "ipv4.ignore-auto-dns", "yes",
+            # "ipv4.dns-priority", KILLSWITCH_DNS_PRIORITY_VALUE,
+            "ipv6.dns-priority", KILLSWITCH_DNS_PRIORITY_VALUE,
+            # "ipv4.ignore-auto-dns", "yes",
             "ipv6.ignore-auto-dns", "yes",
-            "ipv4.dns", "0.0.0.0",
+            # "ipv4.dns", "0.0.0.0",
             "ipv6.dns", "::1"
         ]
 

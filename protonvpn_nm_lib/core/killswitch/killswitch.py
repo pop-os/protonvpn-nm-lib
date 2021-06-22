@@ -7,7 +7,7 @@ from ... import exceptions
 from ...constants import (KILLSWITCH_CONN_NAME, KILLSWITCH_INTERFACE_NAME,
                           ROUTED_CONN_NAME, ROUTED_INTERFACE_NAME,
                           IPv4_DUMMY_ADDRESS, IPv4_DUMMY_GATEWAY,
-                          IPv6_DUMMY_ADDRESS, IPv6_DUMMY_GATEWAY)
+                          IPv6_DUMMY_ADDRESS, IPv6_DUMMY_GATEWAY, KILLSWITCH_DNS_PRIORITY_VALUE)
 from ...enums import (KillSwitchActionEnum, KillSwitchInterfaceTrackerEnum,
                       KillswitchStatusEnum)
 from ...logger import logger
@@ -293,8 +293,8 @@ class KillSwitch:
             "ipv6.gateway", self.ipv6_dummy_gateway,
             "ipv4.route-metric", "98",
             "ipv6.route-metric", "98",
-            "ipv4.dns-priority", "-1500",
-            "ipv6.dns-priority", "-1500",
+            "ipv4.dns-priority", KILLSWITCH_DNS_PRIORITY_VALUE,
+            "ipv6.dns-priority", KILLSWITCH_DNS_PRIORITY_VALUE,
             "ipv4.ignore-auto-dns", "yes",
             "ipv6.ignore-auto-dns", "yes",
             "ipv4.dns", "0.0.0.0",
@@ -338,8 +338,8 @@ class KillSwitch:
             "ipv4.route-metric", "97",
             "ipv6.route-metric", "97",
             "ipv4.routes", route_data_str,
-            "ipv4.dns-priority", "-1500",
-            "ipv6.dns-priority", "-1500",
+            "ipv4.dns-priority", KILLSWITCH_DNS_PRIORITY_VALUE,
+            "ipv6.dns-priority", KILLSWITCH_DNS_PRIORITY_VALUE,
             "ipv4.ignore-auto-dns", "yes",
             "ipv6.ignore-auto-dns", "yes",
             "ipv4.dns", "0.0.0.0",
@@ -358,8 +358,8 @@ class KillSwitch:
                 "ipv6.gateway", self.ipv6_dummy_gateway,
                 "ipv4.route-metric", "97",
                 "ipv6.route-metric", "97",
-                "ipv4.dns-priority", "-1500",
-                "ipv6.dns-priority", "-1500",
+                "ipv4.dns-priority", KILLSWITCH_DNS_PRIORITY_VALUE,
+                "ipv6.dns-priority", KILLSWITCH_DNS_PRIORITY_VALUE,
                 "ipv4.ignore-auto-dns", "yes",
                 "ipv6.ignore-auto-dns", "yes",
                 "ipv4.dns", "0.0.0.0",

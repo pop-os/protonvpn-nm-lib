@@ -1,6 +1,6 @@
 %define unmangled_name protonvpn-nm-lib
 %define version 3.3.0
-%define release 1
+%define release 3
 
 Prefix: %{_prefix}
 
@@ -58,7 +58,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
-* Fri Jun 18 2021 Proton Technologies AG <opensource@proton.me> 3.3.0-1
+* Fri Jun 18 2021 Proton Technologies AG <opensource@proton.me> 3.3.0-3
 - Feature: Generate logs and open folder with logs
 
 * Tue Jun 08 2021 Proton Technologies AG <opensource@proton.me> 3.2.2-11

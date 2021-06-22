@@ -4,7 +4,6 @@ from ....constants import VIRTUAL_DEVICE_NAME
 from ....enums import (ConnectionStartStatusEnum, KillSwitchActionEnum,
                        KillswitchStatusEnum, VPNConnectionReasonEnum,
                        VPNConnectionStateEnum)
-from ...dbus.dbus_reconnect import DbusReconnect
 from ...environment import ExecutionEnvironment
 from ....logger import logger
 from ...dbus.dbus_login1_wrapper import Login1UnitWrapper
@@ -20,7 +19,6 @@ class MonitorVPNConnectionStart:
         self.failed_attempts = 0
         self.loop = loop
         self.virtual_device_name = VIRTUAL_DEVICE_NAME
-        self.dbus_reconnector = DbusReconnect()
         self.bus = dbus.SystemBus()
         self.nm_wrapper = NetworkManagerUnitWrapper(self.bus)
         self.login1_wrapper = Login1UnitWrapper(self.bus)
@@ -66,14 +64,12 @@ class MonitorVPNConnectionStart:
             self.dbus_response[ConnectionStartStatusEnum.MESSAGE] = msg
             self.dbus_response[ConnectionStartStatusEnum.REASON] = reason
 
-            self.dbus_reconnector.start_daemon_reconnector()
-
             try:
                 env.api_session.update_servers_if_needed()
             except: # noqa
                 # Just skip if servers could not be updated
                 pass
-
+            logger.info("Quitting loop on active ProtonVPN connection")
             self.loop.quit()
         elif state in [
             VPNConnectionStateEnum.FAILED,
@@ -108,7 +104,7 @@ class MonitorVPNConnectionStart:
             self.dbus_response[ConnectionStartStatusEnum.STATE] = state
             self.dbus_response[ConnectionStartStatusEnum.MESSAGE] = msg
             self.dbus_response[ConnectionStartStatusEnum.REASON] = reason
-            self.dbus_reconnector.stop_daemon_reconnector()
+            logger.info("Quitting loop on failed ProtonVPN connection")
             self.loop.quit()
 
     def vpn_signal_handler(self, conn):

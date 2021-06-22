@@ -175,8 +175,7 @@ class ProtonVPNReconnector:
         elif state in [
             VPNConnectionStateEnum.FAILED,
             VPNConnectionStateEnum.DISCONNECTED
-            and not self.user_session_locked
-        ]:
+        ] and not self.user_session_locked:
             # reconnect if haven't reached max_attempts
             if (
                 not self.max_attempts
@@ -203,6 +202,11 @@ class ProtonVPNReconnector:
             active_connection (string): path to active connection
             vpn_interface (dbus.Proxy): proxy interface to vpn connection
         """
+        logger.info(
+            "Setting up ProtonVPN connecton: {} {}".format(
+                active_connection, vpn_interface
+            )
+        )
         new_con = self.nm_wrapper.activate_connection(
             vpn_interface,
             dbus.ObjectPath("/"),
