@@ -1,6 +1,6 @@
 %define unmangled_name protonvpn-nm-lib
-%define version 3.3.0
-%define release 3
+%define version 3.3.1
+%define release 1
 
 Prefix: %{_prefix}
 
@@ -58,6 +58,9 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
+* Tue Jun 22 2021 Proton Technologies AG <opensource@proton.me> 3.3.1-1
+- Hotfix: Force disable connectivity check
+
 * Fri Jun 18 2021 Proton Technologies AG <opensource@proton.me> 3.3.0-3
 - Feature: Generate logs and open folder with logs
 

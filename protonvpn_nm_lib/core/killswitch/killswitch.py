@@ -613,8 +613,8 @@ class KillSwitch:
         """Disable NetworkManager connectivity check."""
         if is_conn_check_enabled:
             logger.info("Disabling connectivity check")
-            nm = self.nm_wrapper.get_network_manager_properties_interface() # noqa
-            nm.Set(
+            nm_methods = self.nm_wrapper.get_network_manager_properties_interface()
+            nm_methods.Set(
                 "org.freedesktop.NetworkManager",
                 "ConnectivityCheckEnabled",
                 False
