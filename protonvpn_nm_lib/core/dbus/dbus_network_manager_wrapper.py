@@ -467,9 +467,13 @@ class NetworkManagerUnitWrapper:
 
         return nm_properties
 
-    def get_network_manager_settings_interface(self):
-        logger.info("Get NetworkManager settings interface")
-        return self.__get_proxy_object(SystemBusNMObjectPathEnum.NM_SETTINGS.value)
+    def get_network_manager_properties_interface(self):
+        logger.info("Get NetworkManager properties interface")
+        nm_interface = self.__dbus_wrapper.get_proxy_object_properties_interface(
+            self.get_network_manager_proxy_object()
+        )
+
+        return nm_interface
 
     def connect_network_manager_object_to_signal(self, signal_name, method):
         """Connect a signal to network manager object.
