@@ -1,11 +1,12 @@
+import os
+
 import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
 from protonvpn_nm_lib.constants import VIRTUAL_DEVICE_NAME
 from protonvpn_nm_lib.core.environment import ExecutionEnvironment
 from protonvpn_nm_lib.daemon.daemon_logger import logger
-from protonvpn_nm_lib.enums import (KillSwitchActionEnum,
-                                    KillswitchStatusEnum,
+from protonvpn_nm_lib.enums import (KillSwitchActionEnum, KillswitchStatusEnum,
                                     VPNConnectionReasonEnum,
                                     VPNConnectionStateEnum)
 
@@ -16,7 +17,8 @@ ipv6_leak_protection = env.ipv6leak
 settings = env.settings
 
 from protonvpn_nm_lib.core.dbus.dbus_login1_wrapper import Login1UnitWrapper
-from protonvpn_nm_lib.core.dbus.dbus_network_manager_wrapper import NetworkManagerUnitWrapper
+from protonvpn_nm_lib.core.dbus.dbus_network_manager_wrapper import \
+    NetworkManagerUnitWrapper
 
 
 class ProtonVPNReconnector:
@@ -46,12 +48,16 @@ class ProtonVPNReconnector:
         self.nm_wrapper = NetworkManagerUnitWrapper(self.bus)
         self.login1_wrapper = Login1UnitWrapper(self.bus)
         self.user_session_locked = None
+        self.suspend_lock = None
+        self.shutdown_lock = None
         # Auto connect at startup (Listen for StateChanged going forward)
         self.vpn_activator()
         self.connect_signals()
         logger.info("Is user session locked: {}".format(self.user_session_locked))
 
     def connect_signals(self):
+        # self._create_on_suspend_lock()
+        # self._create_on_shutdown_lock()
         self.nm_wrapper.connect_network_manager_object_to_signal(
             "StateChanged", self.on_network_state_changed
         )
@@ -61,9 +67,41 @@ class ProtonVPNReconnector:
         self.login1_wrapper.connect_user_session_object_to_signal(
             "Unlock", self.on_session_unlock
         )
+        self.login1_wrapper.connect_login1_object_to_signal(
+            "PrepareForShutdown", self.on_prepare_for_shutdown
+        )
+        self.login1_wrapper.connect_login1_object_to_signal(
+            "PrepareForSleep", self.on_prepare_for_suspend
+        )
 
         if self.login1_wrapper.get_properties_current_user_session()["State"] == "active":
             self.user_session_locked = False
+
+    def _create_on_suspend_lock(self):
+        if self.suspend_lock:
+            return
+
+        login_manager_interface = self.login1_wrapper.get_login_manager_interface()
+        try:
+            logger.info("Get suspend inhibit lock")
+            self.suspend_lock = login_manager_interface.Inhibit(
+                "sleep", "ProtonVPN", "Updating session lock status", "block"
+            )
+        except Exception as e:
+            logger.exception(e)
+
+    def _create_on_shutdown_lock(self):
+        if self.shutdown_lock:
+            return
+
+        login_manager_interface = self.login1_wrapper.get_login_manager_interface()
+        try:
+            logger.info("Get shutdown inhibit lock")
+            self.shutdown_lock = login_manager_interface.Inhibit(
+                "shutdown", "ProtonVPN", "Removing Kill Switch Interfaces", "block"
+            )
+        except Exception as e:
+            logger.exception(e)
 
     def on_session_lock(self):
         logger.info("Inside session lock")
@@ -79,6 +117,60 @@ class ProtonVPNReconnector:
         self.user_session_locked = False
         logger.info("Is user session locked: {}".format(self.user_session_locked))
         self.vpn_activator()
+
+    def on_prepare_for_shutdown(self, *args, **kwargs):
+        # logger.info("is_getting_ready_for_shutdown: {}".format(is_getting_ready_for_shutdown))
+        # if not is_getting_ready_for_shutdown:
+        #    self._create_on_shutdown_lock()
+
+        self._create_on_shutdown_lock()
+        # _lock = self.shutdown_lock.take()
+        logger.info("Preparing for shutdown")
+        if settings.killswitch != KillswitchStatusEnum.HARD:
+            logger.info("Removing Kill Switch interface")
+            killswitch.delete_all_connections()
+
+        logger.info("Removing IPv6 leak protection")
+        ipv6_leak_protection.remove_leak_protection()
+
+        if self.shutdown_lock:
+            logger.info(
+                "Release shutdown lock: {} {}".format(self.shutdown_lock, type(self.shutdown_lock))
+            )
+            logger.info("Attempting to release shutdown lock")
+            try:
+                os.close(self.shutdown_lock.take())
+                self.shutdown_lock = None
+            except Exception as e:
+                logger.exception(e)
+            else:
+                logger.info("Successuflly released shutdown lock")
+
+    def on_prepare_for_suspend(self, *args, **kwargs):
+        # logger.info("is_getting_ready_for_suspend {}".format(is_getting_ready_for_shutdown))
+        # if not is_getting_ready_for_suspend:
+        #     self._create_on_suspend_lock()
+
+        self._create_on_suspend_lock()
+        # _lock = self.suspend_lock.take()
+        logger.info("Preparing for sleep")
+        logger.info("Is user session locked: {}".format(self.user_session_locked))
+        self.user_session_locked = True
+        logger.info("Is user session locked: {}".format(self.user_session_locked))
+
+        if self.suspend_lock:
+            logger.info(
+                "Release suspend lock: {} {}".format(self.suspend_lock, type(self.suspend_lock))
+            )
+
+            logger.info("Attempting to release suspend lock")
+            try:
+                os.close(self.suspend_lock.take())
+                self.suspend_lock = None
+            except Exception as e:
+                logger.exception(e)
+            else:
+                logger.info("Successuflly released suspend lock")
 
     def on_network_state_changed(self, state):
         """Network status signal handler.

@@ -290,12 +290,14 @@ class ServerStatusEnum(Enum):
 
 # ## Dbus/Systemd related
 class SystemBusLogin1ObjectPathEnum(Enum):
+    LOGIN1 = "/org/freedesktop/login1"
     USER_SELF = "/org/freedesktop/login1/user/self"
 
 
 class SystemBusLogin1InterfaceEnum(Enum):
     LOGIN1_USER = "org.freedesktop.login1.User"
     SESSION = "org.freedesktop.login1.Session"
+    MANAGER = "org.freedesktop.login1.Manager"
 
 
 class SystemBusNMObjectPathEnum(Enum):
