@@ -135,7 +135,14 @@ SERVICE_TEMPLATE = """
 
 [Unit]
 Description=ProtonVPN Reconnector
+DefaultDependencies=yes
+Wants=NetworkManager.target exit.target
+After=NetworkManager.target
+Before=exit.target
 
 [Service]
-ExecStart=EXEC_START
+ExecStart=<this is replaced during runtime>
+
+[Install]
+WantedBy=multi-user.target
 """.format(APP_VERSION)
