@@ -107,6 +107,7 @@ class ExecutionEnvironment(metaclass=Singleton):
 
     @property
     def user_agent(self):
+        from ..constants import APP_VERSION
         """Get user agent to use when communicating with API
 
         Returns:
@@ -114,8 +115,8 @@ class ExecutionEnvironment(metaclass=Singleton):
         """
         try:
             import distro
-            distribution, version, code_nome = distro.linux_distribution()
-            return "ProtonVPN (Linux; {}/{})".format(distribution, version)
-
+            distribution, version, _ = distro.linux_distribution()
         except ImportError:
-            return "ProtonVPN (Linux; unknown distribution/unknown version)"
+            distribution, version = "Linux", "unknown distribution", "unknown version"
+
+        return "ProtonVPN/{} (Linux; {}/{})".format(APP_VERSION, distribution, version)
