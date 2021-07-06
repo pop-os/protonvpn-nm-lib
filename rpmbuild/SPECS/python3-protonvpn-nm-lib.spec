@@ -1,5 +1,5 @@
 %define unmangled_name protonvpn-nm-lib
-%define version 3.3.2
+%define version 3.4.0
 %define release 1
 
 Prefix: %{_prefix}
@@ -58,6 +58,9 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
+* Tue Jul 06 2021 Proton Technologies AG <opensource@proton.me> 3.4.0-1
+- Remove IPv6 leak protection when there is no VPN and Kill Switch is disabled
+
 * Wed Jun 23 2021 Proton Technologies AG <opensource@proton.me> 3.3.2-1
 - Remove IPv6 leak protection when there is no VPN and Kill Switch is disabled
 

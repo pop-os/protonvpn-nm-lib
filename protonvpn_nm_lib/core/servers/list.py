@@ -77,7 +77,7 @@ class LogicalServer:
     def id(self):
         return self._data["ID"]
 
-    # Score and load can be modified (needed to update loads)
+    # Score, load and status can be modified (needed to update loads)
     @property
     def load(self):
         return self._data["Load"]
@@ -93,6 +93,16 @@ class LogicalServer:
     @score.setter
     def score(self, newvalue):
         self._data["Score"] = float(newvalue)
+
+    @property
+    def enabled(self):
+        return self._data["Status"] == 1 and any(
+            x.enabled for x in self.physical_servers
+        )
+
+    @enabled.setter
+    def enabled(self, newvalue):
+        self._data["Status"] = newvalue
 
     # Every other propriety is readonly
     @property
@@ -132,12 +142,6 @@ class LogicalServer:
     @property
     def city(self):
         return self._data["City"]
-
-    @property
-    def enabled(self):
-        return self._data["Status"] == 1 and any(
-            x.enabled for x in self.physical_servers
-        )
 
     @property
     def tier(self):
@@ -280,8 +284,9 @@ class ServerList:
                 continue
             server = self[s["ID"]]
 
-            server.load = s["Load"]
-            server.score = s["Score"]
+            server.load = s.get("Load", server.load)
+            server.score = s.get("Score", server.score)
+            server.enabled = s.get("Status", server.enabled)
 
         # Required to sort lists again if needed
         self.refresh_indexes()
