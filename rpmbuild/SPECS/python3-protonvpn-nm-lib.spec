@@ -117,7 +117,7 @@ rm -rf $RPM_BUILD_ROOT
 * Thu Feb 25 2021 Proton Technologies AG <opensource@proton.me> 0.5.0-2
 - Refactor library
 - Create public API
-- Improved library overall stability 
+- Improved library overall stability
 - Implement subprocess wrapper
 
 * Wed Feb 24 2021 Proton Technologies AG <opensource@proton.me> 0.4.2-1
