@@ -13,6 +13,7 @@ from .enums import (KillswitchStatusEnum, NetshieldStatusEnum,
                     UserSettingConnectionEnum, UserSettingStatusEnum)
 
 APP_VERSION = "3.4.0"
+API_URL = "https://api.protonvpn.ch"
 
 IPv6_LEAK_PROTECTION_CONN_NAME = "pvpn-ipv6leak-protection"
 IPv6_LEAK_PROTECTION_IFACE_NAME = "ipv6leakintrf0"
@@ -67,7 +68,8 @@ USER_CONFIG_TEMPLATE = {
     },
     UserSettingConnectionEnum.NETSHIELD: NetshieldTranslationEnum.DISABLED,
     UserSettingConnectionEnum.SECURE_CORE: SecureCoreStatusEnum.OFF,
-    UserSettingConnectionEnum.VPN_ACCELERATOR: UserSettingStatusEnum.ENABLED
+    UserSettingConnectionEnum.VPN_ACCELERATOR: UserSettingStatusEnum.ENABLED,
+    UserSettingConnectionEnum.ALTERNATIVE_ROUTING: UserSettingStatusEnum.ENABLED
 }
 NETSHIELD_STATUS_DICT = {
     NetshieldTranslationEnum.DISABLED: NetshieldStatusEnum.DISABLED,
@@ -119,6 +121,9 @@ STREAMING_SERVICES = os.path.join(
 )
 STREAMING_ICONS_CACHE_TIME_PATH = os.path.join(
     PROTON_XDG_CACHE_HOME, "streaming_icons_cache.json"
+)
+API_METADATA_FILEPATH = os.path.join(
+    PROTON_XDG_CACHE_HOME, "api_metadata.json"
 )
 USER_CONFIGURATIONS_FILEPATH = os.path.join(
     PROTON_XDG_CONFIG_HOME, "user_configurations.json"

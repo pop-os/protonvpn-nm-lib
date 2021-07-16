@@ -140,7 +140,25 @@ class Settings(SettingsBackend):
         Returns:
             SecureCoreStatusEnum
         """
-        return self.settings_configurator.set_secure_core(newvalue)
+        self.settings_configurator.set_secure_core(newvalue)
+
+    @property
+    def alternative_routing(self):
+        """Get Alternative Routing setting.
+
+        Returns:
+            UserSettingStatusEnum
+        """
+        return self.settings_configurator.get_alternative_routing()
+
+    @alternative_routing.setter
+    def alternative_routing(self, newvalue):
+        """Get Alternative Routing setting.
+
+        Returns:
+            UserSettingStatusEnum
+        """
+        self.settings_configurator.set_alternative_routing(newvalue)
 
     @property
     def protocol(self):
@@ -280,6 +298,7 @@ class Settings(SettingsBackend):
             DisplayUserSettingsEnum.CUSTOM_DNS: self.dns_custom_ips,
             DisplayUserSettingsEnum.NETSHIELD: self.netshield,
             DisplayUserSettingsEnum.VPN_ACCELERATOR: self.vpn_accelerator,
+            DisplayUserSettingsEnum.ALT_ROUTING: self.alternative_routing,
         }
 
         return settings_dict
