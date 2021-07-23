@@ -18,7 +18,7 @@ setup(
     long_description=long_description,
     install_requires=[
         "proton-client~=0.5.0", "pyxdg", "keyring",
-        "PyGObject", "Jinja2", "distro"
+        "PyGObject", "Jinja2", "distro", "systemd"
     ],
     include_package_data=True,
     license="GPLv3",
