@@ -7,7 +7,7 @@ arch=("any")
 url="https://github.com/ProtonVPN"
 license=("GPL3")
 groups=("ProtonVPN")
-depends=("python-proton-client>=0.5.0" "python-proton-client<0.6.0" "networkmanager" "networkmanager-openvpn" "openvpn" "libnm" "dbus" "libsecret" "python-pyxdg" "python-keyring" "python-jinja" "python-distro" "python-dbus" "python-systemd" "xdg-utils" "python-gobject")
+depends=("python-proton-client>=0.6.0" "networkmanager" "networkmanager-openvpn" "openvpn" "libnm" "dbus" "libsecret" "python-pyxdg" "python-keyring" "python-jinja" "python-distro" "python-dbus" "python-systemd" "xdg-utils" "python-gobject")
 makedepends=("python-setuptools")
 source=("$pkgname.tar.gz")
 sha256sums=(.)
