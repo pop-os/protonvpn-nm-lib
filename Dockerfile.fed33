@@ -40,7 +40,8 @@ RUN dnf install -y \
     python3-keyring \
     python3-distro \
     python3-gobject \
-    python3-jinja2
+    python3-jinja2 \
+    python3-systemd
 
 RUN dnf install -y \
     python3-pytest \

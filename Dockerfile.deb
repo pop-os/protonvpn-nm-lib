@@ -34,7 +34,8 @@ RUN apt-get install -y \
     python3-keyring \
     python3-distro \
     python3-jinja2 \
-    python3-dbus
+    python3-dbus \
+    python3-systemd
 
 RUN apt-get install -y \
     python3-pytest \
