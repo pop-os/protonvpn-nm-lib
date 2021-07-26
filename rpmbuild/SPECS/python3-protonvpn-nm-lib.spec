@@ -62,6 +62,7 @@ rm -rf $RPM_BUILD_ROOT
 * Tue Jul 06 2021 Proton Technologies AG <opensource@proton.me> 3.4.0-1
 - More often update server maintenance status 
 - Feature: Alternative routing 
+- Fix: Logs should be using UTC time
 
 * Wed Jun 23 2021 Proton Technologies AG <opensource@proton.me> 3.3.2-1
 - Remove IPv6 leak protection when there is no VPN and Kill Switch is disabled
