@@ -136,6 +136,12 @@ class BugReport(metaclass=Singleton):
         subprocess.run(["xdg-open", PROTON_XDG_CACHE_HOME_LOGS])
 
 
+# Code snippets below were fetched from https://github.com/newvem/pytz
+# Since the project is not available on all distro repos (that we support),
+# only relevant parts of the code were imported.
+# Some modifications had to be made to accomodate interoperability.
+
+
 class BaseTzInfo(tzinfo):
     _utcoffset = None
     _tzname = None
