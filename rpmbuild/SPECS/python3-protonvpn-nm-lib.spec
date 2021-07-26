@@ -32,6 +32,7 @@ Requires: python3-jinja2
 Requires: python3-pyxdg
 Requires: python3-dbus
 Requires: python3-systemd
+Requires: python3-gobject
 Requires: xdg-utils
 
 %{?python_disable_dependency_generator}
