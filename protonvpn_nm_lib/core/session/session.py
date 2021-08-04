@@ -29,7 +29,7 @@ class ErrorStrategy:
                                        ProtonNetworkError)
         result = None
         check_for_alt_routes = False
-        if ExecutionEnvironment().api_metadata.should_use_original_url():
+        if ExecutionEnvironment().api_metadata.should_try_original_url():
             session.url = API_URL
             logger.info("Use original API")
         elif (
@@ -58,21 +58,20 @@ class ErrorStrategy:
         except ConnectionTimeOutError as e:
             logger.exception(e)
 
-            if ExecutionEnvironment().settings.alternative_routing == UserSettingStatusEnum.DISABLED: # noqa
+            if ExecutionEnvironment().settings.alternative_routing != UserSettingStatusEnum.ENABLED: # noqa
                 raise APITimeoutError("Connection to API timed out")
 
             check_for_alt_routes = True
         except TLSPinningError as e:
             logger.exception(e)
-
-            if ExecutionEnvironment().settings.alternative_routing == UserSettingStatusEnum.DISABLED: # noqa
+            if ExecutionEnvironment().settings.alternative_routing != UserSettingStatusEnum.ENABLED: # noqa
                 raise InsecureConnection("TLS pinning failed, connection could be insecure")
 
             check_for_alt_routes = True
         except ProtonNetworkError as e:
             logger.exception(e)
 
-            if ExecutionEnvironment().settings.alternative_routing == UserSettingStatusEnum.DISABLED: # noqa
+            if ExecutionEnvironment().settings.alternative_routing != UserSettingStatusEnum.ENABLED: # noqa
                 raise APIError("An error occured while attempting to reach API")
 
             check_for_alt_routes = True
@@ -81,33 +80,52 @@ class ErrorStrategy:
             raise UnknownAPIError("Unknown API error occured")
 
         if check_for_alt_routes:
-            _fetched_alternative_routes = True
+            _fetched_alternative_routes = False
 
             logger.info("Check if API is reacheable")
             if not session.is_api_reacheable():
                 try:
                     alternative_routes = session._get_alternative_routes()
+                    _fetched_alternative_routes = True
                 except Exception as e:
                     logger.exception(e)
-                    _fetched_alternative_routes = False
 
             if _fetched_alternative_routes:
-                logger.info("Trying fetched routes: {}".format(alternative_routes))
+                logger.info("Testing alternative routes: {}".format(alternative_routes))
                 for route in alternative_routes:
                     session.url = "https://{}".format(route)
                     session._tls_verification = False
+
+                    logger.info(
+                        "Attempt to reach {} with TLS verification \"{}\" - method: \"{}\"".format(
+                            session.url, "enabled" if session._tls_verification else "disabled",
+                            self._func
+                        )
+                    )
                     try:
                         result = self._func(session, *args, **kwargs)
                     except (NewConnectionError, ConnectionTimeOutError, TLSPinningError) as e:
-                        logger.info("Failed to reach API: {}".format(session.url))
+                        logger.info(
+                            "Failed to reach API {} (tls_verification: {}): {}".format(
+                                session.url, session._tls_verification, e
+                            )
+                        )
                         logger.exception(e)
                         continue
                     except ProtonAPIError as e:
-                        logger.exception(e)
+                        logger.info(
+                            "ProtonAPIError {} (tls_verification: {}): {}".format(
+                                session.url, session._tls_verification, e
+                            )
+                        )
                         self.__handle_api_error(e, session, *args, **kwargs)
                         break
                     except Exception as e:
-                        logger.exception(e)
+                        logger.info(
+                            "Unknown exception {} (tls_verification: {}): {}".format(
+                                session.url, session._tls_verification, e
+                            )
+                        )
                         raise Exception(e)
                     else:
                         logger.info("Store {} and time".format(session.url))
@@ -421,11 +439,19 @@ class APISession:
         # (try) to log in
         self.__proton_api.authenticate(username, password)
 
+        _api_url = API_URL
+        if self.url != API_URL:
+            _api_url = self.url
+            self.url = API_URL
+
         # Order is important here: we first want to set keyrings,
         # then set the class status to avoid inconstistencies
         ExecutionEnvironment().keyring[
             KeyringEnum.DEFAULT_KEYRING_SESSIONDATA.value
         ] = self.__proton_api.dump()
+
+        self.url = _api_url
+
         ExecutionEnvironment().keyring[
             KeyringEnum.DEFAULT_KEYRING_PROTON_USER.value
         ] = {"proton_username": username}
@@ -470,7 +496,6 @@ class APISession:
     @url.setter
     def url(self, newvalue):
         self.__proton_api.api_url = newvalue
-        # self._api_url = newvalue
 
     @property
     def _tls_verification(self):

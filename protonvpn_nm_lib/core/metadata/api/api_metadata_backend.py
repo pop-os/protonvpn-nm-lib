@@ -29,7 +29,7 @@ class APIMetadataBackend(SubclassesMixin, metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
-    def should_use_original_url():
+    def should_try_original_url():
         """Determine if next api call should use the original URL or not.
 
         Check API_URL constant to determine what is original URL.
