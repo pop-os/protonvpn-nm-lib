@@ -8,7 +8,7 @@ from ...constants import (
     PROTON_XDG_CONFIG_HOME,
     USER_CONFIG_TEMPLATE,
     USER_CONFIGURATIONS_FILEPATH,
-    NETSHIELD_STATUS_DICT
+    NETSHIELD_STATUS_DICT,
 )
 from ...enums import (
     ProtocolEnum,
@@ -65,7 +65,15 @@ class SettingsConfigurator:
         try:
             return user_configs[UserSettingConnectionEnum.SECURE_CORE]
         except KeyError:
-            return SecureCoreStatusEnum.OFF
+            return USER_CONFIG_TEMPLATE[UserSettingConnectionEnum.SECURE_CORE]
+
+    def get_alternative_routing(self):
+        """Secure Core get method."""
+        user_configs = self.get_user_configurations()
+        try:
+            return user_configs[UserSettingConnectionEnum.ALTERNATIVE_ROUTING]
+        except KeyError:
+            return USER_CONFIG_TEMPLATE[UserSettingConnectionEnum.ALTERNATIVE_ROUTING]
 
     def get_netshield(self):
         """Netshield get method."""
@@ -73,7 +81,7 @@ class SettingsConfigurator:
         try:
             return user_configs[UserSettingConnectionEnum.NETSHIELD]
         except KeyError:
-            return 0
+            return USER_CONFIG_TEMPLATE[UserSettingConnectionEnum.NETSHIELD]
 
     def get_vpn_accelerator(self):
         """VPN Accelerator get method."""
@@ -81,7 +89,7 @@ class SettingsConfigurator:
         try:
             return user_configs[UserSettingConnectionEnum.VPN_ACCELERATOR]
         except KeyError:
-            return 1
+            return USER_CONFIG_TEMPLATE[UserSettingConnectionEnum.ALTERNATIVE_ROUTING]
 
     def set_protocol(self, protocol):
         """Set default protocol method.
@@ -155,6 +163,21 @@ class SettingsConfigurator:
         user_configs[
             UserSettingConnectionEnum.SECURE_CORE
         ] = status # noqa
+
+        self.set_user_configurations(user_configs)
+
+    def set_alternative_routing(self, status):
+        """Set Alternative Routing.
+
+        Args:
+            status (UserSettingStatusEnum): DNS status
+        """
+        if status not in CONFIG_STATUSES:
+            raise KeyError("Illegal options")
+
+        user_configs = self.get_user_configurations()
+
+        user_configs[UserSettingConnectionEnum.ALTERNATIVE_ROUTING] = status
 
         self.set_user_configurations(user_configs)
 

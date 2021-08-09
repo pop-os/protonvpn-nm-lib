@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
-from ..utils import SubclassesMixin
-from ...logger import logger
+from ...utils import SubclassesMixin
+from ....logger import logger
 
 
 class ConnectionMetadataBackend(SubclassesMixin, metaclass=ABCMeta):

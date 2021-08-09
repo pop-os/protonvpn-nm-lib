@@ -2,13 +2,18 @@ import os
 import random
 import time
 
-from ...constants import (APP_VERSION, CACHED_SERVERLIST, CLIENT_CONFIG,
+from ...constants import (API_METADATA_FILEPATH, API_URL, APP_VERSION,
+                          CACHED_SERVERLIST, CLIENT_CONFIG,
+                          CONNECTION_STATE_FILEPATH,
+                          LAST_CONNECTION_METADATA_FILEPATH,
                           STREAMING_ICONS_CACHE_TIME_PATH, STREAMING_SERVICES)
-from ...enums import KeyringEnum, KillswitchStatusEnum
-from ...exceptions import (API403Error, API10013Error, APIError,
-                           APISessionIsNotValidError,
+from ...enums import KeyringEnum, KillswitchStatusEnum, UserSettingStatusEnum
+from ...exceptions import (API403Error, API5002Error, API5003Error,
+                           API8002Error, API10013Error, APIError,
+                           APISessionIsNotValidError, APITimeoutError,
                            DefaultOVPNPortsNotFoundError, InsecureConnection,
-                           JSONDataError, UnknownAPIError, APITimeoutError)
+                           JSONDataError, NetworkConnectionError,
+                           UnknownAPIError)
 from ...logger import logger
 from ..environment import ExecutionEnvironment
 
@@ -19,32 +24,118 @@ class ErrorStrategy:
 
     def __call__(self, session, *args, **kwargs):
         from proton.exceptions import (ConnectionTimeOutError,
-                                       NewConnectionError, ProtonError,
-                                       ProtonNetworkError, TLSPinningError,
-                                       UnknownConnectionError)
+                                       NewConnectionError, ProtonAPIError,
+                                       TLSPinningError, UnknownConnectionError,
+                                       ProtonNetworkError)
+        result = None
+        check_for_alt_routes = False
+        if ExecutionEnvironment().api_metadata.should_try_original_url():
+            session.url = API_URL
+            logger.info("Use original API")
+        elif (
+            ExecutionEnvironment().settings.alternative_routing == UserSettingStatusEnum.ENABLED
+            and ExecutionEnvironment().api_metadata.get_alternative_url() != API_URL
+        ):
+            session.url = ExecutionEnvironment().api_metadata.get_alternative_url()
+            logger.info("Use alternative API: {}".format(session.url))
+
+        session._tls_verification = False if session.url != API_URL else True
+
+        logger.info(
+            "Attempt to reach {} with TLS verification \"{}\" - method: \"{}\"".format(
+                session.url, "enabled" if session._tls_verification else "disabled", self._func
+            )
+        )
+
         try:
             result = self._func(session, *args, **kwargs)
-        except ProtonError as e:
-            # Do we handle that error code?
+            # this has to be set again as for some reason it automatically gets reset after
+            # excecuting the previous funcion
+            session._tls_verification = False if session.url != API_URL else True
+        except ProtonAPIError as e:
             logger.exception(e)
-            if hasattr(self, f'_handle_{e.code}'):
-                return getattr(
-                    self,
-                    f'_handle_{e.code}')(e, session, *args, **kwargs)
-            else:
-                raise self._remap_protonerror(e)
+            self.__handle_api_error(e, session, *args, **kwargs)
         except ConnectionTimeOutError as e:
             logger.exception(e)
-            raise APITimeoutError("Connection to API timed out")
+
+            if ExecutionEnvironment().settings.alternative_routing != UserSettingStatusEnum.ENABLED: # noqa
+                raise APITimeoutError("Connection to API timed out")
+
+            check_for_alt_routes = True
         except TLSPinningError as e:
             logger.exception(e)
-            raise InsecureConnection("TLS pinning failed, connection could be insecure")
-        except (NewConnectionError, ProtonNetworkError) as e:
+            if ExecutionEnvironment().settings.alternative_routing != UserSettingStatusEnum.ENABLED: # noqa
+                raise InsecureConnection("TLS pinning failed, connection could be insecure")
+
+            check_for_alt_routes = True
+        except ProtonNetworkError as e:
             logger.exception(e)
-            raise APIError("An error occured while attempting to reach API")
+
+            if ExecutionEnvironment().settings.alternative_routing != UserSettingStatusEnum.ENABLED: # noqa
+                raise APIError("An error occured while attempting to reach API")
+
+            check_for_alt_routes = True
         except UnknownConnectionError as e:
             logger.exception(e)
             raise UnknownAPIError("Unknown API error occured")
+
+        if check_for_alt_routes:
+            _fetched_alternative_routes = False
+
+            logger.info("Check if API is reacheable")
+            if not session.is_api_reacheable():
+                try:
+                    alternative_routes = session._get_alternative_routes()
+                    _fetched_alternative_routes = True
+                except Exception as e:
+                    logger.exception(e)
+
+            if _fetched_alternative_routes:
+                logger.info("Testing alternative routes: {}".format(alternative_routes))
+                for route in alternative_routes:
+                    session.url = "https://{}".format(route)
+                    session._tls_verification = False
+
+                    logger.info(
+                        "Attempt to reach {} with TLS verification \"{}\" - method: \"{}\"".format(
+                            session.url, "enabled" if session._tls_verification else "disabled",
+                            self._func
+                        )
+                    )
+                    try:
+                        result = self._func(session, *args, **kwargs)
+                    except (NewConnectionError, ConnectionTimeOutError, TLSPinningError) as e:
+                        logger.info(
+                            "Failed to reach API {} (tls_verification: {}): {}".format(
+                                session.url, session._tls_verification, e
+                            )
+                        )
+                        logger.exception(e)
+                        continue
+                    except ProtonAPIError as e:
+                        logger.info(
+                            "ProtonAPIError {} (tls_verification: {}): {}".format(
+                                session.url, session._tls_verification, e
+                            )
+                        )
+                        self.__handle_api_error(e, session, *args, **kwargs)
+                        break
+                    except Exception as e:
+                        logger.info(
+                            "Unknown exception {} (tls_verification: {}): {}".format(
+                                session.url, session._tls_verification, e
+                            )
+                        )
+                        raise Exception(e)
+                    else:
+                        logger.info("Store {} and time".format(session.url))
+                        ExecutionEnvironment().api_metadata.save_time_and_url_of_last_original_call(
+                            session.url
+                        )
+                        break
+
+        if not result:
+            raise NetworkConnectionError("Unable to reach internet connectivity")
 
         return result
 
@@ -53,12 +144,21 @@ class ErrorStrategy:
         import functools
         return functools.partial(self.__call__, obj)
 
+    def __handle_api_error(self, e, session, *args, **kwargs):
+        logger.info("Handle API error")
+        if hasattr(self, f'_handle_{e.code}'):
+            return getattr(
+                self,
+                f'_handle_{e.code}')(e, session, *args, **kwargs)
+        else:
+            raise self._remap_protonerror(e)
+
     def _call_without_error_handling(self, session, *args, **kwargs):
         """Call the function, without any advanced handlers, but still remap error codes"""
-        from proton.api import ProtonError
+        from proton.exceptions import ProtonAPIError
         try:
             return self._func(session, *args, **kwargs)
-        except ProtonError as e:
+        except ProtonAPIError as e:
             raise self._remap_protonerror(e)
 
     def _remap_protonerror(self, e):
@@ -99,7 +199,7 @@ class ErrorStrategy:
 class ErrorStrategyLogout(ErrorStrategy):
     def _handle_401(self, error, session, *args, **kwargs):
         logger.info("Ignored a 401 at logout")
-        return
+        pass
 
 
 class ErrorStrategyNormalCall(ErrorStrategy):
@@ -110,14 +210,29 @@ class ErrorStrategyNormalCall(ErrorStrategy):
         return self._call_without_error_handling(session, *args, **kwargs)
 
     def _handle_403(self, error, session, *args, **kwargs):
-        raise API403Error("Missing scopes. Required user re-authentication.")
+        raise API403Error(error)
+
+    def _handle_5002(self, error, session, *args, **kwargs):
+        raise API5002Error(error)
+
+    def _handle_5003(self, error, session, *args, **kwargs):
+        raise API5003Error(error)
 
     def _handle_10013(self, error, session, *args, **kwargs):
-        raise API10013Error("Refresh token is invalid. Required user re-authentication.")
+        raise API10013Error(error)
 
 
 class ErrorStrategyAuthenticate(ErrorStrategy):
-    pass
+    def _handle_401(self, error, session, *args, **kwargs):
+        logger.info("Ignored a 401 at authenticate")
+        pass
+
+    def _handle_403(self, error, session, *args, **kwargs):
+        logger.info("Ignored a 401 at authenticate")
+        pass
+
+    def _handle_8002(self, error, session, *args, **kwargs):
+        raise API8002Error(error)
 
 
 class ErrorStrategyRefresh(ErrorStrategy):
@@ -153,7 +268,7 @@ class APISession:
 
     def __init__(self, api_url=None, enforce_pinning=True):
         if api_url is None:
-            self._api_url = "https://api.protonvpn.ch"
+            self._api_url = API_URL
 
         self._enforce_pinning = enforce_pinning
 
@@ -184,6 +299,18 @@ class APISession:
             TLSPinning=self._enforce_pinning,
         )
 
+    def is_api_reacheable(self):
+        from proton.exceptions import (ConnectionTimeOutError,
+                                       NewConnectionError, TLSPinningError)
+
+        try:
+            self.__proton_api.api_request("/tests/ping")
+        except (NewConnectionError, ConnectionTimeOutError, TLSPinningError) as e:
+            logger.exception(e)
+            return False
+
+        return True
+
     def __keyring_load_session(self):
         """
         Try to load username and session data from keyring:
@@ -209,7 +336,13 @@ class APISession:
             self.__keyring_clear_session()
             return
 
-        if keyring_data.get('api_url') != self.__proton_api.dump()['api_url']:
+        # also check if the API url matches the one stored on file/and or if 24h have passed
+        if (
+            keyring_data.get('api_url') != self.__proton_api.dump()['api_url']
+        ) and (
+            keyring_data.get('api_url') != ExecutionEnvironment().api_metadata.get_alternative_url()
+            and ExecutionEnvironment().api_metadata.get_alternative_url() != API_URL
+        ):
             # Don't reuse a session with different api url
             # FIXME
             # print("Wrong session url")
@@ -252,23 +385,37 @@ class APISession:
     def logout(self):
         self.__keyring_clear_vpn_data()
         self.__keyring_clear_session()
+        logger.info("Cleared keyring session")
 
         self.__proton_user = None
         self.__vpn_data = None
 
         self.__vpn_logicals = None
+        logger.info("Cleared local cache variables")
 
         # A best effort is to logout the user via
         # the API, but if that is not possible then
         # at the least logout the user locally.
+        logger.info("Attempting to logout via API")
         try:
             self.__proton_api.logout()
         except: # noqa
+            logger.info("Unable to logout via API")
             pass
-        self.remove_cache(CACHED_SERVERLIST)
-        self.remove_cache(CLIENT_CONFIG)
+
+        logger.info("Remove cache files")
+        filepaths_to_remove = [
+            CACHED_SERVERLIST, CLIENT_CONFIG, API_METADATA_FILEPATH,
+            LAST_CONNECTION_METADATA_FILEPATH, CONNECTION_STATE_FILEPATH,
+            STREAMING_ICONS_CACHE_TIME_PATH, STREAMING_SERVICES
+        ]
+        for fp in filepaths_to_remove:
+            self.remove_cache(fp)
+
         # Re-create a new
         self.__session_create()
+
+        return True
 
     @ErrorStrategyRefresh
     def refresh(self):
@@ -280,6 +427,8 @@ class APISession:
             KeyringEnum.DEFAULT_KEYRING_SESSIONDATA.value
         ] = self.__proton_api.dump()
 
+        return True
+
     @ErrorStrategyAuthenticate
     def authenticate(self, username, password):
         """Authenticate using username/password.
@@ -287,39 +436,36 @@ class APISession:
         This destroys the current session, if any.
         """
 
-        # Clear keyring and private data, and ensure we start fresh
-        self.logout()
-
         # (try) to log in
         self.__proton_api.authenticate(username, password)
+
+        _api_url = API_URL
+        if self.url != API_URL:
+            _api_url = self.url
+            self.url = API_URL
 
         # Order is important here: we first want to set keyrings,
         # then set the class status to avoid inconstistencies
         ExecutionEnvironment().keyring[
             KeyringEnum.DEFAULT_KEYRING_SESSIONDATA.value
         ] = self.__proton_api.dump()
+
+        self.url = _api_url
+
         ExecutionEnvironment().keyring[
             KeyringEnum.DEFAULT_KEYRING_PROTON_USER.value
         ] = {"proton_username": username}
 
         self.__proton_user = username
 
-        # immediatly cache all necessary data
-        data_to_cache_list = [
+        # just by calling the properties, it automatically triggers to cache the data
+        _ = [
             self.servers, self.clientconfig,
             self.streaming, self.streaming_icons,
             self._vpn_data
         ]
-        from concurrent.futures import ThreadPoolExecutor
-        with ThreadPoolExecutor() as executor:
-            executor.map(self.__cache_data_after_authenticate, data_to_cache_list)
 
-    def __cache_data_after_authenticate(self, data):
-        try:
-            data
-        except Exception as e:
-            logger.exception(e)
-            return
+        return True
 
     @property
     def is_valid(self):
@@ -344,6 +490,32 @@ class APISession:
             pass
 
     @property
+    def url(self):
+        return self.__proton_api.api_url
+
+    @url.setter
+    def url(self, newvalue):
+        self.__proton_api.api_url = newvalue
+
+    @property
+    def _tls_verification(self):
+        return self.__proton_api.tls_verify
+
+    @_tls_verification.setter
+    def _tls_verification(self, newvalue):
+        if not isinstance(newvalue, bool):
+            raise Exception("Passed argument is not bool")
+
+        if self.__proton_api.tls_verify != newvalue:
+            self.__proton_api.tls_verify = newvalue
+
+    def _get_alternative_routes(self, callback=None):
+        if not callback:
+            return self.__proton_api.get_alternative_routes()
+
+        self.__proton_api.get_alternative_routes(callback)
+
+    @property
     def username(self):
         # Return the proton username
         self.ensure_valid()
@@ -364,6 +536,8 @@ class APISession:
         ExecutionEnvironment().keyring[
             KeyringEnum.DEFAULT_KEYRING_USERDATA.value
         ] = self.__vpn_data
+
+        return True
 
     @property
     def _vpn_data(self):
@@ -439,17 +613,11 @@ class APISession:
 
         if self.__next_fetch_logicals < time.time() or force:
             # Update logicals
-            self.__vpn_logicals.update_logical_data(
-                self.__proton_api.api_request('/vpn/logicals')
-            )
+            self.__vpn_logicals.update_logical_data(self.__proton_api.api_request('/vpn/logicals'))
             changed = True
         elif self.__next_fetch_load < time.time():
             # Update loads
-            self.__vpn_logicals.update_load_data(
-                self.__proton_api.api_request(
-                    '/vpn/loads'
-                )
-            )
+            self.__vpn_logicals.update_load_data(self.__proton_api.api_request('/vpn/loads'))
             changed = True
 
         if changed:
@@ -462,9 +630,11 @@ class APISession:
             except Exception as e:
                 # This is not fatal, we only were not capable
                 # of storing the cache.
-                logger.info("Could not save server cache {}".format(
-                    e
-                ))
+                logger.info(
+                    "Could not save server cache {}".format(e)
+                )
+
+        return True
 
     @property
     def servers(self):
@@ -491,7 +661,7 @@ class APISession:
         except: # noqa
             pass
 
-        self.streaming
+        # self.streaming
         return self.__vpn_logicals
 
     @ErrorStrategyNormalCall
@@ -525,6 +695,8 @@ class APISession:
                 logger.info("Could not save client config cache {}".format(
                     e
                 ))
+
+        return True
 
     @property
     def clientconfig(self):
@@ -583,6 +755,8 @@ class APISession:
                 logger.info("Could not save streaming services cache {}".format(
                     e
                 ))
+
+        return True
 
     @property
     def streaming(self):

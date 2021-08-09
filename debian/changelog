@@ -1,6 +1,9 @@
 protonvpn-nm-lib (3.4.0-1) unstable; urgency=medium
 
   * More often update server maintenance status 
+  * Feature: Alternative routing 
+  * Fix: Logs should be using UTC time
+  * Fix: Add missing dependency
 
  -- Proton Technologies AG <opensource@proton.me>  Tue, 06 Jul 2021 17:45:00 +0100
 

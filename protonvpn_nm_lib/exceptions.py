@@ -132,7 +132,7 @@ class API5003Error(ProtonSessionWrapperError):
 class API8002Error(ProtonSessionWrapperError):
     """Error 8002.
 
-    Wrong password.
+    Incorrect login credentials.
     """
 
 
@@ -159,8 +159,8 @@ class UnreacheableAPIError(ProtonSessionWrapperError):
     """APIBlockError"""
 
 
-class InternetConnectionError(ProtonSessionWrapperError):
-    """Internet connection error"""
+class NetworkConnectionError(ProtonSessionWrapperError):
+    """Network connection error"""
 
 
 class InsecureConnection(ProtonSessionWrapperError):

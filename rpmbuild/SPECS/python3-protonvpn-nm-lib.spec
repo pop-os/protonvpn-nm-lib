@@ -25,7 +25,7 @@ Requires: openvpn
 Requires: NetworkManager
 Requires: NetworkManager-openvpn
 Requires: gtk3
-Requires: python3-proton-client >= 0.5.0, python3-proton-client < 0.6.0
+Requires: python3-proton-client >= 0.6.0
 Requires: python3-keyring
 Requires: python3-distro
 Requires: python3-jinja2
@@ -34,6 +34,7 @@ Requires: python3-dbus
 Requires: python3-systemd
 Requires: python3-gobject
 Requires: xdg-utils
+Conflicts: protonvpn-cli < 3.9.0, protonvpn-cli < 1.3.0
 
 %{?python_disable_dependency_generator}
 
@@ -60,7 +61,10 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Tue Jul 06 2021 Proton Technologies AG <opensource@proton.me> 3.4.0-1
-- Remove IPv6 leak protection when there is no VPN and Kill Switch is disabled
+- More often update server maintenance status 
+- Feature: Alternative routing 
+- Fix: Logs should be using UTC time
+- Fix: Add missing dependency
 
 * Wed Jun 23 2021 Proton Technologies AG <opensource@proton.me> 3.3.2-1
 - Remove IPv6 leak protection when there is no VPN and Kill Switch is disabled

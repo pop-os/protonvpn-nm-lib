@@ -1,4 +1,4 @@
-from . import default_connection_metadata # noqa
-from .connection_metadata_backend import ConnectionMetadataBackend
+from .connection import ConnectionMetadataBackend
+from .api import APIMetadataBackend
 
-__all__ = ["ConnectionMetadataBackend"]
+__all__ = ["ConnectionMetadataBackend", "APIMetadataBackend"]
