@@ -34,6 +34,7 @@ Requires: python3-dbus
 Requires: python3-systemd
 Requires: python3-gobject
 Requires: xdg-utils
+Conflicts: protonvpn-cli < 3.9.0, protonvpn-cli < 1.3.0
 
 %{?python_disable_dependency_generator}
 
