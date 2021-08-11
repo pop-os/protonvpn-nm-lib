@@ -1,6 +1,6 @@
 %define unmangled_name protonvpn-nm-lib
 %define version 3.4.0
-%define release 1
+%define release 2
 
 Prefix: %{_prefix}
 
@@ -60,7 +60,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
-* Tue Jul 06 2021 Proton Technologies AG <opensource@proton.me> 3.4.0-1
+* Tue Jul 06 2021 Proton Technologies AG <opensource@proton.me> 3.4.0-2
 - More often update server maintenance status 
 - Feature: Alternative routing 
 - Fix: Logs should be using UTC time
