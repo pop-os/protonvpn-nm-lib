@@ -80,17 +80,17 @@ class ErrorStrategy:
             raise UnknownAPIError("Unknown API error occured")
 
         if check_for_alt_routes:
+            logger.info("Check if API is reacheable")
+
             _fetched_alternative_routes = False
 
-            logger.info("Check if API is reacheable")
-            if not session.is_api_reacheable():
-                try:
-                    alternative_routes = session._get_alternative_routes()
-                    _fetched_alternative_routes = True
-                except Exception as e:
-                    logger.exception(e)
+            try:
+                alternative_routes = session._get_alternative_routes()
+                _fetched_alternative_routes = True
+            except Exception as e:
+                logger.exception(e)
 
-            if _fetched_alternative_routes:
+            if not session.is_api_reacheable() and _fetched_alternative_routes:
                 logger.info("Testing alternative routes: {}".format(alternative_routes))
                 for route in alternative_routes:
                     session.url = "https://{}".format(route)
