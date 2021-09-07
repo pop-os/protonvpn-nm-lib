@@ -6,14 +6,15 @@ from ...constants import (API_METADATA_FILEPATH, API_URL, APP_VERSION,
                           CACHED_SERVERLIST, CLIENT_CONFIG,
                           CONNECTION_STATE_FILEPATH,
                           LAST_CONNECTION_METADATA_FILEPATH,
-                          STREAMING_ICONS_CACHE_TIME_PATH, STREAMING_SERVICES)
+                          STREAMING_ICONS_CACHE_TIME_PATH, STREAMING_SERVICES,
+                          PROTON_XDG_CACHE_HOME, PROTON_XDG_CACHE_HOME_LOGS)
 from ...enums import KeyringEnum, KillswitchStatusEnum, UserSettingStatusEnum
 from ...exceptions import (API403Error, API5002Error, API5003Error,
-                           API8002Error, API10013Error, APIError,
+                           API8002Error, API10013Error,
                            APISessionIsNotValidError, APITimeoutError,
                            DefaultOVPNPortsNotFoundError, InsecureConnection,
                            JSONDataError, NetworkConnectionError,
-                           UnknownAPIError)
+                           UnknownAPIError, UnreacheableAPIError)
 from ...logger import logger
 from ..environment import ExecutionEnvironment
 
@@ -26,113 +27,26 @@ class ErrorStrategy:
         from proton.exceptions import (ConnectionTimeOutError,
                                        NewConnectionError, ProtonAPIError,
                                        TLSPinningError, UnknownConnectionError,
-                                       ProtonNetworkError)
+                                       )
         result = None
-        check_for_alt_routes = False
-        if ExecutionEnvironment().api_metadata.should_try_original_url():
-            session.url = API_URL
-            logger.info("Use original API")
-        elif (
-            ExecutionEnvironment().settings.alternative_routing == UserSettingStatusEnum.ENABLED
-            and ExecutionEnvironment().api_metadata.get_alternative_url() != API_URL
-        ):
-            session.url = ExecutionEnvironment().api_metadata.get_alternative_url()
-            logger.info("Use alternative API: {}".format(session.url))
-
-        session._tls_verification = False if session.url != API_URL else True
-
-        logger.info(
-            "Attempt to reach {} with TLS verification \"{}\" - method: \"{}\"".format(
-                session.url, "enabled" if session._tls_verification else "disabled", self._func
-            )
-        )
 
         try:
             result = self._func(session, *args, **kwargs)
-            # this has to be set again as for some reason it automatically gets reset after
-            # excecuting the previous funcion
-            session._tls_verification = False if session.url != API_URL else True
         except ProtonAPIError as e:
             logger.exception(e)
             self.__handle_api_error(e, session, *args, **kwargs)
         except ConnectionTimeOutError as e:
             logger.exception(e)
-
-            if ExecutionEnvironment().settings.alternative_routing != UserSettingStatusEnum.ENABLED: # noqa
-                raise APITimeoutError("Connection to API timed out")
-
-            check_for_alt_routes = True
+            raise APITimeoutError("Connection to API timed out")
+        except NewConnectionError as e:
+            logger.exception(e)
+            raise UnreacheableAPIError("Unable to reach API")
         except TLSPinningError as e:
             logger.exception(e)
-            if ExecutionEnvironment().settings.alternative_routing != UserSettingStatusEnum.ENABLED: # noqa
-                raise InsecureConnection("TLS pinning failed, connection could be insecure")
-
-            check_for_alt_routes = True
-        except ProtonNetworkError as e:
-            logger.exception(e)
-
-            if ExecutionEnvironment().settings.alternative_routing != UserSettingStatusEnum.ENABLED: # noqa
-                raise APIError("An error occured while attempting to reach API")
-
-            check_for_alt_routes = True
+            raise InsecureConnection("TLS pinning failed, connection could be insecure")
         except UnknownConnectionError as e:
             logger.exception(e)
             raise UnknownAPIError("Unknown API error occured")
-
-        if check_for_alt_routes:
-            logger.info("Check if API is reacheable")
-
-            _fetched_alternative_routes = False
-
-            try:
-                alternative_routes = session._get_alternative_routes()
-                _fetched_alternative_routes = True
-            except Exception as e:
-                logger.exception(e)
-
-            if not session.is_api_reacheable() and _fetched_alternative_routes:
-                logger.info("Testing alternative routes: {}".format(alternative_routes))
-                for route in alternative_routes:
-                    session.url = "https://{}".format(route)
-                    session._tls_verification = False
-
-                    logger.info(
-                        "Attempt to reach {} with TLS verification \"{}\" - method: \"{}\"".format(
-                            session.url, "enabled" if session._tls_verification else "disabled",
-                            self._func
-                        )
-                    )
-                    try:
-                        result = self._func(session, *args, **kwargs)
-                    except (NewConnectionError, ConnectionTimeOutError, TLSPinningError) as e:
-                        logger.info(
-                            "Failed to reach API {} (tls_verification: {}): {}".format(
-                                session.url, session._tls_verification, e
-                            )
-                        )
-                        logger.exception(e)
-                        continue
-                    except ProtonAPIError as e:
-                        logger.info(
-                            "ProtonAPIError {} (tls_verification: {}): {}".format(
-                                session.url, session._tls_verification, e
-                            )
-                        )
-                        self.__handle_api_error(e, session, *args, **kwargs)
-                        break
-                    except Exception as e:
-                        logger.info(
-                            "Unknown exception {} (tls_verification: {}): {}".format(
-                                session.url, session._tls_verification, e
-                            )
-                        )
-                        raise Exception(e)
-                    else:
-                        logger.info("Store {} and time".format(session.url))
-                        ExecutionEnvironment().api_metadata.save_time_and_url_of_last_original_call(
-                            session.url
-                        )
-                        break
 
         if not result:
             raise NetworkConnectionError("Unable to reach internet connectivity")
@@ -294,10 +208,16 @@ class APISession:
         from proton.api import Session
         self.__proton_api = Session(
             self._api_url,
+            log_dir_path=PROTON_XDG_CACHE_HOME_LOGS,
+            cache_dir_path=PROTON_XDG_CACHE_HOME,
             appversion="LinuxVPN_" + APP_VERSION,
             user_agent=ExecutionEnvironment().user_agent,
-            TLSPinning=self._enforce_pinning,
+            tls_pinning=self._enforce_pinning,
         )
+        self.__proton_api.enable_alternative_routing = ExecutionEnvironment().settings.alternative_routing.value
+
+    def update_alternative_routing(self, newvalue):
+        self.__proton_api.enable_alternative_routing = newvalue
 
     def is_api_reacheable(self):
         from proton.exceptions import (ConnectionTimeOutError,
@@ -337,12 +257,7 @@ class APISession:
             return
 
         # also check if the API url matches the one stored on file/and or if 24h have passed
-        if (
-            keyring_data.get('api_url') != self.__proton_api.dump()['api_url']
-        ) and (
-            keyring_data.get('api_url') != ExecutionEnvironment().api_metadata.get_alternative_url()
-            and ExecutionEnvironment().api_metadata.get_alternative_url() != API_URL
-        ):
+        if keyring_data.get('api_url') != self.__proton_api.dump()['api_url']:
             # Don't reuse a session with different api url
             # FIXME
             # print("Wrong session url")
@@ -359,8 +274,12 @@ class APISession:
         # This is a "dangerous" call, as we assume that everything
         # in keyring_data is correctly formatted
         self.__proton_api = Session.load(
-            keyring_data, TLSPinning=self._enforce_pinning
+            keyring_data,
+            log_dir_path=PROTON_XDG_CACHE_HOME_LOGS,
+            cache_dir_path=PROTON_XDG_CACHE_HOME,
+            tls_pinning=self._enforce_pinning
         )
+        self.__proton_api.enable_alternative_routing = ExecutionEnvironment().settings.alternative_routing.value
         self.__proton_user = keyring_data_user['proton_username']
 
     def __keyring_clear_session(self):
@@ -439,18 +358,11 @@ class APISession:
         # (try) to log in
         self.__proton_api.authenticate(username, password)
 
-        _api_url = API_URL
-        if self.url != API_URL:
-            _api_url = self.url
-            self.url = API_URL
-
         # Order is important here: we first want to set keyrings,
         # then set the class status to avoid inconstistencies
         ExecutionEnvironment().keyring[
             KeyringEnum.DEFAULT_KEYRING_SESSIONDATA.value
         ] = self.__proton_api.dump()
-
-        self.url = _api_url
 
         ExecutionEnvironment().keyring[
             KeyringEnum.DEFAULT_KEYRING_PROTON_USER.value
@@ -488,32 +400,6 @@ class APISession:
             os.remove(cache_path)
         except FileNotFoundError:
             pass
-
-    @property
-    def url(self):
-        return self.__proton_api.api_url
-
-    @url.setter
-    def url(self, newvalue):
-        self.__proton_api.api_url = newvalue
-
-    @property
-    def _tls_verification(self):
-        return self.__proton_api.tls_verify
-
-    @_tls_verification.setter
-    def _tls_verification(self, newvalue):
-        if not isinstance(newvalue, bool):
-            raise Exception("Passed argument is not bool")
-
-        if self.__proton_api.tls_verify != newvalue:
-            self.__proton_api.tls_verify = newvalue
-
-    def _get_alternative_routes(self, callback=None):
-        if not callback:
-            return self.__proton_api.get_alternative_routes()
-
-        self.__proton_api.get_alternative_routes(callback)
 
     @property
     def username(self):
@@ -602,6 +488,7 @@ class APISession:
 
     @ErrorStrategyNormalCall
     def update_servers_if_needed(self, force=False):
+        logger.info("Checking if servers need updating")
         changed = False
 
         if (
@@ -613,10 +500,14 @@ class APISession:
 
         if self.__next_fetch_logicals < time.time() or force:
             # Update logicals
+            logger.info("Updating logicals")
+            self.__ensure_that_alt_routing_can_be_skipped()
             self.__vpn_logicals.update_logical_data(self.__proton_api.api_request('/vpn/logicals'))
             changed = True
         elif self.__next_fetch_load < time.time():
             # Update loads
+            logger.info("Updating loads")
+            self.__ensure_that_alt_routing_can_be_skipped()
             self.__vpn_logicals.update_load_data(self.__proton_api.api_request('/vpn/loads'))
             changed = True
 
@@ -666,6 +557,7 @@ class APISession:
 
     @ErrorStrategyNormalCall
     def update_client_config_if_needed(self, force=False):
+        logger.info("Checking if client config need updating")
         changed = False
 
         if (
@@ -677,6 +569,8 @@ class APISession:
 
         if self.__next_fetch_client_config < time.time() or force:
             # Update client config
+            logger.info("Updating client config")
+            self.__ensure_that_alt_routing_can_be_skipped()
             self.__clientconfig.update_client_config_data(
                 self.__proton_api.api_request(
                     "/vpn/clientconfig"
@@ -726,6 +620,7 @@ class APISession:
 
     @ErrorStrategyNormalCall
     def update_streaming_data_if_needed(self, force=False):
+        logger.info("Checking if streaming data need updating")
         changed = False
 
         if (
@@ -737,6 +632,8 @@ class APISession:
 
         if self.__next_fetch_streaming_service < time.time() or force:
             # Update streaming services
+            logger.info("Updating streaming data")
+            self.__ensure_that_alt_routing_can_be_skipped()
             self.__streaming_services.update_streaming_services_data(
                 self.__proton_api.api_request(
                     "/vpn/streamingservices"
@@ -787,6 +684,7 @@ class APISession:
         return self.__streaming_services
 
     def update_streaming_icons_if_needed(self, force=False):
+        logger.info("Checking streaming icons if need updating")
         if (
             ExecutionEnvironment().settings.killswitch
             == KillswitchStatusEnum.HARD
@@ -795,6 +693,8 @@ class APISession:
             return
 
         if self.__next_fetch_streaming_icons < time.time() or force:
+            logger.info("Updating streaming icons")
+            self.__ensure_that_alt_routing_can_be_skipped()
             self.__streaming_icons.update_streaming_icons_data(self.__streaming_services)
 
             self._update_next_fetch_streaming_icons()
@@ -807,6 +707,36 @@ class APISession:
                 logger.info("Could not save streaming services cache {}".format(
                     e
                 ))
+
+    def __ensure_that_alt_routing_can_be_skipped(self):
+        """Check if alternative routing can be skipped.
+
+        This method should be called before making API calls.
+        This is mainly for the purpose of alternative routing, since if a VPN
+        connection is active, there is no reason to use alt routes and not directly
+        the original API.
+        """
+        logger.info("Ensure that alternative routing can be skipped")
+        if ExecutionEnvironment().settings.alternative_routing != UserSettingStatusEnum.ENABLED:
+            logger.info("Alternative routing is disabled.")
+            self.__proton_api.force_skip_alternative_routing = False
+            return
+
+        try:
+            active_connection = ExecutionEnvironment()\
+                .connection_backend.get_active_protonvpn_connection()
+            logger.info(
+                "Active ProtonVPN connection found. "
+                "Force skipping alternative routing."
+            )
+        except: # noqa
+            active_connection = None
+            logger.info(
+                "Active ProtonVPN connection could not be found. "
+                "Switiching to alternative routing."
+            )
+
+        self.__proton_api.force_skip_alternative_routing = True if active_connection else False
 
     @property
     def streaming_icons(self):
@@ -839,7 +769,7 @@ class APISession:
         except (TypeError, KeyError) as e:
             logger.exception(e)
             raise DefaultOVPNPortsNotFoundError(
-                "Default OVPN ports could not be found"
+                "Default OVPN (UDP) ports could not be found"
             )
 
     @property
@@ -849,5 +779,5 @@ class APISession:
         except (TypeError, KeyError) as e:
             logger.exception(e)
             raise DefaultOVPNPortsNotFoundError(
-                "Default OVPN ports could not be found"
+                "Default OVPN (TCP) ports could not be found"
             )

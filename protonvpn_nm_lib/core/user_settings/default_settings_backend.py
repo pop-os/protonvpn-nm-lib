@@ -155,9 +155,10 @@ class Settings(SettingsBackend):
     def alternative_routing(self, newvalue):
         """Get Alternative Routing setting.
 
-        Returns:
-            UserSettingStatusEnum
+        Args:
+            newvalue (UserSettingStatusEnum)
         """
+        ExecutionEnvironment().api_session.update_alternative_routing(newvalue.value)
         self.settings_configurator.set_alternative_routing(newvalue)
 
     @property
