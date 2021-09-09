@@ -704,6 +704,13 @@ class APISession:
                     e
                 ))
 
+    @ErrorStrategyNormalCall
+    def get_location_data(self):
+        self.__ensure_that_alt_routing_can_be_skipped()
+        response = self.__proton_api.api_request("/vpn/location")
+        from ..location import CurrentLocation
+        return CurrentLocation(response)
+
     def __ensure_that_alt_routing_can_be_skipped(self):
         """Check if alternative routing can be skipped.
 
