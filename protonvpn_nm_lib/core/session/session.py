@@ -488,7 +488,6 @@ class APISession:
 
     @ErrorStrategyNormalCall
     def update_servers_if_needed(self, force=False):
-        logger.info("Checking if servers need updating")
         changed = False
 
         if (
@@ -500,13 +499,13 @@ class APISession:
 
         if self.__next_fetch_logicals < time.time() or force:
             # Update logicals
-            logger.info("Updating logicals")
+            logger.info("Fetching logicals")
             self.__ensure_that_alt_routing_can_be_skipped()
             self.__vpn_logicals.update_logical_data(self.__proton_api.api_request('/vpn/logicals'))
             changed = True
         elif self.__next_fetch_load < time.time():
             # Update loads
-            logger.info("Updating loads")
+            logger.info("Fetching loads")
             self.__ensure_that_alt_routing_can_be_skipped()
             self.__vpn_logicals.update_load_data(self.__proton_api.api_request('/vpn/loads'))
             changed = True
@@ -557,7 +556,6 @@ class APISession:
 
     @ErrorStrategyNormalCall
     def update_client_config_if_needed(self, force=False):
-        logger.info("Checking if client config need updating")
         changed = False
 
         if (
@@ -569,7 +567,7 @@ class APISession:
 
         if self.__next_fetch_client_config < time.time() or force:
             # Update client config
-            logger.info("Updating client config")
+            logger.info("Fetching client config")
             self.__ensure_that_alt_routing_can_be_skipped()
             self.__clientconfig.update_client_config_data(
                 self.__proton_api.api_request(
@@ -620,7 +618,6 @@ class APISession:
 
     @ErrorStrategyNormalCall
     def update_streaming_data_if_needed(self, force=False):
-        logger.info("Checking if streaming data need updating")
         changed = False
 
         if (
@@ -632,7 +629,7 @@ class APISession:
 
         if self.__next_fetch_streaming_service < time.time() or force:
             # Update streaming services
-            logger.info("Updating streaming data")
+            logger.info("Fetching streaming data")
             self.__ensure_that_alt_routing_can_be_skipped()
             self.__streaming_services.update_streaming_services_data(
                 self.__proton_api.api_request(
@@ -684,7 +681,6 @@ class APISession:
         return self.__streaming_services
 
     def update_streaming_icons_if_needed(self, force=False):
-        logger.info("Checking streaming icons if need updating")
         if (
             ExecutionEnvironment().settings.killswitch
             == KillswitchStatusEnum.HARD
@@ -693,7 +689,7 @@ class APISession:
             return
 
         if self.__next_fetch_streaming_icons < time.time() or force:
-            logger.info("Updating streaming icons")
+            logger.info("Fetching streaming icons")
             self.__ensure_that_alt_routing_can_be_skipped()
             self.__streaming_icons.update_streaming_icons_data(self.__streaming_services)
 
@@ -707,6 +703,13 @@ class APISession:
                 logger.info("Could not save streaming services cache {}".format(
                     e
                 ))
+
+    @ErrorStrategyNormalCall
+    def get_location_data(self):
+        self.__ensure_that_alt_routing_can_be_skipped()
+        response = self.__proton_api.api_request("/vpn/location")
+        from ..location import CurrentLocation
+        return CurrentLocation(response)
 
     def __ensure_that_alt_routing_can_be_skipped(self):
         """Check if alternative routing can be skipped.
@@ -725,18 +728,27 @@ class APISession:
         try:
             active_connection = ExecutionEnvironment()\
                 .connection_backend.get_active_protonvpn_connection()
-            logger.info(
-                "Active ProtonVPN connection found. "
-                "Force skipping alternative routing."
-            )
         except: # noqa
             active_connection = None
+            logger.info(
+                "Error occured while trying to fetch VPN connection."
+            )
+
+        if not active_connection:
             logger.info(
                 "Active ProtonVPN connection could not be found. "
                 "Switiching to alternative routing."
             )
 
-        self.__proton_api.force_skip_alternative_routing = True if active_connection else False
+            self.__proton_api.force_skip_alternative_routing = False
+            return
+
+        logger.info(
+            "Active ProtonVPN connection found. "
+            "Force skipping alternative routing."
+        )
+        self.__proton_api.force_skip_alternative_routing = True
+
 
     @property
     def streaming_icons(self):
