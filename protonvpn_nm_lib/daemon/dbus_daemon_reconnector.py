@@ -56,8 +56,8 @@ class ProtonVPNReconnector:
         logger.info("Is user session locked: {}".format(self.user_session_locked))
 
     def connect_signals(self):
-        # self._create_on_suspend_lock()
-        # self._create_on_shutdown_lock()
+        self._create_on_suspend_lock()
+        self._create_on_shutdown_lock()
         self.nm_wrapper.connect_network_manager_object_to_signal(
             "StateChanged", self.on_network_state_changed
         )
@@ -83,10 +83,13 @@ class ProtonVPNReconnector:
 
         login_manager_interface = self.login1_wrapper.get_login_manager_interface()
         try:
-            logger.info("Get suspend inhibit lock")
+            logger.info("Create sleep inhibit lock")
             self.suspend_lock = login_manager_interface.Inhibit(
-                "sleep", "ProtonVPN", "Updating session lock status", "block"
-            )
+                "sleep", "ProtonVPN", "Update session lock status", "delay"
+            ).take()
+            logger.info("Sleep lock created: {} {}".format(
+                self.shutdown_lock, type(self.shutdown_lock)
+            ))
         except Exception as e:
             logger.exception(e)
 
@@ -96,10 +99,13 @@ class ProtonVPNReconnector:
 
         login_manager_interface = self.login1_wrapper.get_login_manager_interface()
         try:
-            logger.info("Get shutdown inhibit lock")
+            logger.info("Create shutdown inhibit lock")
             self.shutdown_lock = login_manager_interface.Inhibit(
-                "shutdown", "ProtonVPN", "Removing Kill Switch Interfaces", "block"
-            )
+                "shutdown", "ProtonVPN", "Remove VPN interfaces", "delay"
+            ).take()
+            logger.info("Shutdown lock created: {} {}".format(
+                self.shutdown_lock, type(self.shutdown_lock)
+            ))
         except Exception as e:
             logger.exception(e)
 
@@ -119,27 +125,23 @@ class ProtonVPNReconnector:
         self.vpn_activator()
 
     def on_prepare_for_shutdown(self, *args, **kwargs):
-        # logger.info("is_getting_ready_for_shutdown: {}".format(is_getting_ready_for_shutdown))
-        # if not is_getting_ready_for_shutdown:
-        #    self._create_on_shutdown_lock()
-
-        self._create_on_shutdown_lock()
-        # _lock = self.shutdown_lock.take()
         logger.info("Preparing for shutdown")
+
         if settings.killswitch != KillswitchStatusEnum.HARD:
-            logger.info("Removing Kill Switch interface")
+            logger.info("Remove Kill Switch interface")
             killswitch.delete_all_connections()
 
-        logger.info("Removing IPv6 leak protection")
+        logger.info("Remove IPv6 leak protection")
         ipv6_leak_protection.remove_leak_protection()
 
         if self.shutdown_lock:
             logger.info(
-                "Release shutdown lock: {} {}".format(self.shutdown_lock, type(self.shutdown_lock))
+                "Attempting to release shutdown lock: {} {}".format(
+                    self.shutdown_lock, type(self.shutdown_lock)
+                )
             )
-            logger.info("Attempting to release shutdown lock")
             try:
-                os.close(self.shutdown_lock.take())
+                os.close(self.shutdown_lock)
                 self.shutdown_lock = None
             except Exception as e:
                 logger.exception(e)
@@ -147,25 +149,21 @@ class ProtonVPNReconnector:
                 logger.info("Successuflly released shutdown lock")
 
     def on_prepare_for_suspend(self, *args, **kwargs):
-        # logger.info("is_getting_ready_for_suspend {}".format(is_getting_ready_for_shutdown))
-        # if not is_getting_ready_for_suspend:
-        #     self._create_on_suspend_lock()
-
-        self._create_on_suspend_lock()
-        # _lock = self.suspend_lock.take()
         logger.info("Preparing for sleep")
+
         logger.info("Is user session locked: {}".format(self.user_session_locked))
         self.user_session_locked = True
         logger.info("Is user session locked: {}".format(self.user_session_locked))
 
         if self.suspend_lock:
             logger.info(
-                "Release suspend lock: {} {}".format(self.suspend_lock, type(self.suspend_lock))
+                "Attempting to release suspend lock: {} {}".format(
+                    self.suspend_lock, type(self.suspend_lock)
+                )
             )
 
-            logger.info("Attempting to release suspend lock")
             try:
-                os.close(self.suspend_lock.take())
+                os.close(self.suspend_lock)
                 self.suspend_lock = None
             except Exception as e:
                 logger.exception(e)
