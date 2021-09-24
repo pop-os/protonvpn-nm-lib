@@ -6,11 +6,11 @@ from ...constants import (API_METADATA_FILEPATH, API_URL, APP_VERSION,
                           CACHED_SERVERLIST, CLIENT_CONFIG,
                           CONNECTION_STATE_FILEPATH,
                           LAST_CONNECTION_METADATA_FILEPATH,
-                          STREAMING_ICONS_CACHE_TIME_PATH, STREAMING_SERVICES,
-                          PROTON_XDG_CACHE_HOME, PROTON_XDG_CACHE_HOME_LOGS)
+                          PROTON_XDG_CACHE_HOME, PROTON_XDG_CACHE_HOME_LOGS,
+                          STREAMING_ICONS_CACHE_TIME_PATH, STREAMING_SERVICES)
 from ...enums import KeyringEnum, KillswitchStatusEnum, UserSettingStatusEnum
 from ...exceptions import (API403Error, API5002Error, API5003Error,
-                           API8002Error, API10013Error,
+                           API8002Error, API9001Error, API10013Error,
                            APISessionIsNotValidError, APITimeoutError,
                            DefaultOVPNPortsNotFoundError, InsecureConnection,
                            JSONDataError, NetworkConnectionError,
@@ -26,8 +26,7 @@ class ErrorStrategy:
     def __call__(self, session, *args, **kwargs):
         from proton.exceptions import (ConnectionTimeOutError,
                                        NewConnectionError, ProtonAPIError,
-                                       TLSPinningError, UnknownConnectionError,
-                                       )
+                                       TLSPinningError, UnknownConnectionError)
         result = None
 
         try:
@@ -85,7 +84,7 @@ class ErrorStrategy:
         return getattr(session, self.__func__.__name__)(*args, **kwargs)
 
     # Common handlers retries
-    def handle_429(self, error, session, *args, **kwargs):
+    def _handle_429(self, error, session, *args, **kwargs):
         logger.info("Catched 429 error, will retry")
 
         hold_request_time = error.headers["Retry-After"]
@@ -101,13 +100,17 @@ class ErrorStrategy:
         # Retry
         return self._call_original_function(session, *args, **kwargs)
 
-    def handle_503(self, error, session, *args, **kwargs):
+    def _handle_503(self, error, session, *args, **kwargs):
         logger.info("Catched 503 error, retrying new request")
 
         # Wait between 2 and 10 seconds
         hold_request_time = 2 + random.random() * 8
         time.sleep(hold_request_time)
         return self._call_original_function(session, *args, **kwargs)
+
+    def _handle_9001(self, error, session, *args, **kwargs):
+        logger.info("Catched 9001 error, raising human verification exception")
+        raise API9001Error(error)
 
 
 class ErrorStrategyLogout(ErrorStrategy):
@@ -214,7 +217,8 @@ class APISession:
             user_agent=ExecutionEnvironment().user_agent,
             tls_pinning=self._enforce_pinning,
         )
-        self.__proton_api.enable_alternative_routing = ExecutionEnvironment().settings.alternative_routing.value
+        self.__proton_api.enable_alternative_routing = ExecutionEnvironment()\
+            .settings.alternative_routing.value
 
     def update_alternative_routing(self, newvalue):
         self.__proton_api.enable_alternative_routing = newvalue
@@ -279,7 +283,8 @@ class APISession:
             cache_dir_path=PROTON_XDG_CACHE_HOME,
             tls_pinning=self._enforce_pinning
         )
-        self.__proton_api.enable_alternative_routing = ExecutionEnvironment().settings.alternative_routing.value
+        self.__proton_api.enable_alternative_routing = ExecutionEnvironment()\
+            .settings.alternative_routing.value
         self.__proton_user = keyring_data_user['proton_username']
 
     def __keyring_clear_session(self):
@@ -349,14 +354,20 @@ class APISession:
         return True
 
     @ErrorStrategyAuthenticate
-    def authenticate(self, username, password):
+    def authenticate(self, username, password, human_verification=None):
         """Authenticate using username/password.
 
         This destroys the current session, if any.
         """
 
+        # Ensure the session is clean
+        try:
+            self.logout()
+        except: # noqa
+            pass
+
         # (try) to log in
-        self.__proton_api.authenticate(username, password)
+        self.__proton_api.authenticate(username, password, human_verification)
 
         # Order is important here: we first want to set keyrings,
         # then set the class status to avoid inconstistencies
@@ -749,6 +760,9 @@ class APISession:
         )
         self.__proton_api.force_skip_alternative_routing = True
 
+    @property
+    def captcha_url(self):
+        return self.__proton_api.captcha_url
 
     @property
     def streaming_icons(self):
