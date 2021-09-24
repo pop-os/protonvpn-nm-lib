@@ -136,6 +136,14 @@ class API8002Error(ProtonSessionWrapperError):
     """
 
 
+class API9001Error(ProtonSessionWrapperError):
+    """Error 9001.
+
+    Human verification required.
+    (Usually done via captcha)
+    """
+
+
 class API10013Error(ProtonSessionWrapperError):
     """Error 10013.
 

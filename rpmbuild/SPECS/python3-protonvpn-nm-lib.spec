@@ -1,6 +1,6 @@
 %define unmangled_name protonvpn-nm-lib
-%define version 3.4.1
-%define release 3
+%define version 3.5.0
+%define release 1
 
 Prefix: %{_prefix}
 
@@ -25,7 +25,7 @@ Requires: openvpn
 Requires: NetworkManager
 Requires: NetworkManager-openvpn
 Requires: gtk3
-Requires: python3-proton-client >= 0.6.0
+Requires: python3-proton-client
 Requires: python3-keyring
 Requires: python3-distro
 Requires: python3-jinja2
@@ -34,7 +34,7 @@ Requires: python3-dbus
 Requires: python3-systemd
 Requires: python3-gobject
 Requires: xdg-utils
-Conflicts: protonvpn-cli < 3.9.0, protonvpn-cli < 1.3.0
+Conflicts: protonvpn-cli < 3.10.0, protonvpn-cli < 1.4.0
 
 %{?python_disable_dependency_generator}
 
@@ -60,6 +60,9 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 
 %changelog
+* Fri Sep 24 2021 Proton Technologies AG <opensource@proton.me> 3.5.0-1
+- Handle human verification
+
 * Tue Jul 06 2021 Proton Technologies AG <opensource@proton.me> 3.4.1-3
 - More often update server maintenance status 
 - Feature: Alternative routing 

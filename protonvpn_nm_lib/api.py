@@ -18,16 +18,17 @@ class ProtonVPNClientAPI:
         self._utils = Utilities
         self._bug_report = BugReport()
 
-    def login(self, username, password):
+    def login(self, username, password, human_verification=None):
         """Login user with provided username and password.
         If login is unsuccessful, an exception will be thrown.
 
         Args:
             username (string)
             password (string)
+            human_verification (optional; list|tuple)
         """
         self._utils.ensure_connectivity()
-        self._env.api_session.authenticate(username, password)
+        self._env.api_session.authenticate(username, password, human_verification)
 
     def logout(self):
         """Logout user and delete current user session."""
