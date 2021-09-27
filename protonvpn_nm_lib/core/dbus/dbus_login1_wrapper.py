@@ -42,6 +42,29 @@ class Login1UnitWrapper:
             SystemBusLogin1InterfaceEnum.SESSION.value
         )
 
+    def connect_login1_object_to_signal(self, signal_name, method):
+        """Connect a signal to user session object.
+
+        Args:
+            signal_name (string): the name of the signal to listen to
+            method (func): the method that received the signal
+        """
+        logger.info("Connect prepare for shutdown signal: {} {}".format(signal_name, method))
+        interface = self.get_login_manager_interface()
+        interface.connect_to_signal(signal_name, method)
+
+    def get_login_manager_interface(self):
+        """Get org.freedesktop.login1.Manager interface.
+
+        Returns:
+            dbus.proxies.Interface: Get org.freedesktop.login1.Manager interface
+        """
+        logger.info("Get org.freedesktop.login1.Manager interface")
+        return self.__dbus_wrapper.get_proxy_object_interface(
+            self.__get_proxy_object(SystemBusLogin1ObjectPathEnum.LOGIN1.value),
+            SystemBusLogin1InterfaceEnum.MANAGER.value
+        )
+
     def _get_current_user_session_proxy_object(self):
         """Get current session proxy object.
 
