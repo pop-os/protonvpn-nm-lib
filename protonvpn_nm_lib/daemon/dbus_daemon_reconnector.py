@@ -56,23 +56,23 @@ class ProtonVPNReconnector:
         logger.info("Is user session locked: {}".format(self.user_session_locked))
 
     def connect_signals(self):
-        self._create_on_suspend_lock()
+        # self._create_on_suspend_lock()
         self._create_on_shutdown_lock()
         self.nm_wrapper.connect_network_manager_object_to_signal(
             "StateChanged", self.on_network_state_changed
         )
-        self.login1_wrapper.connect_user_session_object_to_signal(
-            "Lock", self.on_session_lock
-        )
-        self.login1_wrapper.connect_user_session_object_to_signal(
-            "Unlock", self.on_session_unlock
-        )
+        # self.login1_wrapper.connect_user_session_object_to_signal(
+        #     "Lock", self.on_session_lock
+        # )
+        # self.login1_wrapper.connect_user_session_object_to_signal(
+        #     "Unlock", self.on_session_unlock
+        # )
         self.login1_wrapper.connect_login1_object_to_signal(
             "PrepareForShutdown", self.on_prepare_for_shutdown
         )
-        self.login1_wrapper.connect_login1_object_to_signal(
-            "PrepareForSleep", self.on_prepare_for_suspend
-        )
+        # self.login1_wrapper.connect_login1_object_to_signal(
+        #     "PrepareForSleep", self.on_prepare_for_suspend
+        # )
 
         if self.login1_wrapper.get_properties_current_user_session()["State"] == "active":
             self.user_session_locked = False
