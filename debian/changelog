@@ -2,6 +2,7 @@ protonvpn-nm-lib (3.5.0-1) unstable; urgency=medium
 
   * Handle human verification
   * Fix: Remove network interfaces upon reboot/shutdown if kill switch is not set to permanent
+  * Fix: Wake on suspend has now an additional check to ensure that the reconnector kicks in only when the session is unlocked
 
  -- Proton Technologies AG <opensource@proton.me>  Fri, 24 Sep 2021 11:30:00 +0100
  
