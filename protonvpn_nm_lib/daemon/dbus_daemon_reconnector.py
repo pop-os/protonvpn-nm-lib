@@ -47,35 +47,36 @@ class ProtonVPNReconnector:
         self.bus = dbus.SystemBus()
         self.nm_wrapper = NetworkManagerUnitWrapper(self.bus)
         self.login1_wrapper = Login1UnitWrapper(self.bus)
-        self.user_session_locked = None
+        self.is_user_session_locked = False
         self.suspend_lock = None
         self.shutdown_lock = None
         # Auto connect at startup (Listen for StateChanged going forward)
         self.vpn_activator()
         self.connect_signals()
-        logger.info("Is user session locked: {}".format(self.user_session_locked))
 
     def connect_signals(self):
-        # self._create_on_suspend_lock()
-        self._create_on_shutdown_lock()
-        self.nm_wrapper.connect_network_manager_object_to_signal(
-            "StateChanged", self.on_network_state_changed
+        self.login1_wrapper.connect_user_session_object_to_signal(
+            "Lock", self.on_session_lock
         )
-        # self.login1_wrapper.connect_user_session_object_to_signal(
-        #     "Lock", self.on_session_lock
-        # )
-        # self.login1_wrapper.connect_user_session_object_to_signal(
-        #     "Unlock", self.on_session_unlock
-        # )
+        self.login1_wrapper.connect_user_session_object_to_signal(
+            "Unlock", self.on_session_unlock
+        )
         self.login1_wrapper.connect_login1_object_to_signal(
             "PrepareForShutdown", self.on_prepare_for_shutdown
         )
-        # self.login1_wrapper.connect_login1_object_to_signal(
-        #     "PrepareForSleep", self.on_prepare_for_suspend
-        # )
+        self.login1_wrapper.connect_login1_object_to_signal(
+            "PrepareForSleep", self.on_prepare_for_suspend
+        )
+        self.nm_wrapper.connect_network_manager_object_to_signal(
+            "StateChanged", self.on_network_state_changed
+        )
+        self._create_on_suspend_lock()
+        self._create_on_shutdown_lock()
 
-        if self.login1_wrapper.get_properties_current_user_session()["State"] == "active":
-            self.user_session_locked = False
+        self.is_user_session_locked = \
+            False \
+            if self.login1_wrapper.get_properties_current_user_session()["State"] == "active" \
+            else True
 
     def _create_on_suspend_lock(self):
         if self.suspend_lock:
@@ -88,7 +89,7 @@ class ProtonVPNReconnector:
                 "sleep", "ProtonVPN", "Update session lock status", "delay"
             ).take()
             logger.info("Sleep lock created: {} {}".format(
-                self.shutdown_lock, type(self.shutdown_lock)
+                self.suspend_lock, type(self.suspend_lock)
             ))
         except Exception as e:
             logger.exception(e)
@@ -110,18 +111,12 @@ class ProtonVPNReconnector:
             logger.exception(e)
 
     def on_session_lock(self):
-        logger.info("Inside session lock")
-        logger.info("Is user session locked: {}".format(self.user_session_locked))
-        logger.info("Session got \"locked\"")
-        self.user_session_locked = True
-        logger.info("Is user session locked: {}".format(self.user_session_locked))
+        self.is_user_session_locked = True
+        logger.info("Session state: \"{}\"".format("Locked" if self.is_user_session_locked else "Unlocked"))
 
     def on_session_unlock(self):
-        logger.info("Inside session unlock")
-        logger.info("Is user session locked: {}".format(self.user_session_locked))
-        logger.info("Session got \"unlocked\"")
-        self.user_session_locked = False
-        logger.info("Is user session locked: {}".format(self.user_session_locked))
+        self.is_user_session_locked = False
+        logger.info("Session state: \"{}\"".format("Locked" if self.is_user_session_locked else "Unlocked"))
         self.vpn_activator()
 
     def on_prepare_for_shutdown(self, *args, **kwargs):
@@ -134,41 +129,46 @@ class ProtonVPNReconnector:
         logger.info("Remove IPv6 leak protection")
         ipv6_leak_protection.remove_leak_protection()
 
-        if self.shutdown_lock:
-            logger.info(
-                "Attempting to release shutdown lock: {} {}".format(
-                    self.shutdown_lock, type(self.shutdown_lock)
-                )
+        if not self.shutdown_lock:
+            return
+
+        logger.info(
+            "Attempting to release shutdown lock: {} {}".format(
+                self.shutdown_lock, type(self.shutdown_lock)
             )
-            try:
-                os.close(self.shutdown_lock)
-                self.shutdown_lock = None
-            except Exception as e:
-                logger.exception(e)
-            else:
-                logger.info("Successuflly released shutdown lock")
+        )
+        try:
+            os.close(self.shutdown_lock)
+            self.shutdown_lock = None
+        except Exception as e:
+            logger.exception(e)
+            return
+
+        logger.info("Successuflly released shutdown lock")
 
     def on_prepare_for_suspend(self, *args, **kwargs):
         logger.info("Preparing for sleep")
 
-        logger.info("Is user session locked: {}".format(self.user_session_locked))
-        self.user_session_locked = True
-        logger.info("Is user session locked: {}".format(self.user_session_locked))
+        self.is_user_session_locked = True
+        logger.info("Session state: \"{}\"".format("Locked" if self.is_user_session_locked else "Unlocked"))
 
-        if self.suspend_lock:
-            logger.info(
-                "Attempting to release suspend lock: {} {}".format(
-                    self.suspend_lock, type(self.suspend_lock)
-                )
+        if not self.suspend_lock:
+            return
+
+        logger.info(
+            "Attempting to release suspend lock: {} {}".format(
+                self.suspend_lock, type(self.suspend_lock)
             )
+        )
 
-            try:
-                os.close(self.suspend_lock)
-                self.suspend_lock = None
-            except Exception as e:
-                logger.exception(e)
-            else:
-                logger.info("Successuflly released suspend lock")
+        try:
+            os.close(self.suspend_lock)
+            self.suspend_lock = None
+        except Exception as e:
+            logger.exception(e)
+            return
+
+        logger.info("Successuflly released suspend lock")
 
     def on_network_state_changed(self, state):
         """Network status signal handler.
@@ -195,7 +195,7 @@ class ProtonVPNReconnector:
                 reason
             )
         )
-        if state == VPNConnectionStateEnum.IS_ACTIVE and not self.user_session_locked:
+        if state == VPNConnectionStateEnum.IS_ACTIVE and not self.is_user_session_locked:
             logger.info(
                 "ProtonVPN with virtual device '{}' is running.".format(
                     self.virtual_device_name
@@ -225,7 +225,7 @@ class ProtonVPNReconnector:
         elif (
             state == VPNConnectionStateEnum.DISCONNECTED
             and reason == VPNConnectionReasonEnum.USER_HAS_DISCONNECTED
-            and not self.user_session_locked
+            and not self.is_user_session_locked
         ):
             logger.info("ProtonVPN connection was manually disconnected.")
             self.failed_attempts = 0
@@ -265,7 +265,7 @@ class ProtonVPNReconnector:
         elif state in [
             VPNConnectionStateEnum.FAILED,
             VPNConnectionStateEnum.DISCONNECTED
-        ] and not self.user_session_locked:
+        ] and not self.is_user_session_locked:
             # reconnect if haven't reached max_attempts
             if (
                 not self.max_attempts
@@ -382,7 +382,7 @@ class ProtonVPNReconnector:
                 self.failed_attempts, self.max_attempts, self.delay
             ) + "ms;\n"
         )
-        if self.user_session_locked:
+        if self.is_user_session_locked:
             return
 
         vpn_interface = self.nm_wrapper.get_vpn_interface()
